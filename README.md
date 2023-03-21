@@ -2,7 +2,7 @@
 A side project/broadcaster tool that escalated, its main purpose is to automatically change your twitch category based on what you are playing.
 
 # - Features:
-  • Change your twitch title and category based on active application/game.
+  • Change your twitch title and category based on active application/game. 
   • Application level audio mixer with hotkeys
 
 # - How does it work:
