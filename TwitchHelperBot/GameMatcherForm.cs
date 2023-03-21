@@ -74,9 +74,10 @@ namespace TwitchHelperBot
             string[] sections = Globals.iniHelper.SectionNames();
             for (int i = 0; i < sections.Length; i++)
             {
-                if (sections[i] != Globals.iniHelper.exe)
+                string PresetCategory = Globals.iniHelper.Read("PresetCategory", sections[i]);
+                if (PresetCategory != null)
                 {
-                    JObject category = JObject.Parse(Globals.iniHelper.Read("PresetCategory", sections[i]));
+                    JObject category = JObject.Parse(PresetCategory);
                     listView1.SmallImageList.Images.Add(GetImageFromURL(category["box_art_url"].ToString(), category["id"].ToString()));
                     listView1.Items.Add(new ListViewItem(new string[]
                     {
