@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Net;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -32,9 +33,47 @@ namespace TwitchHelperBot
         {
             InitializeComponent();
 
+            checkForUpdates();
+
             startupApp();
             registerAudioMixerHotkeys();
             Globals.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
+        }
+
+        private void checkForUpdates()
+        {
+            using (WebClient client = new WebClient())
+            {
+                client.Headers.Add("User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
+                string githubLatestReleaseJsonString = client.DownloadString("https://api.github.com/repos/StEaLtHmAn/TwitchHelperBot/releases/latest");
+                JObject githubLatestReleaseJson = JObject.Parse(githubLatestReleaseJsonString);
+
+                Version CurrentVersion = Assembly.GetEntryAssembly().GetName().Version;
+                string[] githubVersionNumbersSplit = new string(githubLatestReleaseJson["tag_name"].ToString().ToLower().Where(c => char.IsDigit(c)).ToArray()).Split('.');
+
+                Version GithubVersion;
+                if (githubVersionNumbersSplit.Length == 2)
+                    GithubVersion = new Version(int.Parse(githubVersionNumbersSplit[0]), int.Parse(githubVersionNumbersSplit[1]));
+                else if (githubVersionNumbersSplit.Length == 3)
+                    GithubVersion = new Version(int.Parse(githubVersionNumbersSplit[0]), int.Parse(githubVersionNumbersSplit[1]), int.Parse(githubVersionNumbersSplit[2]));
+                else if (githubVersionNumbersSplit.Length == 4)
+                    GithubVersion = new Version(int.Parse(githubVersionNumbersSplit[0]), int.Parse(githubVersionNumbersSplit[1]), int.Parse(githubVersionNumbersSplit[2]), int.Parse(githubVersionNumbersSplit[3]));
+                else
+                    GithubVersion = new Version();
+
+                if (GithubVersion > CurrentVersion)
+                {
+                    foreach (JObject asset in githubLatestReleaseJson["assets"] as JArray)
+                    {
+                        if (asset["content_type"].ToString() == "application/x-zip-compressed")
+                        {
+                            client.DownloadFile(asset["browser_download_url"].ToString(), asset["name"].ToString());
+                            Process.Start("Updater.exe", asset["name"].ToString());
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         private void startupApp()
