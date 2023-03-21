@@ -1,6 +1,5 @@
-﻿using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.WinForms;
-using Microsoft.Web.WebView2.Wpf;
+﻿using CSCore.CoreAudioAPI;
+using Microsoft.Web.WebView2.Core;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
@@ -9,8 +8,8 @@ using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using WebView2 = Microsoft.Web.WebView2.WinForms.WebView2;
 
 namespace TwitchHelperBot
@@ -34,6 +33,8 @@ namespace TwitchHelperBot
             InitializeComponent();
 
             startupApp();
+            registerAudioMixerHotkeys();
+            Globals.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
         }
 
         private void startupApp()
@@ -149,6 +150,116 @@ namespace TwitchHelperBot
             //show welcome message
             OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {userDetailsResponse["data"][0]["display_name"]}", userDetailsResponse["data"][0]["profile_image_url"].ToString(), userDetailsResponse["data"][0]["id"].ToString());
             form123.Show();
+        }
+
+        private void registerAudioMixerHotkeys()
+        {
+            Globals.keyboardHook.clearHotkeys();
+
+            string[] HotkeysUpList = Globals.iniHelper.ReadKeys("HotkeysUp");
+            foreach (string key in HotkeysUpList)
+            {
+                string HotkeysUp = Globals.iniHelper.Read(key, "HotkeysUp");
+                ModifierKeys modifiers = global::ModifierKeys.None;
+                if (HotkeysUp.Contains("Ctrl+"))
+                    modifiers |= global::ModifierKeys.Control;
+                if (HotkeysUp.Contains("Shift+"))
+                    modifiers |= global::ModifierKeys.Shift;
+                if (HotkeysUp.Contains("Alt+"))
+                    modifiers |= global::ModifierKeys.Alt;
+
+                Keys keys = (Keys)new KeysConverter().ConvertFromString(HotkeysUp.Split('+').Last());
+
+                Globals.keyboardHook.RegisterHotKey(modifiers, keys);
+            }
+
+            string[] HotkeysDownList = Globals.iniHelper.ReadKeys("HotkeysDown");
+            foreach (string key in HotkeysDownList)
+            {
+                string HotkeysDown = Globals.iniHelper.Read(key, "HotkeysDown");
+                ModifierKeys modifiers = global::ModifierKeys.None;
+                if (HotkeysDown.Contains("Ctrl+"))
+                    modifiers |= global::ModifierKeys.Control;
+                if (HotkeysDown.Contains("Shift+"))
+                    modifiers |= global::ModifierKeys.Shift;
+                if (HotkeysDown.Contains("Alt+"))
+                    modifiers |= global::ModifierKeys.Alt;
+
+                Keys keys = (Keys)new KeysConverter().ConvertFromString(HotkeysDown.Split('+').Last());
+
+                Globals.keyboardHook.RegisterHotKey(modifiers, keys);
+            }
+        }
+
+        private void KeyboardHook_KeyPressed(object sender, KeyPressedEventArgs e)
+        {
+            string keyNames = new KeysConverter().ConvertToString(e.Key);
+            if ((e.Modifier & global::ModifierKeys.Alt) != 0)
+                keyNames = "Alt+" + keyNames;
+            if ((e.Modifier & global::ModifierKeys.Shift) != 0)
+                keyNames = "Shift+" + keyNames;
+            if ((e.Modifier & global::ModifierKeys.Control) != 0)
+                keyNames = "Ctrl+" + keyNames;
+
+            string[] HotkeysUpList = Globals.iniHelper.ReadKeys("HotkeysUp");
+            string processPath = string.Empty;
+            bool isUp = false;
+            foreach (string key in HotkeysUpList)
+            {
+                string keyValue = Globals.iniHelper.Read(key, "HotkeysUp");
+                if (keyValue == keyNames)
+                {
+                    processPath = key;
+                    isUp = true;
+                    break;
+                }
+            }
+            string[] HotkeysDownList = Globals.iniHelper.ReadKeys("HotkeysDown");
+            foreach (string key in HotkeysUpList)
+            {
+                string keyValue = Globals.iniHelper.Read(key, "HotkeysDown");
+                if (keyValue == keyNames)
+                {
+                    processPath = key;
+                    break;
+                }
+            }
+
+            Task.Run(() => {
+                try
+                {
+                    using (var sessionEnumerator = AudioManager.GetAudioSessions())
+                    {
+                        foreach (var session in sessionEnumerator)
+                        {
+                            using (var sessionControl = session.QueryInterface<AudioSessionControl2>())
+                            {
+                                bool shouldGoIn = processPath == "0" && sessionControl.ProcessID == 0;
+                                if (!shouldGoIn)
+                                {
+                                    try
+                                    {
+                                        shouldGoIn = processPath == sessionControl.Process.MainModule.FileName;
+                                    }
+                                    catch { }
+                                }
+                                if (shouldGoIn)
+                                {
+                                    using (var simpleVolume = session.QueryInterface<SimpleAudioVolume>())
+                                    {
+                                        if (isUp)
+                                            AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume + 0.01f);
+                                        else
+                                            AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume - 0.01f);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } catch (Exception ex) {
+                    Debug.WriteLine(ex);
+                }
+            });
         }
 
         private class MyRenderer : ToolStripProfessionalRenderer
@@ -331,6 +442,18 @@ namespace TwitchHelperBot
         {
             SettingsForm form = new SettingsForm();
             form.ShowDialog();
+        }
+
+        private void AudioMixerToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            AudioMixerForm form = new AudioMixerForm();
+            form.ShowDialog();
+            registerAudioMixerHotkeys();
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Globals.keyboardHook.Dispose();
         }
     }
 }

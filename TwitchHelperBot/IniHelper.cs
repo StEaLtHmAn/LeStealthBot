@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -11,6 +12,9 @@ public class IniHelper
 
     [DllImport("kernel32", CharSet = CharSet.Unicode)]
     static extern int GetPrivateProfileString(string section, string key, string Default, StringBuilder RetVal, int Size, string FilePath);
+
+    [DllImport("kernel32.dll")]
+    private static extern int GetPrivateProfileSection(string lpAppName, byte[] lpszReturnBuffer, int nSize, string lpFileName);
 
     [DllImport("kernel32")]
     static extern uint GetPrivateProfileSectionNames(IntPtr pszReturnBuffer, uint nSize, string lpFileName);
@@ -29,6 +33,21 @@ public class IniHelper
         FileInfo = new FileInfo(path ?? exe);
     }
 
+    public string[] ReadKeys(string category)
+    {
+        byte[] buffer = new byte[65025];
+        GetPrivateProfileSection(category, buffer, 65025, FileInfo.FullName);
+        string[] tmp = Encoding.ASCII.GetString(buffer).Trim('\0').Split('\0');
+
+        List<string> result = new List<string>();
+        if(tmp.Length > 0 && tmp[0].Length > 0)
+            foreach (string entry in tmp)
+            {
+                result.Add(entry.Substring(0, entry.IndexOf("=")));
+            }
+
+        return result.ToArray();
+    }
     public string Read(string key, string section = null)
     {
         try

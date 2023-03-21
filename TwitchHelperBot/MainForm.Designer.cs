@@ -34,11 +34,12 @@
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.setupPresetsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.pauseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.quitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.AudioMixerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -62,13 +63,14 @@
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.setupPresetsToolStripMenuItem,
             this.settingsToolStripMenuItem,
+            this.AudioMixerToolStripMenuItem,
             this.toolStripSeparator2,
             this.pauseToolStripMenuItem,
             this.toolStripSeparator1,
             this.quitToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
             this.contextMenuStrip1.ShowImageMargin = false;
-            this.contextMenuStrip1.Size = new System.Drawing.Size(156, 126);
+            this.contextMenuStrip1.Size = new System.Drawing.Size(154, 126);
             // 
             // setupPresetsToolStripMenuItem
             // 
@@ -76,6 +78,13 @@
             this.setupPresetsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.setupPresetsToolStripMenuItem.Text = "Preset Manager";
             this.setupPresetsToolStripMenuItem.Click += new System.EventHandler(this.setupPresetsToolStripMenuItem_Click);
+            // 
+            // settingsToolStripMenuItem
+            // 
+            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.settingsToolStripMenuItem.Text = "Settings";
+            this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
@@ -101,12 +110,12 @@
             this.quitToolStripMenuItem.Text = "Quit";
             this.quitToolStripMenuItem.Click += new System.EventHandler(this.quitToolStripMenuItem_Click);
             // 
-            // settingsToolStripMenuItem
+            // AudioMixerToolStripMenuItem
             // 
-            this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
-            this.settingsToolStripMenuItem.Text = "Settings";
-            this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
+            this.AudioMixerToolStripMenuItem.Name = "AudioMixerToolStripMenuItem";
+            this.AudioMixerToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.AudioMixerToolStripMenuItem.Text = "Audio Mixer";
+            this.AudioMixerToolStripMenuItem.Click += new System.EventHandler(this.AudioMixerToolStripMenuItem_Click);
             // 
             // MainForm
             // 
@@ -120,6 +129,7 @@
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Main";
             this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.contextMenuStrip1.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -136,5 +146,6 @@
         private System.Windows.Forms.ToolStripMenuItem pauseToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator1;
         private System.Windows.Forms.ToolStripMenuItem settingsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem AudioMixerToolStripMenuItem;
     }
 }
