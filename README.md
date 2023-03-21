@@ -1,6 +1,11 @@
 # TwitchHelperBot
 A side project/broadcaster tool that escalated, its main purpose is to automatically change your twitch category based on what you are playing.
 
+# - Preview:
+  ![image](https://user-images.githubusercontent.com/2267356/226535649-2c0ec6c2-2caa-4cb1-b815-59af412ee3ad.png)
+  
+  ![image](https://user-images.githubusercontent.com/2267356/226535704-37e41328-835f-4e06-abb4-94cb7a90dc90.png)
+
 # - Features:
   • Change your twitch title and category based on active application/game.
 
