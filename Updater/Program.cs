@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Threading;
 
 namespace Updater
 {
@@ -10,6 +11,8 @@ namespace Updater
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Extracting new files...");
+            Thread.Sleep(250);
             if (args.Length == 0 || !args[0].ToLower().Contains(".zip"))
             {
                 args = new string[] { "TwitchHelper.zip" };
@@ -18,15 +21,26 @@ namespace Updater
             {
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {
-                    Console.WriteLine("FullName: " + entry.FullName);
-                    Console.WriteLine("Name: " + entry.Name);
-                    if(entry.FullName.Contains("."))
-                        entry.ExtractToFile(entry.FullName, true);
+                    if (entry.FullName.Contains("."))
+                    {
+                        if (!entry.FullName.Contains("Updater.exe"))
+                        {
+                            Console.WriteLine("Extracted: " + entry.FullName);
+                            entry.ExtractToFile(entry.FullName, true);
+                        }
+                    }
                     else
                         Directory.CreateDirectory(entry.FullName);
                 }
             }
+            Console.WriteLine("Done");
 
+            Console.WriteLine("Deleting zip file...");
+            Thread.Sleep(250);
+            File.Delete(args[0]);
+
+            Console.WriteLine("Lauching TwitchHelperBot...");
+            Thread.Sleep(250);
             Process.Start("TwitchHelperBot.exe");
         }
     }

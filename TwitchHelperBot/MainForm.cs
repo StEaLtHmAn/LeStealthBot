@@ -5,10 +5,13 @@ using RestSharp;
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using WebView2 = Microsoft.Web.WebView2.WinForms.WebView2;
@@ -33,14 +36,19 @@ namespace TwitchHelperBot
         {
             InitializeComponent();
 
-            checkForUpdates();
-
-            startupApp();
-            registerAudioMixerHotkeys();
-            Globals.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
+            if (!checkForUpdates())
+            {
+                startupApp();
+                registerAudioMixerHotkeys();
+                Globals.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
+            }
+            else
+            {
+                Globals.DelayAction(0, new Action(() => { Dispose(); }));
+            }
         }
 
-        private void checkForUpdates()
+        private bool checkForUpdates()
         {
             using (WebClient client = new WebClient())
             {
@@ -49,7 +57,7 @@ namespace TwitchHelperBot
                 JObject githubLatestReleaseJson = JObject.Parse(githubLatestReleaseJsonString);
 
                 Version CurrentVersion = Assembly.GetEntryAssembly().GetName().Version;
-                string[] githubVersionNumbersSplit = new string(githubLatestReleaseJson["tag_name"].ToString().ToLower().Where(c => char.IsDigit(c)).ToArray()).Split('.');
+                string[] githubVersionNumbersSplit = Regex.Replace(githubLatestReleaseJson["tag_name"].ToString().ToLower(), "^[\\D]", string.Empty).Split('.');
 
                 Version GithubVersion;
                 if (githubVersionNumbersSplit.Length == 2)
@@ -67,13 +75,25 @@ namespace TwitchHelperBot
                     {
                         if (asset["content_type"].ToString() == "application/x-zip-compressed")
                         {
+                            //download latest zip
                             client.DownloadFile(asset["browser_download_url"].ToString(), asset["name"].ToString());
+                            //extract latest updater
+                            using (ZipArchive archive = ZipFile.OpenRead(asset["name"].ToString()))
+                            {
+                                foreach (ZipArchiveEntry entry in archive.Entries)
+                                {
+                                    if (entry.FullName.Contains("Updater.exe"))
+                                        entry.ExtractToFile(entry.FullName, true);
+                                }
+                            }
+                            //run the updater
                             Process.Start("Updater.exe", asset["name"].ToString());
-                            break;
+                            return true;
                         }
                     }
                 }
             }
+            return false;
         }
 
         private void startupApp()
