@@ -25,7 +25,7 @@ namespace TwitchHelperBot
             {
                 File.Delete(filename);
             }
-            File.WriteAllText(filename, $"{DateTime.Now}: {message}{Environment.NewLine}");
+            File.AppendAllText(filename, $"{DateTime.Now}: {message}{Environment.NewLine}");
         }
 
         public static void DelayAction(int millisecond, Action action)

@@ -1,14 +1,12 @@
 ﻿using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -59,17 +57,29 @@ namespace TwitchHelperBot
 
         private void ListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            JObject selectedData = GetSelectedListItemData();
-            if (pictureBox1.Image != null)
+            try
             {
-                pictureBox1.Image.Dispose();
+                JObject selectedData = GetSelectedListItemData();
+                GetImageFromURL(selectedData["box_art_url"].ToString(), "ImageCache\\" + selectedData["id"].ToString() + ".jpg", () =>
+                {
+                    using (FileStream fs = new FileStream("ImageCache\\" + selectedData["id"].ToString() + ".jpg", FileMode.Open, FileAccess.Read))
+                    {
+                        pictureBox1.Image?.Dispose();
+                        pictureBox1.Image = Image.FromStream(fs);
+                    }
+                });
+                
             }
-            pictureBox1.Image = GetImageFromURL(selectedData["box_art_url"].ToString(), selectedData["id"].ToString());
+            catch (Exception ex)
+            {
+                Globals.LogMessage("textBox2_ListBox_SelectedIndexChanged exception: " + ex);
+            }
         }
 
         private void loadPresets()
         {
             listView1.Items.Clear();
+            listView1.SmallImageList?.Dispose();
             listView1.SmallImageList = new ImageList();
             string[] sections = Globals.iniHelper.SectionNames();
             for (int i = 0; i < sections.Length; i++)
@@ -78,13 +88,19 @@ namespace TwitchHelperBot
                 if (PresetCategory != null)
                 {
                     JObject category = JObject.Parse(PresetCategory);
-                    listView1.SmallImageList.Images.Add(GetImageFromURL(category["box_art_url"].ToString(), category["id"].ToString()));
+                    GetImageFromURL(category["box_art_url"].ToString(), "ImageCache\\" + category["id"].ToString() + ".jpg", () =>
+                    {
+                        using (FileStream fs = new FileStream("ImageCache\\" + category["id"].ToString() + ".jpg", FileMode.Open, FileAccess.Read))
+                        {
+                            listView1.SmallImageList.Images.Add(Image.FromStream(fs));
+                        }
+                    });
                     listView1.Items.Add(new ListViewItem(new string[]
                     {
                         sections[i],
                         Globals.iniHelper.Read("PresetTitle", sections[i]),
                         category["name"].ToString()
-                    }, i-1));
+                    }, listView1.SmallImageList.Images.Count - 1));
                 }
             }
             if(listView1.Items.Count > 0)
@@ -209,11 +225,14 @@ namespace TwitchHelperBot
                     comboBox2.SelectedItem = listView1.SelectedItems[0].SubItems[0].Text;
                     JObject selectedData = JObject.Parse(Globals.iniHelper.Read("PresetCategory", listView1.SelectedItems[0].SubItems[0].Text));
                     textBox2.Text = selectedData["name"].ToString();
-                    if (pictureBox1.Image != null)
+                    GetImageFromURL(selectedData["box_art_url"].ToString(), "ImageCache\\" + selectedData["id"].ToString() + ".jpg", () =>
                     {
-                        pictureBox1.Image.Dispose();
-                    }
-                    pictureBox1.Image = GetImageFromURL(selectedData["box_art_url"].ToString(), selectedData["id"].ToString());
+                        using (FileStream fs = new FileStream("ImageCache\\" + selectedData["id"].ToString() + ".jpg", FileMode.Open, FileAccess.Read))
+                        {
+                            pictureBox1.Image?.Dispose();
+                            pictureBox1.Image = Image.FromStream(fs);
+                        }
+                    });
                 }
             }
             catch (Exception ex)
@@ -251,20 +270,73 @@ namespace TwitchHelperBot
             }
         }
 
-        private Image GetImageFromURL(string url, string filename)
+        //private Image GetImageFromURL(string url, string filename)
+        //{
+        //    try
+        //    {
+        //        Directory.CreateDirectory(Path.GetDirectoryName(filename));
+        //        if (!File.Exists(filename))
+        //        {
+        //            using (WebClient client = new WebClient())
+        //            {
+        //                client.DownloadFile(url, filename);
+        //            }
+        //        }
+        //        if (File.Exists(filename))
+        //        {
+        //            using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
+        //            {
+        //                return Image.FromStream(fs);
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Globals.LogMessage("GetImageFromURL exception: " + ex);
+        //    }
+
+        //    return null;
+        //}
+
+        private void GetImageFromURL(string url, string filename, Action action)
         {
-            if (!filename.EndsWith(".jpg"))
-                filename = filename + ".jpg";
-            if (!File.Exists("ImageCache\\" + filename))
+            try
             {
-                Directory.CreateDirectory("ImageCache");
-                using (WebClient client = new WebClient())
+                if (!File.Exists(filename))
                 {
-                    client.DownloadFile(url, "ImageCache\\" + filename);
+                    Directory.CreateDirectory(Path.GetDirectoryName(filename));
+                    using (WebClient client = new WebClient())
+                    {
+                        client.DownloadFileCompleted += delegate
+                        {
+                            try
+                            {
+                                action.Invoke();
+                            }
+                            catch (Exception ex)
+                            {
+                                Globals.LogMessage("GetImageFromURL actionA exception: " + ex);
+                            }
+                        };
+                        client.DownloadFileAsync(new Uri(url), filename);
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        action.Invoke();
+                    }
+                    catch (Exception ex)
+                    {
+                        Globals.LogMessage("GetImageFromURL actionB exception: " + ex);
+                    }
                 }
             }
-
-            return Image.FromFile("ImageCache\\" + filename);
+            catch (Exception ex)
+            {
+                Globals.LogMessage("GetImageFromURL exception: " + ex);
+            }
         }
 
         private void button3_Click(object sender, EventArgs e)
@@ -299,11 +371,6 @@ namespace TwitchHelperBot
                 comboBox2.Items.Add(dialog.FileName);
                 comboBox2.SelectedItem = dialog.FileName;
             }
-        }
-
-        private void listView1_DrawColumnHeader(object sender, DrawListViewColumnHeaderEventArgs e)
-        {
-
         }
     }
 }
