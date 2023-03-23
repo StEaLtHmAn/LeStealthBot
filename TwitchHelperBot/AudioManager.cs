@@ -1,6 +1,4 @@
 ﻿using CSCore.CoreAudioAPI;
-using System.Diagnostics;
-using System.Security.Cryptography;
 
 namespace TwitchHelperBot
 {

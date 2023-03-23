@@ -13,7 +13,7 @@ namespace TwitchHelperBot
     public static class Globals
     {
         public static KeyboardHook keyboardHook = new KeyboardHook();
-        public static IniHelper iniHelper = new IniHelper("TwitchHelperBotSettings.ini");
+        public static IniHelper iniHelper = new IniHelper($"{Assembly.GetExecutingAssembly().GetName().Name}Settings.ini");
         public static Dictionary<string, string> CategoryCache = new Dictionary<string, string>();
         public static string access_token = null;
         public static string clientId = null;

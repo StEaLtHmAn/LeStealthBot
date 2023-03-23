@@ -292,30 +292,33 @@ namespace TwitchHelperBot
                         {
                             using (var sessionControl = session.QueryInterface<AudioSessionControl2>())
                             {
-                                bool shouldGoIn = processPath == "0" && sessionControl.ProcessID == 0;
-                                if (!shouldGoIn)
+                                if (processPath != "0" && sessionControl.ProcessID != 0)
                                 {
                                     try
                                     {
-                                        shouldGoIn = processPath == sessionControl.Process.MainModule.FileName;
+                                        if (processPath == sessionControl.Process.MainModule.FileName)
+                                        {
+                                            using (var simpleVolume = session.QueryInterface<SimpleAudioVolume>())
+                                            {
+                                                if (isUp)
+                                                    AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume + 0.01f);
+                                                else
+                                                    AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume - 0.01f);
+                                            }
+                                        }
                                     }
-                                    catch { }
-                                }
-                                if (shouldGoIn)
-                                {
-                                    using (var simpleVolume = session.QueryInterface<SimpleAudioVolume>())
+                                    catch (Exception ex)
                                     {
-                                        if (isUp)
-                                            AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume + 0.01f);
-                                        else
-                                            AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume - 0.01f);
+                                        Globals.LogMessage("KeyboardHook_KeyPressed exception: " + ex);
                                     }
                                 }
                             }
                         }
                     }
-                } catch (Exception ex) {
-                    Debug.WriteLine(ex);
+                }
+                catch (Exception ex)
+                {
+                    Globals.LogMessage("KeyboardHook_KeyPressed exception: " + ex);
                 }
             });
         }

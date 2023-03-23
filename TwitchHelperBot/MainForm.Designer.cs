@@ -35,11 +35,11 @@
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.setupPresetsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.AudioMixerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
             this.pauseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.quitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.AudioMixerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -62,10 +62,10 @@
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.setupPresetsToolStripMenuItem,
+            this.pauseToolStripMenuItem,
+            this.toolStripSeparator2,
             this.settingsToolStripMenuItem,
             this.AudioMixerToolStripMenuItem,
-            this.toolStripSeparator2,
-            this.pauseToolStripMenuItem,
             this.toolStripSeparator1,
             this.quitToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
@@ -75,47 +75,47 @@
             // setupPresetsToolStripMenuItem
             // 
             this.setupPresetsToolStripMenuItem.Name = "setupPresetsToolStripMenuItem";
-            this.setupPresetsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.setupPresetsToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.setupPresetsToolStripMenuItem.Text = "Preset Manager";
             this.setupPresetsToolStripMenuItem.Click += new System.EventHandler(this.setupPresetsToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
+            // 
+            // AudioMixerToolStripMenuItem
+            // 
+            this.AudioMixerToolStripMenuItem.Name = "AudioMixerToolStripMenuItem";
+            this.AudioMixerToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.AudioMixerToolStripMenuItem.Text = "Audio Mixer";
+            this.AudioMixerToolStripMenuItem.Click += new System.EventHandler(this.AudioMixerToolStripMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(152, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(150, 6);
             // 
             // pauseToolStripMenuItem
             // 
             this.pauseToolStripMenuItem.Name = "pauseToolStripMenuItem";
-            this.pauseToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.pauseToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.pauseToolStripMenuItem.Text = "Pause channel edits";
             this.pauseToolStripMenuItem.Click += new System.EventHandler(this.pauseToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(152, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(150, 6);
             // 
             // quitToolStripMenuItem
             // 
             this.quitToolStripMenuItem.Name = "quitToolStripMenuItem";
-            this.quitToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.quitToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
             this.quitToolStripMenuItem.Text = "Quit";
             this.quitToolStripMenuItem.Click += new System.EventHandler(this.quitToolStripMenuItem_Click);
-            // 
-            // AudioMixerToolStripMenuItem
-            // 
-            this.AudioMixerToolStripMenuItem.Name = "AudioMixerToolStripMenuItem";
-            this.AudioMixerToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
-            this.AudioMixerToolStripMenuItem.Text = "Audio Mixer";
-            this.AudioMixerToolStripMenuItem.Click += new System.EventHandler(this.AudioMixerToolStripMenuItem_Click);
             // 
             // MainForm
             // 

@@ -24,7 +24,7 @@ namespace Updater
                     {
                         if (!entry.FullName.Contains("Updater.exe"))
                         {
-                            Console.WriteLine("Extracted: " + entry.FullName);
+                            Console.WriteLine("Extracting: " + entry.FullName);
                             entry.ExtractToFile(entry.FullName, true);
                         }
                     }
@@ -34,13 +34,15 @@ namespace Updater
             }
             Console.WriteLine("Done");
 
-            Console.WriteLine("Deleting zip file...");
+            Console.WriteLine("Deleting installation files...");
             Thread.Sleep(250);
             File.Delete(args[0]);
 
             Console.WriteLine("Lauching TwitchHelperBot...");
             Thread.Sleep(250);
             Process.Start("TwitchHelperBot.exe");
+            Thread.Sleep(250);
+            Console.WriteLine("Done");
         }
     }
 }

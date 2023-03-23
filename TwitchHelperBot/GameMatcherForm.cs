@@ -354,6 +354,16 @@ namespace TwitchHelperBot
                         form.Show();
                     }
                 }
+                else if(textBox1.Text.Length > 0 && textBox2.Text.Length > 0)
+                {
+                    JObject category = GetSelectedListItemData();
+
+                    if (Application.OpenForms.OfType<MainForm>().First().UpdateChannelInfo(category["id"].ToString(), textBox1.Text))
+                    {
+                        OverlayNotificationMessage form = new OverlayNotificationMessage($"Channel Info Updated\r\n{category["name"]}\r\n{textBox1.Text}", category["box_art_url"].ToString(), category["id"].ToString());
+                        form.Show();
+                    }
+                }
             }
             catch (Exception ex)
             {

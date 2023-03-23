@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Input;
 
 namespace TwitchHelperBot
 {
@@ -47,9 +46,16 @@ namespace TwitchHelperBot
                 }
             }
             catch { }
+            if (pictureBox.Image == null)
+            {
+                pictureBox.Image = Bitmap.FromHicon(SystemIcons.WinLogo.Handle);
+            }
+            pictureBox.Anchor = AnchorStyles.None;
 
             Label lblVolume = new Label();
             lblVolume.Text = volume+"%";
+            lblVolume.Anchor = AnchorStyles.None;
+            lblVolume.AutoSize = true;
 
             Label lblName = new Label();
             if (process.Id == 0)
@@ -60,11 +66,14 @@ namespace TwitchHelperBot
                     lblName.Text = process?.MainModule?.ModuleName ?? "Unknown";
                 }
                 catch { }
+            lblName.Anchor = AnchorStyles.None;
+            lblName.AutoSize = true;
 
             TrackBar trackBar = new TrackBar();
             trackBar.Maximum = 100;
             trackBar.Value = (int)float.Parse(volume);
             trackBar.Orientation = Orientation.Vertical;
+            trackBar.TickStyle = TickStyle.Both;
             trackBar.Size = new Size(45, 104);
             trackBar.TickFrequency = 10;
             trackBar.ValueChanged += (object sender, EventArgs e) =>
@@ -73,6 +82,7 @@ namespace TwitchHelperBot
                 float volumeValue = trackBar.Value / 100f;
                 Task.Run(() => AudioManager.SetVolumeForProcess(process.Id, volumeValue));
             };
+            trackBar.Anchor = AnchorStyles.None;
 
             Button button = new Button();
             button.AutoSize = true;
@@ -89,6 +99,7 @@ namespace TwitchHelperBot
                     trackBar.Value = 0;
                 }
             };
+            button.Anchor = AnchorStyles.None;
 
             Button btnVolumeUpHotkey = new Button();
             btnVolumeUpHotkey.AutoSize = true;
@@ -136,7 +147,8 @@ namespace TwitchHelperBot
                     catch { }
                 }
             };
-            
+            btnVolumeUpHotkey.Anchor = AnchorStyles.None;
+
             Button btnVolumeDownHotkey = new Button();
             btnVolumeDownHotkey.AutoSize = true;
             btnVolumeDownHotkey.FlatStyle = FlatStyle.Flat;
@@ -183,6 +195,7 @@ namespace TwitchHelperBot
                     catch { }
                 }
             };
+            btnVolumeDownHotkey.Anchor = AnchorStyles.None;
 
             FlowLayoutPanel flowLayoutPanel = new FlowLayoutPanel();
             flowLayoutPanel.AutoSize = true;
