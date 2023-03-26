@@ -30,9 +30,9 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            this.timer1 = new System.Windows.Forms.Timer(this.components);
+            this.updateChannelInfoTimer = new System.Windows.Forms.Timer(this.components);
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
-            this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.NotificationMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.setupPresetsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.AudioMixerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -40,27 +40,27 @@
             this.pauseToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.quitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.contextMenuStrip1.SuspendLayout();
+            this.NotificationMenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
             // timer1
             // 
-            this.timer1.Enabled = true;
-            this.timer1.Interval = 5000;
-            this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
+            this.updateChannelInfoTimer.Enabled = true;
+            this.updateChannelInfoTimer.Interval = 5000;
+            this.updateChannelInfoTimer.Tick += new System.EventHandler(this.updateChannelInfoTimer_Tick);
             // 
             // notifyIcon1
             // 
             this.notifyIcon1.BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Info;
             this.notifyIcon1.BalloonTipTitle = "Channel Info Updated";
-            this.notifyIcon1.ContextMenuStrip = this.contextMenuStrip1;
+            this.notifyIcon1.ContextMenuStrip = this.NotificationMenuStrip;
             this.notifyIcon1.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon1.Icon")));
             this.notifyIcon1.Text = "Twitch Bot Helper";
             this.notifyIcon1.Visible = true;
             // 
             // contextMenuStrip1
             // 
-            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.NotificationMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.setupPresetsToolStripMenuItem,
             this.pauseToolStripMenuItem,
             this.toolStripSeparator2,
@@ -68,9 +68,9 @@
             this.AudioMixerToolStripMenuItem,
             this.toolStripSeparator1,
             this.quitToolStripMenuItem});
-            this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.ShowImageMargin = false;
-            this.contextMenuStrip1.Size = new System.Drawing.Size(154, 126);
+            this.NotificationMenuStrip.Name = "contextMenuStrip1";
+            this.NotificationMenuStrip.ShowImageMargin = false;
+            this.NotificationMenuStrip.Size = new System.Drawing.Size(154, 126);
             // 
             // setupPresetsToolStripMenuItem
             // 
@@ -130,16 +130,16 @@
             this.Text = "Main";
             this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
-            this.contextMenuStrip1.ResumeLayout(false);
+            this.NotificationMenuStrip.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
 
         #endregion
 
-        private System.Windows.Forms.Timer timer1;
+        private System.Windows.Forms.Timer updateChannelInfoTimer;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
-        private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
+        private System.Windows.Forms.ContextMenuStrip NotificationMenuStrip;
         private System.Windows.Forms.ToolStripMenuItem setupPresetsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem quitToolStripMenuItem;
         private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;

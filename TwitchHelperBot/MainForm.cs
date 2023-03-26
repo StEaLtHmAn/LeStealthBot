@@ -74,6 +74,9 @@ namespace TwitchHelperBot
                     {
                         if (asset["content_type"].ToString() == "application/x-zip-compressed")
                         {
+                            MessageBox.Show(githubLatestReleaseJson["name"].ToString() + "\r\n\r\n" + githubLatestReleaseJson["body"].ToString(),
+                            "New Updates - Released " + Globals.getRelativeDateTime(DateTime.Parse(githubLatestReleaseJson["published_at"].ToString())), MessageBoxButtons.OK);
+
                             //download latest zip
                             client.DownloadFile(asset["browser_download_url"].ToString(), asset["name"].ToString());
                             //extract latest updater
@@ -104,9 +107,9 @@ namespace TwitchHelperBot
             {
                 using (TextInputForm testDialog = new TextInputForm("Setup LoginName", "Please enter your twitch LoginName to continue."))
                 {
-                    if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox1.Text.Length > 0)
+                    if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox.Text.Length > 0)
                     {
-                        loginName = testDialog.textBox1.Text;
+                        loginName = testDialog.textBox.Text;
                         Globals.iniHelper.Write("LoginName", loginName);
                     }
                     else
@@ -124,9 +127,9 @@ namespace TwitchHelperBot
             {
                 using (TextInputForm testDialog = new TextInputForm("Setup ClientID", "We need your application ClientID.\r\n\r\n- Browse here: https://dev.twitch.tv/console/apps/create \r\n- Set OAuthRedirectURL to http://localhost (or something else if you know what you doing)\r\n- Set Category to Broadcaster Suite\r\n- Click Create and copy-paste the ClientID into the box below."))
                 {
-                    if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox1.Text.Length > 0)
+                    if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox.Text.Length > 0)
                     {
-                        Globals.clientId = testDialog.textBox1.Text;
+                        Globals.clientId = testDialog.textBox.Text;
                         Globals.iniHelper.Write("ClientId", Globals.clientId);
                     }
                     else
@@ -142,9 +145,9 @@ namespace TwitchHelperBot
             {
                 using (TextInputForm testDialog = new TextInputForm("Setup OAuthRedirectURL", $"We need the OAuthRedirectURL you entered for your application.\r\nIf you closed the page it can be found here https://dev.twitch.tv/console/apps/{Globals.clientId}"))
                 {
-                    if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox1.Text.Length > 0)
+                    if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox.Text.Length > 0)
                     {
-                        RedirectURI = testDialog.textBox1.Text;
+                        RedirectURI = testDialog.textBox.Text;
                         Globals.iniHelper.Write("AuthRedirectURI", RedirectURI);
                     }
                     else
@@ -167,20 +170,20 @@ namespace TwitchHelperBot
                 if (DarkModeEnabled)
                 {
                     Globals.ToggleDarkMode(this, DarkModeEnabled);
-                    contextMenuStrip1.BackColor = Globals.DarkColour;
-                    contextMenuStrip1.ForeColor = SystemColors.ControlLightLight;
-                    contextMenuStrip1.Renderer = new MyRenderer();
+                    NotificationMenuStrip.BackColor = Globals.DarkColour;
+                    NotificationMenuStrip.ForeColor = SystemColors.ControlLightLight;
+                    NotificationMenuStrip.Renderer = new MyRenderer();
                 }
             }
             tmp = Globals.iniHelper.Read("ModifyChannelCooldown");
             if (string.IsNullOrEmpty(tmp))
             {
                 Globals.iniHelper.Write("ModifyChannelCooldown", "5000");
-                timer1.Interval = 5000;
+                updateChannelInfoTimer.Interval = 5000;
             }
             else
             {
-                timer1.Interval = int.Parse(tmp);
+                updateChannelInfoTimer.Interval = int.Parse(tmp);
             }
             if (string.IsNullOrEmpty(Globals.iniHelper.Read("NotificationDuration")))
             {
@@ -192,7 +195,7 @@ namespace TwitchHelperBot
             if (string.IsNullOrEmpty(Globals.access_token) || !ValidateToken())
             {
                 BrowserForm form = new BrowserForm($"https://id.twitch.tv/oauth2/authorize?client_id={Globals.clientId}&redirect_uri={RedirectURI}&response_type=token&scope=channel:manage:broadcast");
-                form.webView21.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_TwitchAuthNavigationCompleted);
+                form.webView2.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_TwitchAuthNavigationCompleted);
                 form.ShowDialog();
 
                 //if token is still not valid then we close the app
@@ -323,6 +326,7 @@ namespace TwitchHelperBot
             });
         }
 
+        //this is used to set the on-hover highlight colour of the menustrip
         private class MyRenderer : ToolStripProfessionalRenderer
         {
             public MyRenderer() : base(new MyColors()) { }
@@ -408,11 +412,11 @@ namespace TwitchHelperBot
             return response.IsSuccessful;
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private void updateChannelInfoTimer_Tick(object sender, EventArgs e)
         {
             if (paused)
                 return;
-            timer1.Enabled = false;
+            updateChannelInfoTimer.Enabled = false;
             try
             {
                 int windowID = GetForegroundWindow();
@@ -441,7 +445,7 @@ namespace TwitchHelperBot
             }
             catch (Exception ex)
             {
-                Globals.LogMessage("timer1_Tick exception: " + ex);
+                Globals.LogMessage("updateChannelInfoTimer_Tick exception: " + ex);
             }
 
             //old code was used as a backup to set category/title based on whats running and not whats in forground
@@ -475,7 +479,7 @@ namespace TwitchHelperBot
             //        }
             //    }
             //}
-            timer1.Enabled = true;
+            updateChannelInfoTimer.Enabled = true;
         }
 
         private void setupPresetsToolStripMenuItem_Click(object sender, EventArgs e)

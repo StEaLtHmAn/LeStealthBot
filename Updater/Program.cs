@@ -10,8 +10,7 @@ namespace Updater
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Extracting new files...");
-            Thread.Sleep(250);
+            Console.WriteLine("- Extracting new files...");
             if (args.Length == 0 || !args[0].ToLower().Contains(".zip"))
             {
                 args = new string[] { "TwitchHelper.zip" };
@@ -33,15 +32,14 @@ namespace Updater
                 }
             }
             Console.WriteLine("Done");
-
-            Console.WriteLine("Deleting installation files...");
+            Console.WriteLine();
+            Console.WriteLine("- Deleting installation files...");
             Thread.Sleep(250);
             File.Delete(args[0]);
-
-            Console.WriteLine("Lauching TwitchHelperBot...");
-            Thread.Sleep(250);
+            Console.WriteLine("Done");
+            Console.WriteLine();
+            Console.WriteLine("- Lauching TwitchHelperBot...");
             Process.Start("TwitchHelperBot.exe");
-            Thread.Sleep(250);
             Console.WriteLine("Done");
         }
     }

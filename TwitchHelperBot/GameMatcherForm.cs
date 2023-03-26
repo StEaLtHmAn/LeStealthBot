@@ -21,8 +21,8 @@ namespace TwitchHelperBot
             if (DarkModeEnabled)
             {
                 Globals.ToggleDarkMode(this, DarkModeEnabled);
-                listView1.OwnerDraw = true;
-                listView1.DrawColumnHeader += new DrawListViewColumnHeaderEventHandler((sender, e) =>
+                presetsListView.OwnerDraw = true;
+                presetsListView.DrawColumnHeader += new DrawListViewColumnHeaderEventHandler((sender, e) =>
                 {
                     using (SolidBrush backBrush = new SolidBrush(Globals.DarkColour))
                     {
@@ -40,17 +40,17 @@ namespace TwitchHelperBot
                         e.Graphics.DrawString(e.Header.Text, e.Font, foreBrush, e.Bounds, format);
                     }
                 });
-                listView1.DrawItem += new DrawListViewItemEventHandler((sender, e) =>
+                presetsListView.DrawItem += new DrawListViewItemEventHandler((sender, e) =>
                 {
                     e.DrawDefault = true;
                 });
-                listView1.DrawSubItem += new DrawListViewSubItemEventHandler((sender, e) =>
+                presetsListView.DrawSubItem += new DrawListViewSubItemEventHandler((sender, e) =>
                 {
                     e.DrawDefault = true;
                 });
             }
 
-            textBox2.listBox.SelectedIndexChanged += ListBox_SelectedIndexChanged;
+            txtPresetCategory.listBox.SelectedIndexChanged += ListBox_SelectedIndexChanged;
 
             loadPresets();
         }
@@ -64,8 +64,8 @@ namespace TwitchHelperBot
                 {
                     using (FileStream fs = new FileStream("ImageCache\\" + selectedData["id"].ToString() + ".jpg", FileMode.Open, FileAccess.Read))
                     {
-                        pictureBox1.Image?.Dispose();
-                        pictureBox1.Image = Image.FromStream(fs);
+                        presetCategoryPictureBox.Image?.Dispose();
+                        presetCategoryPictureBox.Image = Image.FromStream(fs);
                     }
                 });
                 
@@ -78,9 +78,9 @@ namespace TwitchHelperBot
 
         private void loadPresets()
         {
-            listView1.Items.Clear();
-            listView1.SmallImageList?.Dispose();
-            listView1.SmallImageList = new ImageList();
+            presetsListView.Items.Clear();
+            presetsListView.SmallImageList?.Dispose();
+            presetsListView.SmallImageList = new ImageList();
             string[] sections = Globals.iniHelper.SectionNames();
             for (int i = 0; i < sections.Length; i++)
             {
@@ -92,29 +92,37 @@ namespace TwitchHelperBot
                     {
                         using (FileStream fs = new FileStream("ImageCache\\" + category["id"].ToString() + ".jpg", FileMode.Open, FileAccess.Read))
                         {
-                            listView1.SmallImageList.Images.Add(Image.FromStream(fs));
+                            presetsListView.SmallImageList.Images.Add(Image.FromStream(fs));
                         }
                     });
-                    listView1.Items.Add(new ListViewItem(new string[]
+                    presetsListView.Items.Add(new ListViewItem(new string[]
                     {
                         sections[i],
                         Globals.iniHelper.Read("PresetTitle", sections[i]),
                         category["name"].ToString()
-                    }, listView1.SmallImageList.Images.Count - 1));
+                    }, presetsListView.SmallImageList.Images.Count - 1));
                 }
             }
-            if(listView1.Items.Count > 0)
-                listView1.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
+            if(presetsListView.Items.Count > 0)
+                presetsListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             try
             {
-                if (!string.IsNullOrEmpty(textBox1.Text) && !string.IsNullOrEmpty(textBox2.Text) && comboBox2.SelectedItem != null)
+                if (!string.IsNullOrEmpty(txtPresetTitle.Text) && !string.IsNullOrEmpty(txtPresetCategory.Text) && cbxPresetExePath.SelectedItem != null)
                 {
-                    Globals.iniHelper.Write("PresetTitle", textBox1.Text, comboBox2.SelectedItem.ToString());
-                    Globals.iniHelper.Write("PresetCategory", GetSelectedListItemData().ToString(Newtonsoft.Json.Formatting.None), comboBox2.SelectedItem.ToString());
+                    Globals.iniHelper.Write("PresetTitle", txtPresetTitle.Text, cbxPresetExePath.SelectedItem.ToString());
+                    Globals.iniHelper.Write("PresetCategory", GetSelectedListItemData().ToString(Newtonsoft.Json.Formatting.None), cbxPresetExePath.SelectedItem.ToString());
+
+                    loadPresets();
+                }
+                else if (!string.IsNullOrEmpty(txtPresetTitle.Text) || !string.IsNullOrEmpty(txtPresetCategory.Text))
+                {
+                    string configKey = "Manual_" + DateTime.Now.Ticks;
+                    Globals.iniHelper.Write("PresetTitle", txtPresetTitle.Text, configKey);
+                    Globals.iniHelper.Write("PresetCategory", GetSelectedListItemData().ToString(Newtonsoft.Json.Formatting.None), configKey);
 
                     loadPresets();
                 }
@@ -125,9 +133,9 @@ namespace TwitchHelperBot
             }
         }
 
-        private void comboBox2_DropDown(object sender, EventArgs e)
+        private void cbxPresetExePath_DropDown(object sender, EventArgs e)
         {
-            comboBox2.Items.Clear();
+            cbxPresetExePath.Items.Clear();
             foreach (Process p in Process.GetProcesses())
             {
                 try
@@ -135,14 +143,14 @@ namespace TwitchHelperBot
                     if (string.IsNullOrEmpty(p?.MainWindowTitle))
                         continue;
                     string tmpName = p?.MainModule?.FileName ?? "UNKNOWN";
-                    if (!comboBox2.Items.Contains(tmpName))
-                        comboBox2.Items.Add(tmpName);
+                    if (!cbxPresetExePath.Items.Contains(tmpName))
+                        cbxPresetExePath.Items.Add(tmpName);
                 }
                 catch { }
             }
         }
 
-        private void comboBox2_Format(object sender, ListControlConvertEventArgs e)
+        private void cbxPresetExePath_Format(object sender, ListControlConvertEventArgs e)
         {
             try
             {
@@ -150,7 +158,7 @@ namespace TwitchHelperBot
             }
             catch (Exception ex)
             {
-                Globals.LogMessage("comboBox2_Format exception: " + ex);
+                Globals.LogMessage("cbxPresetExePath_Format exception: " + ex);
             }
         }
 
@@ -158,9 +166,9 @@ namespace TwitchHelperBot
         {
             try
             {
-                if (listView1.SelectedItems.Count > 0)
+                if (presetsListView.SelectedItems.Count > 0)
                 {
-                    Globals.iniHelper.DeleteSection(listView1.SelectedItems[0].SubItems[0].Text);
+                    Globals.iniHelper.DeleteSection(presetsListView.SelectedItems[0].SubItems[0].Text);
 
                     loadPresets();
                 }
@@ -192,52 +200,52 @@ namespace TwitchHelperBot
             return response.Content;
         }
 
-        private async void textBox2_TextChanged(object sender, EventArgs e)
+        private async void txtPresetCategory_TextChanged(object sender, EventArgs e)
         {
             try
             {
-                string currentText = textBox2.Text;
+                string currentText = txtPresetCategory.Text;
                 JObject categoryList = JObject.Parse(await SearchCategories(currentText.Trim()));
                 if (categoryList["data"] != null && categoryList["data"].Count() > 0)
                 {
                     object newData = categoryList["data"] as JArray;
-                    if (textBox2.Data != newData)
+                    if (txtPresetCategory.Data != newData)
                     {
-                        textBox2.Data = categoryList["data"] as JArray;
+                        txtPresetCategory.Data = categoryList["data"] as JArray;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Globals.LogMessage("textBox2_TextChanged exception: " + ex);
+                Globals.LogMessage("txtPresetCategory_TextChanged exception: " + ex);
             }
         }
 
-        private void listView1_SelectedIndexChanged(object sender, EventArgs e)
+        private void presetsListView_SelectedIndexChanged(object sender, EventArgs e)
         {
             try
             {
-                if (listView1.SelectedItems.Count > 0)
+                if (presetsListView.SelectedItems.Count > 0)
                 {
-                    textBox1.Text = Globals.iniHelper.Read("PresetTitle", listView1.SelectedItems[0].SubItems[0].Text);
-                    if (!comboBox2.Items.Contains(listView1.SelectedItems[0].SubItems[0].Text))
-                        comboBox2.Items.Add(listView1.SelectedItems[0].SubItems[0].Text);
-                    comboBox2.SelectedItem = listView1.SelectedItems[0].SubItems[0].Text;
-                    JObject selectedData = JObject.Parse(Globals.iniHelper.Read("PresetCategory", listView1.SelectedItems[0].SubItems[0].Text));
-                    textBox2.Text = selectedData["name"].ToString();
+                    txtPresetTitle.Text = Globals.iniHelper.Read("PresetTitle", presetsListView.SelectedItems[0].SubItems[0].Text);
+                    if (!cbxPresetExePath.Items.Contains(presetsListView.SelectedItems[0].SubItems[0].Text))
+                        cbxPresetExePath.Items.Add(presetsListView.SelectedItems[0].SubItems[0].Text);
+                    cbxPresetExePath.SelectedItem = presetsListView.SelectedItems[0].SubItems[0].Text;
+                    JObject selectedData = JObject.Parse(Globals.iniHelper.Read("PresetCategory", presetsListView.SelectedItems[0].SubItems[0].Text));
+                    txtPresetCategory.Text = selectedData["name"].ToString();
                     GetImageFromURL(selectedData["box_art_url"].ToString(), "ImageCache\\" + selectedData["id"].ToString() + ".jpg", () =>
                     {
                         using (FileStream fs = new FileStream("ImageCache\\" + selectedData["id"].ToString() + ".jpg", FileMode.Open, FileAccess.Read))
                         {
-                            pictureBox1.Image?.Dispose();
-                            pictureBox1.Image = Image.FromStream(fs);
+                            presetCategoryPictureBox.Image?.Dispose();
+                            presetCategoryPictureBox.Image = Image.FromStream(fs);
                         }
                     });
                 }
             }
             catch (Exception ex)
             {
-                Globals.LogMessage("listView1_SelectedIndexChanged exception: " + ex);
+                Globals.LogMessage("presetsListView_SelectedIndexChanged exception: " + ex);
             }
         }
 
@@ -255,48 +263,20 @@ namespace TwitchHelperBot
 
         private JObject GetSelectedListItemData()
         {
-            var tempList = textBox2.Data.Where(x => x["name"].ToString() == textBox2.Text).ToArray();
+            var tempList = txtPresetCategory.Data.Where(x => x["name"].ToString() == txtPresetCategory.Text).ToArray();
             if (tempList.Count() == 1)
             {
                 return tempList[0] as JObject;
             }
-            else if (textBox2.listBox.SelectedItem != null)
+            else if (txtPresetCategory.listBox.SelectedItem != null)
             {
-                return textBox2.listBox.SelectedItem as JObject;
+                return txtPresetCategory.listBox.SelectedItem as JObject;
             }
             else
             {
-                return textBox2.Data[0] as JObject;
+                return txtPresetCategory.Data[0] as JObject;
             }
         }
-
-        //private Image GetImageFromURL(string url, string filename)
-        //{
-        //    try
-        //    {
-        //        Directory.CreateDirectory(Path.GetDirectoryName(filename));
-        //        if (!File.Exists(filename))
-        //        {
-        //            using (WebClient client = new WebClient())
-        //            {
-        //                client.DownloadFile(url, filename);
-        //            }
-        //        }
-        //        if (File.Exists(filename))
-        //        {
-        //            using (FileStream fs = new FileStream(filename, FileMode.Open, FileAccess.Read))
-        //            {
-        //                return Image.FromStream(fs);
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Globals.LogMessage("GetImageFromURL exception: " + ex);
-        //    }
-
-        //    return null;
-        //}
 
         private void GetImageFromURL(string url, string filename, Action action)
         {
@@ -343,24 +323,24 @@ namespace TwitchHelperBot
         {
             try
             {
-                if (listView1.SelectedItems.Count > 0)
+                if (presetsListView.SelectedItems.Count > 0)
                 {
-                    string PresetTitle = Globals.iniHelper.Read("PresetTitle", listView1.SelectedItems[0].SubItems[0].Text);
-                    JObject category = JObject.Parse(Globals.iniHelper.Read("PresetCategory", listView1.SelectedItems[0].SubItems[0].Text));
+                    string PresetTitle = Globals.iniHelper.Read("PresetTitle", presetsListView.SelectedItems[0].SubItems[0].Text);
+                    JObject category = JObject.Parse(Globals.iniHelper.Read("PresetCategory", presetsListView.SelectedItems[0].SubItems[0].Text));
 
                     if (Application.OpenForms.OfType<MainForm>().First().UpdateChannelInfo(category["id"].ToString(), PresetTitle))
                     {
-                        OverlayNotificationMessage form = new OverlayNotificationMessage($"Channel Info Updated\r\n{category["name"]}\r\n{PresetTitle}", category["box_art_url"].ToString(), category["id"].ToString());
+                        OverlayNotificationMessage form = new OverlayNotificationMessage($"Channel Info Updated\r\n\r\n{category["name"]}\r\n{PresetTitle}", category["box_art_url"].ToString(), category["id"].ToString());
                         form.Show();
                     }
                 }
-                else if(textBox1.Text.Length > 0 && textBox2.Text.Length > 0)
+                else if(txtPresetTitle.Text.Length > 0 || txtPresetCategory.Text.Length > 0)
                 {
                     JObject category = GetSelectedListItemData();
 
-                    if (Application.OpenForms.OfType<MainForm>().First().UpdateChannelInfo(category["id"].ToString(), textBox1.Text))
+                    if (Application.OpenForms.OfType<MainForm>().First().UpdateChannelInfo(category["id"].ToString(), txtPresetTitle.Text))
                     {
-                        OverlayNotificationMessage form = new OverlayNotificationMessage($"Channel Info Updated\r\n{category["name"]}\r\n{textBox1.Text}", category["box_art_url"].ToString(), category["id"].ToString());
+                        OverlayNotificationMessage form = new OverlayNotificationMessage($"Channel Info Updated\r\n\r\n{category["name"]}\r\n{txtPresetTitle.Text}", category["box_art_url"].ToString(), category["id"].ToString());
                         form.Show();
                     }
                 }
@@ -378,8 +358,8 @@ namespace TwitchHelperBot
             dialog.FilterIndex = 1;
             if (dialog.ShowDialog() == DialogResult.OK)
             {
-                comboBox2.Items.Add(dialog.FileName);
-                comboBox2.SelectedItem = dialog.FileName;
+                cbxPresetExePath.Items.Add(dialog.FileName);
+                cbxPresetExePath.SelectedItem = dialog.FileName;
             }
         }
     }

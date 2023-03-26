@@ -29,21 +29,21 @@
         private void InitializeComponent()
         {
             this.button1 = new System.Windows.Forms.Button();
-            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.txtPresetTitle = new System.Windows.Forms.TextBox();
             this.button2 = new System.Windows.Forms.Button();
             this.label2 = new System.Windows.Forms.Label();
             this.label3 = new System.Windows.Forms.Label();
             this.label4 = new System.Windows.Forms.Label();
-            this.comboBox2 = new System.Windows.Forms.ComboBox();
-            this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.cbxPresetExePath = new System.Windows.Forms.ComboBox();
+            this.presetCategoryPictureBox = new System.Windows.Forms.PictureBox();
             this.button3 = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
-            this.textBox2 = new AutoCompleteTextBox();
-            this.listView1 = new System.Windows.Forms.ListView();
+            this.txtPresetCategory = new AutoCompleteTextBox();
+            this.presetsListView = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.presetCategoryPictureBox)).BeginInit();
             this.SuspendLayout();
             // 
             // button1
@@ -61,10 +61,10 @@
             // 
             // textBox1
             // 
-            this.textBox1.Location = new System.Drawing.Point(93, 287);
-            this.textBox1.Name = "textBox1";
-            this.textBox1.Size = new System.Drawing.Size(480, 20);
-            this.textBox1.TabIndex = 2;
+            this.txtPresetTitle.Location = new System.Drawing.Point(93, 287);
+            this.txtPresetTitle.Name = "textBox1";
+            this.txtPresetTitle.Size = new System.Drawing.Size(480, 20);
+            this.txtPresetTitle.TabIndex = 2;
             // 
             // button2
             // 
@@ -108,25 +108,25 @@
             // 
             // comboBox2
             // 
-            this.comboBox2.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-            this.comboBox2.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.comboBox2.FormattingEnabled = true;
-            this.comboBox2.Location = new System.Drawing.Point(93, 261);
-            this.comboBox2.Name = "comboBox2";
-            this.comboBox2.Size = new System.Drawing.Size(411, 21);
-            this.comboBox2.TabIndex = 1;
-            this.comboBox2.DropDown += new System.EventHandler(this.comboBox2_DropDown);
-            this.comboBox2.Format += new System.Windows.Forms.ListControlConvertEventHandler(this.comboBox2_Format);
+            this.cbxPresetExePath.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.cbxPresetExePath.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.cbxPresetExePath.FormattingEnabled = true;
+            this.cbxPresetExePath.Location = new System.Drawing.Point(93, 261);
+            this.cbxPresetExePath.Name = "comboBox2";
+            this.cbxPresetExePath.Size = new System.Drawing.Size(411, 21);
+            this.cbxPresetExePath.TabIndex = 1;
+            this.cbxPresetExePath.DropDown += new System.EventHandler(this.cbxPresetExePath_DropDown);
+            this.cbxPresetExePath.Format += new System.Windows.Forms.ListControlConvertEventHandler(this.cbxPresetExePath_Format);
             // 
             // pictureBox1
             // 
-            this.pictureBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.pictureBox1.Location = new System.Drawing.Point(93, 313);
-            this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(52, 72);
-            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
-            this.pictureBox1.TabIndex = 14;
-            this.pictureBox1.TabStop = false;
+            this.presetCategoryPictureBox.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.presetCategoryPictureBox.Location = new System.Drawing.Point(93, 313);
+            this.presetCategoryPictureBox.Name = "pictureBox1";
+            this.presetCategoryPictureBox.Size = new System.Drawing.Size(52, 72);
+            this.presetCategoryPictureBox.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
+            this.presetCategoryPictureBox.TabIndex = 14;
+            this.presetCategoryPictureBox.TabStop = false;
             // 
             // button3
             // 
@@ -154,32 +154,32 @@
             // 
             // textBox2
             // 
-            this.textBox2.Location = new System.Drawing.Point(151, 313);
-            this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(422, 20);
-            this.textBox2.TabIndex = 3;
-            this.textBox2.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
+            this.txtPresetCategory.Location = new System.Drawing.Point(151, 313);
+            this.txtPresetCategory.Name = "textBox2";
+            this.txtPresetCategory.Size = new System.Drawing.Size(422, 20);
+            this.txtPresetCategory.TabIndex = 3;
+            this.txtPresetCategory.TextChanged += new System.EventHandler(this.txtPresetCategory_TextChanged);
             // 
             // listView1
             // 
-            this.listView1.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.presetsListView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1,
             this.columnHeader2,
             this.columnHeader3});
-            this.listView1.FullRowSelect = true;
-            this.listView1.GridLines = true;
-            this.listView1.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
-            this.listView1.HideSelection = false;
-            this.listView1.Location = new System.Drawing.Point(0, 0);
-            this.listView1.MultiSelect = false;
-            this.listView1.Name = "listView1";
-            this.listView1.ShowGroups = false;
-            this.listView1.Size = new System.Drawing.Size(585, 240);
-            this.listView1.TabIndex = 0;
-            this.listView1.UseCompatibleStateImageBehavior = false;
-            this.listView1.View = System.Windows.Forms.View.Details;
-            this.listView1.SelectedIndexChanged += new System.EventHandler(this.listView1_SelectedIndexChanged);
-            this.listView1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.listView1_KeyDown);
+            this.presetsListView.FullRowSelect = true;
+            this.presetsListView.GridLines = true;
+            this.presetsListView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
+            this.presetsListView.HideSelection = false;
+            this.presetsListView.Location = new System.Drawing.Point(0, 0);
+            this.presetsListView.MultiSelect = false;
+            this.presetsListView.Name = "listView1";
+            this.presetsListView.ShowGroups = false;
+            this.presetsListView.Size = new System.Drawing.Size(585, 240);
+            this.presetsListView.TabIndex = 0;
+            this.presetsListView.UseCompatibleStateImageBehavior = false;
+            this.presetsListView.View = System.Windows.Forms.View.Details;
+            this.presetsListView.SelectedIndexChanged += new System.EventHandler(this.presetsListView_SelectedIndexChanged);
+            this.presetsListView.KeyDown += new System.Windows.Forms.KeyEventHandler(this.listView1_KeyDown);
             // 
             // columnHeader1
             // 
@@ -202,17 +202,17 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(585, 406);
-            this.Controls.Add(this.listView1);
+            this.Controls.Add(this.presetsListView);
             this.Controls.Add(this.button4);
             this.Controls.Add(this.button3);
-            this.Controls.Add(this.pictureBox1);
-            this.Controls.Add(this.textBox2);
-            this.Controls.Add(this.comboBox2);
+            this.Controls.Add(this.presetCategoryPictureBox);
+            this.Controls.Add(this.txtPresetCategory);
+            this.Controls.Add(this.cbxPresetExePath);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.label2);
             this.Controls.Add(this.button2);
-            this.Controls.Add(this.textBox1);
+            this.Controls.Add(this.txtPresetTitle);
             this.Controls.Add(this.button1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -221,7 +221,7 @@
             this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Preset Manager";
-            ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.presetCategoryPictureBox)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -229,17 +229,17 @@
 
         #endregion
         private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.TextBox textBox1;
+        private System.Windows.Forms.TextBox txtPresetTitle;
         private System.Windows.Forms.Button button2;
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Label label3;
         private System.Windows.Forms.Label label4;
-        private System.Windows.Forms.ComboBox comboBox2;
-        private AutoCompleteTextBox textBox2;
-        private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.ComboBox cbxPresetExePath;
+        private AutoCompleteTextBox txtPresetCategory;
+        private System.Windows.Forms.PictureBox presetCategoryPictureBox;
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Button button4;
-        private System.Windows.Forms.ListView listView1;
+        private System.Windows.Forms.ListView presetsListView;
         private System.Windows.Forms.ColumnHeader columnHeader1;
         private System.Windows.Forms.ColumnHeader columnHeader2;
         private System.Windows.Forms.ColumnHeader columnHeader3;

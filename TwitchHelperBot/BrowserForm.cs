@@ -19,7 +19,7 @@ namespace TwitchHelperBot
 
             Text = url;
 
-            webView21.Source = new Uri(url);
+            webView2.Source = new Uri(url);
             BringToFront();
         }
     }

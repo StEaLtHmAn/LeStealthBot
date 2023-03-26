@@ -1,13 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace TwitchHelperBot
@@ -30,12 +25,20 @@ namespace TwitchHelperBot
             }
         }
 
-        public OverlayNotificationMessage(string Message, string iconURL = null, string iconFileName = null)
+        private Action onClick;
+        public OverlayNotificationMessage(string Message, string iconURL = null, string iconFileName = null, Action onClick = null)
         {
             InitializeComponent();
             Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
 
-            label1.Text = $"{Message}";
+            notificationText.Text = $"{Message}";
+
+            if (onClick != null)
+            {
+                this.onClick = onClick;
+                notificationText.Click += notification_Click;
+                notificationIcon.Click += notification_Click;
+            }
 
             //close after 5 seconds
             Globals.DelayAction(int.Parse(Globals.iniHelper.Read("NotificationDuration") ?? "5000"), new Action(() => { Dispose(); }));
@@ -52,15 +55,15 @@ namespace TwitchHelperBot
 
             if (iconURL != null && iconFileName != null)
             {
-                if (pictureBox1.Image != null)
+                if (notificationIcon.Image != null)
                 {
-                    pictureBox1.Image.Dispose();
+                    notificationIcon.Image.Dispose();
                 }
-                pictureBox1.Image = GetImageFromURL(iconURL, iconFileName);
+                notificationIcon.Image = GetImageFromURL(iconURL, iconFileName);
             }
             else
             {
-                label1.Size = new Size(Width, Height);
+                notificationText.Size = new Size(Width, Height);
             }
         }
 
@@ -78,6 +81,11 @@ namespace TwitchHelperBot
             }
 
             return Image.FromFile("ImageCache\\" + filename);
+        }
+
+        private void notification_Click(object sender, EventArgs e)
+        {
+            onClick.Invoke();
         }
     }
 }
