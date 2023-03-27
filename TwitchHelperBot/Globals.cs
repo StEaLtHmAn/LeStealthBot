@@ -60,6 +60,28 @@ namespace TwitchHelperBot
             return (int)(ts.TotalDays / 365.242) == 1 ? "1 Year ago" : (int)(ts.TotalDays / 365.242) + " Years ago";
         }
 
+        public static void registerAudioMixerHotkeys()
+        {
+            keyboardHook.clearHotkeys();
+
+            string[] HotkeysUpList = iniHelper.ReadKeys("HotkeysUp");
+            foreach (string key in HotkeysUpList)
+            {
+                Keys keys = (Keys)int.Parse(iniHelper.Read(key, "HotkeysUp"));
+                ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
+
+                keyboardHook.RegisterHotKey(modifiers, keys);
+            }
+
+            string[] HotkeysDownList = iniHelper.ReadKeys("HotkeysDown");
+            foreach (string key in HotkeysDownList)
+            {
+                Keys keys = (Keys)int.Parse(iniHelper.Read(key, "HotkeysDown"));
+                ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
+
+                keyboardHook.RegisterHotKey(modifiers, keys);
+            }
+        }
 
         [DllImport("dwmapi.dll")]
         private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int attrValue, int attrSize);

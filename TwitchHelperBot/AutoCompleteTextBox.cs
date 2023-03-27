@@ -9,8 +9,21 @@ public class AutoCompleteTextBox : TextBox
     public ListBox listBox;
     private PopupWindow popup;
     private bool _isAdded;
-    public JArray Data = null;
+    private JArray _Data = null;
     private string _formerValue = string.Empty;
+
+    public JArray Data
+    {
+        get { return _Data; }
+        set
+        {
+            if (_Data != value)
+            {
+                _Data = value;
+                UpdateListBox();
+            }
+        }
+    }
 
     public AutoCompleteTextBox()
     {
@@ -26,8 +39,15 @@ public class AutoCompleteTextBox : TextBox
         listBox.Format += _listBox_Format;
         popup = new PopupWindow(listBox);
         KeyDown += this_KeyDown;
-        KeyUp += this_KeyUp;
         Click += AutoCompleteTextBox_Click;
+        //LostFocus += AutoCompleteTextBox_LostFocus;
+        Leave += AutoCompleteTextBox_LostFocus;
+    }
+
+    private void AutoCompleteTextBox_LostFocus(object sender, EventArgs e)
+    {
+        if(!listBox.Focused)
+            ResetListBox();
     }
 
     private void _listBox_Format(object sender, ListControlConvertEventArgs e)
@@ -37,7 +57,7 @@ public class AutoCompleteTextBox : TextBox
 
     private void AutoCompleteTextBox_Click(object sender, EventArgs e)
     {
-        ResetListBox();
+        ShowListBox();
     }
 
     private void _listBox_Click(object sender, EventArgs e)
@@ -52,7 +72,7 @@ public class AutoCompleteTextBox : TextBox
 
     private void ShowListBox()
     {
-        if (!_isAdded)
+        if (!_isAdded && Data != null && Data.Count > 0)
         {
             popup.Show(this, new Point(0, Height));
             _isAdded = true;
@@ -63,11 +83,6 @@ public class AutoCompleteTextBox : TextBox
     {
         popup.Close();
         _isAdded = false;
-    }
-
-    private void this_KeyUp(object sender, KeyEventArgs e)
-    {
-        UpdateListBox();
     }
 
     private void this_KeyDown(object sender, KeyEventArgs e)

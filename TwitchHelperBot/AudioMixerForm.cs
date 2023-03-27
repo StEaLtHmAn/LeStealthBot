@@ -136,6 +136,7 @@ namespace TwitchHelperBot
                     try
                     {
                         Globals.iniHelper.DeleteKey(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysUp");
+                        Globals.registerAudioMixerHotkeys();
                     }
                     catch { }
                 }
@@ -150,6 +151,7 @@ namespace TwitchHelperBot
                     try
                     {
                         Globals.iniHelper.Write(process.Id == 0 ? "0" : process.MainModule.FileName, ((int)e.KeyData).ToString(), "HotkeysUp");
+                        Globals.registerAudioMixerHotkeys();
                     }
                     catch { }
                 }
@@ -190,6 +192,7 @@ namespace TwitchHelperBot
                     try
                     {
                         Globals.iniHelper.DeleteKey(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysDown");
+                        Globals.registerAudioMixerHotkeys();
                     }
                     catch { }
                 }
@@ -204,6 +207,7 @@ namespace TwitchHelperBot
                     try
                     {
                         Globals.iniHelper.Write(process.Id == 0 ? "0" : process.MainModule.FileName, ((int)e.KeyData).ToString(), "HotkeysDown");
+                        Globals.registerAudioMixerHotkeys();
                     }
                     catch { }
                 }
@@ -222,6 +226,11 @@ namespace TwitchHelperBot
             flowLayoutPanel.Controls.Add(btnVolumeUpHotkey);
             flowLayoutPanel.Controls.Add(btnVolumeDownHotkey);
             flowLayoutPanel1.Controls.Add(flowLayoutPanel);
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Task.Run(() => InitForm());
         }
     }
 }

@@ -208,11 +208,7 @@ namespace TwitchHelperBot
                 JObject categoryList = JObject.Parse(await SearchCategories(currentText.Trim()));
                 if (categoryList["data"] != null && categoryList["data"].Count() > 0)
                 {
-                    object newData = categoryList["data"] as JArray;
-                    if (txtPresetCategory.Data != newData)
-                    {
-                        txtPresetCategory.Data = categoryList["data"] as JArray;
-                    }
+                    txtPresetCategory.Data = categoryList["data"] as JArray;
                 }
             }
             catch (Exception ex)

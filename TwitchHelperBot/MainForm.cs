@@ -38,7 +38,7 @@ namespace TwitchHelperBot
             if (!checkForUpdates())
             {
                 startupApp();
-                registerAudioMixerHotkeys();
+                Globals.registerAudioMixerHotkeys();
                 Globals.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
             }
             else
@@ -211,29 +211,6 @@ namespace TwitchHelperBot
             //show welcome message
             OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {userDetailsResponse["data"][0]["display_name"]}", userDetailsResponse["data"][0]["profile_image_url"].ToString(), userDetailsResponse["data"][0]["id"].ToString());
             form123.Show();
-        }
-
-        private void registerAudioMixerHotkeys()
-        {
-            Globals.keyboardHook.clearHotkeys();
-
-            string[] HotkeysUpList = Globals.iniHelper.ReadKeys("HotkeysUp");
-            foreach (string key in HotkeysUpList)
-            {
-                Keys keys = (Keys)int.Parse(Globals.iniHelper.Read(key, "HotkeysUp"));
-                ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
-
-                Globals.keyboardHook.RegisterHotKey(modifiers, keys);
-            }
-
-            string[] HotkeysDownList = Globals.iniHelper.ReadKeys("HotkeysDown");
-            foreach (string key in HotkeysDownList)
-            {
-                Keys keys = (Keys)int.Parse(Globals.iniHelper.Read(key, "HotkeysDown"));
-                ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
-
-                Globals.keyboardHook.RegisterHotKey(modifiers, keys);
-            }
         }
 
         private void KeyboardHook_KeyPressed(object sender, KeyPressedEventArgs e)
@@ -496,7 +473,6 @@ namespace TwitchHelperBot
         {
             AudioMixerForm form = new AudioMixerForm();
             form.ShowDialog();
-            registerAudioMixerHotkeys();
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
