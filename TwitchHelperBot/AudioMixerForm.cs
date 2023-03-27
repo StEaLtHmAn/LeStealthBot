@@ -2,6 +2,7 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -108,7 +109,19 @@ namespace TwitchHelperBot
             string HotkeysUpValue = Globals.iniHelper.Read(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysUp");
             if (!string.IsNullOrEmpty(HotkeysUpValue))
             {
-                btnVolumeUpHotkey.Text = HotkeysUpValue;
+                Keys keyData = (Keys)int.Parse(HotkeysUpValue);
+                Keys Modifiers = keyData & Keys.Modifiers;
+                Keys KeyCode = keyData & Keys.KeyCode;
+                if (!Enum.IsDefined(typeof(Keys), (int)KeyCode))
+                {
+                    KeyCode = Keys.None;
+                }
+                string keyNames = "None";
+                if (KeyCode != Keys.Menu && KeyCode != Keys.ShiftKey && KeyCode != Keys.ControlKey)
+                {
+                    keyNames = new KeysConverter().ConvertToString(KeyCode);
+                }
+                btnVolumeUpHotkey.Text = string.Join("+", Modifiers.ToString().Split(new string[] { ", " }, StringSplitOptions.RemoveEmptyEntries).Reverse()) + "+" + keyNames;
             }
             else
             {
@@ -128,21 +141,15 @@ namespace TwitchHelperBot
                 }
                 else
                 {
-                    string keyNames = "?";
+                    string keyNames = "None";
                     if (e.KeyCode != Keys.Menu && e.KeyCode != Keys.ShiftKey && e.KeyCode != Keys.ControlKey)
                     {
                         keyNames = new KeysConverter().ConvertToString(e.KeyCode);
                     }
-                    if (e.Alt)
-                        keyNames = "Alt+" + keyNames;
-                    if (e.Shift)
-                        keyNames = "Shift+" + keyNames;
-                    if (e.Control)
-                        keyNames = "Ctrl+" + keyNames;
-                    btnVolumeUpHotkey.Text = keyNames;
+                    btnVolumeUpHotkey.Text = string.Join("+", e.Modifiers.ToString().Split(new string[] { ", " }, StringSplitOptions.RemoveEmptyEntries).Reverse()) + "+" + keyNames;
                     try
                     {
-                        Globals.iniHelper.Write(process.Id == 0 ? "0" : process.MainModule.FileName, keyNames, "HotkeysUp");
+                        Globals.iniHelper.Write(process.Id == 0 ? "0" : process.MainModule.FileName, ((int)e.KeyData).ToString(), "HotkeysUp");
                     }
                     catch { }
                 }
@@ -156,7 +163,19 @@ namespace TwitchHelperBot
             string HotkeysDownValue = Globals.iniHelper.Read(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysDown");
             if (!string.IsNullOrEmpty(HotkeysDownValue))
             {
-                btnVolumeDownHotkey.Text = HotkeysDownValue;
+                Keys keyData = (Keys)int.Parse(HotkeysDownValue);
+                Keys Modifiers = keyData & Keys.Modifiers;
+                Keys KeyCode = keyData & Keys.KeyCode;
+                if (!Enum.IsDefined(typeof(Keys), (int)KeyCode))
+                {
+                    KeyCode = Keys.None;
+                }
+                string keyNames = "None";
+                if (KeyCode != Keys.Menu && KeyCode != Keys.ShiftKey && KeyCode != Keys.ControlKey)
+                {
+                    keyNames = new KeysConverter().ConvertToString(KeyCode);
+                }
+                btnVolumeDownHotkey.Text = string.Join("+", Modifiers.ToString().Split(new string[] { ", " }, StringSplitOptions.RemoveEmptyEntries).Reverse()) + "+" + keyNames;
             }
             else
             {
@@ -176,21 +195,15 @@ namespace TwitchHelperBot
                 }
                 else
                 {
-                    string keyNames = "?";
+                    string keyNames = "None";
                     if (e.KeyCode != Keys.Menu && e.KeyCode != Keys.ShiftKey && e.KeyCode != Keys.ControlKey)
                     {
                         keyNames = new KeysConverter().ConvertToString(e.KeyCode);
                     }
-                    if (e.Alt)
-                        keyNames = "Alt+" + keyNames;
-                    if (e.Shift)
-                        keyNames = "Shift+" + keyNames;
-                    if (e.Control)
-                        keyNames = "Ctrl+" + keyNames;
-                    btnVolumeDownHotkey.Text = keyNames;
+                    btnVolumeDownHotkey.Text = string.Join("+", e.Modifiers.ToString().Split(new string[] { ", " }, StringSplitOptions.RemoveEmptyEntries).Reverse()) + "+" + keyNames;
                     try
                     {
-                        Globals.iniHelper.Write(process.Id == 0 ? "0" : process.MainModule.FileName, keyNames, "HotkeysDown");
+                        Globals.iniHelper.Write(process.Id == 0 ? "0" : process.MainModule.FileName, ((int)e.KeyData).ToString(), "HotkeysDown");
                     }
                     catch { }
                 }

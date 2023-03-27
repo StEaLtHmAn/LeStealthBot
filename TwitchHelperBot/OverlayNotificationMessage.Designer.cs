@@ -28,31 +28,30 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.notificationText = new System.Windows.Forms.Label();
             this.notificationIcon = new System.Windows.Forms.PictureBox();
+            this.notificationText = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.notificationIcon)).BeginInit();
             this.SuspendLayout();
             // 
-            // label1
+            // notificationIcon
             // 
-            this.notificationText.Dock = System.Windows.Forms.DockStyle.Right;
-            this.notificationText.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.notificationText.Location = new System.Drawing.Point(36, 0);
-            this.notificationText.Margin = new System.Windows.Forms.Padding(3);
-            this.notificationText.Name = "label1";
-            this.notificationText.Size = new System.Drawing.Size(160, 50);
-            this.notificationText.TabIndex = 0;
-            this.notificationText.Text = "Loading...";
-            // 
-            // pictureBox1
-            // 
-            this.notificationIcon.Dock = System.Windows.Forms.DockStyle.Fill;
             this.notificationIcon.Location = new System.Drawing.Point(0, 0);
-            this.notificationIcon.Name = "pictureBox1";
+            this.notificationIcon.Name = "notificationIcon";
             this.notificationIcon.Size = new System.Drawing.Size(36, 50);
             this.notificationIcon.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom;
             this.notificationIcon.TabIndex = 1;
             this.notificationIcon.TabStop = false;
+            // 
+            // notificationText
+            // 
+            this.notificationText.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.notificationText.Location = new System.Drawing.Point(36, 0);
+            this.notificationText.Margin = new System.Windows.Forms.Padding(3);
+            this.notificationText.Name = "notificationText";
+            this.notificationText.Padding = new System.Windows.Forms.Padding(3);
+            this.notificationText.Size = new System.Drawing.Size(160, 50);
+            this.notificationText.TabIndex = 0;
+            this.notificationText.Text = "Loading...";
             // 
             // OverlayNotificationMessage
             // 
@@ -75,8 +74,7 @@
         }
 
         #endregion
-
-        private System.Windows.Forms.Label notificationText;
         private System.Windows.Forms.PictureBox notificationIcon;
+        private System.Windows.Forms.Label notificationText;
     }
 }

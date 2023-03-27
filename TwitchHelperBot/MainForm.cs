@@ -220,16 +220,8 @@ namespace TwitchHelperBot
             string[] HotkeysUpList = Globals.iniHelper.ReadKeys("HotkeysUp");
             foreach (string key in HotkeysUpList)
             {
-                string HotkeysUp = Globals.iniHelper.Read(key, "HotkeysUp");
-                ModifierKeys modifiers = global::ModifierKeys.None;
-                if (HotkeysUp.Contains("Ctrl+"))
-                    modifiers |= global::ModifierKeys.Control;
-                if (HotkeysUp.Contains("Shift+"))
-                    modifiers |= global::ModifierKeys.Shift;
-                if (HotkeysUp.Contains("Alt+"))
-                    modifiers |= global::ModifierKeys.Alt;
-
-                Keys keys = (Keys)new KeysConverter().ConvertFromString(HotkeysUp.Split('+').Last());
+                Keys keys = (Keys)int.Parse(Globals.iniHelper.Read(key, "HotkeysUp"));
+                ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
 
                 Globals.keyboardHook.RegisterHotKey(modifiers, keys);
             }
@@ -237,16 +229,8 @@ namespace TwitchHelperBot
             string[] HotkeysDownList = Globals.iniHelper.ReadKeys("HotkeysDown");
             foreach (string key in HotkeysDownList)
             {
-                string HotkeysDown = Globals.iniHelper.Read(key, "HotkeysDown");
-                ModifierKeys modifiers = global::ModifierKeys.None;
-                if (HotkeysDown.Contains("Ctrl+"))
-                    modifiers |= global::ModifierKeys.Control;
-                if (HotkeysDown.Contains("Shift+"))
-                    modifiers |= global::ModifierKeys.Shift;
-                if (HotkeysDown.Contains("Alt+"))
-                    modifiers |= global::ModifierKeys.Alt;
-
-                Keys keys = (Keys)new KeysConverter().ConvertFromString(HotkeysDown.Split('+').Last());
+                Keys keys = (Keys)int.Parse(Globals.iniHelper.Read(key, "HotkeysDown"));
+                ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
 
                 Globals.keyboardHook.RegisterHotKey(modifiers, keys);
             }
@@ -254,21 +238,14 @@ namespace TwitchHelperBot
 
         private void KeyboardHook_KeyPressed(object sender, KeyPressedEventArgs e)
         {
-            string keyNames = new KeysConverter().ConvertToString(e.Key);
-            if ((e.Modifier & global::ModifierKeys.Alt) != 0)
-                keyNames = "Alt+" + keyNames;
-            if ((e.Modifier & global::ModifierKeys.Shift) != 0)
-                keyNames = "Shift+" + keyNames;
-            if ((e.Modifier & global::ModifierKeys.Control) != 0)
-                keyNames = "Ctrl+" + keyNames;
-
             string[] HotkeysUpList = Globals.iniHelper.ReadKeys("HotkeysUp");
             string processPath = string.Empty;
             bool isUp = false;
             foreach (string key in HotkeysUpList)
             {
-                string keyValue = Globals.iniHelper.Read(key, "HotkeysUp");
-                if (keyValue == keyNames)
+                Keys keys = (Keys)int.Parse(Globals.iniHelper.Read(key, "HotkeysUp") ?? "0");
+                ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
+                if (keys == e.Key && modifiers == e.Modifier)
                 {
                     processPath = key;
                     isUp = true;
@@ -278,8 +255,9 @@ namespace TwitchHelperBot
             string[] HotkeysDownList = Globals.iniHelper.ReadKeys("HotkeysDown");
             foreach (string key in HotkeysUpList)
             {
-                string keyValue = Globals.iniHelper.Read(key, "HotkeysDown");
-                if (keyValue == keyNames)
+                Keys keys = (Keys)int.Parse(Globals.iniHelper.Read(key, "HotkeysDown") ?? "0");
+                ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
+                if (keys == e.Key && modifiers == e.Modifier)
                 {
                     processPath = key;
                     break;
@@ -295,25 +273,22 @@ namespace TwitchHelperBot
                         {
                             using (var sessionControl = session.QueryInterface<AudioSessionControl2>())
                             {
-                                if (processPath != "0" && sessionControl.ProcessID != 0)
+                                try
                                 {
-                                    try
+                                    if ((processPath == "0" && sessionControl.ProcessID == 0) || (processPath == sessionControl.Process.MainModule.FileName))
                                     {
-                                        if (processPath == sessionControl.Process.MainModule.FileName)
+                                        using (var simpleVolume = session.QueryInterface<SimpleAudioVolume>())
                                         {
-                                            using (var simpleVolume = session.QueryInterface<SimpleAudioVolume>())
-                                            {
-                                                if (isUp)
-                                                    AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume + 0.01f);
-                                                else
-                                                    AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume - 0.01f);
-                                            }
+                                            if (isUp)
+                                                AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume + 0.01f);
+                                            else
+                                                AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume - 0.01f);
                                         }
                                     }
-                                    catch (Exception ex)
-                                    {
-                                        Globals.LogMessage("KeyboardHook_KeyPressed exception: " + ex);
-                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Globals.LogMessage("KeyboardHook_KeyPressed exception: " + ex);
                                 }
                             }
                         }
@@ -401,11 +376,15 @@ namespace TwitchHelperBot
             RestClient client = new RestClient();
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+            client.AddDefaultHeader("Content-Type", "application/json");
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/channels", Method.Patch);
             request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
-            request.AddParameter("game_id", game_id);
+            JObject parameters = new JObject();
+            if (!string.IsNullOrEmpty(game_id))
+                parameters.Add("game_id", game_id);
             if (!string.IsNullOrEmpty(title))
-                request.AddParameter("title", title);
+                parameters.Add("title", title);
+            request.AddJsonBody(parameters.ToString(Newtonsoft.Json.Formatting.None));
             RestResponse response = client.Execute(request);
             if(!response.IsSuccessful)
                 Globals.LogMessage("UpdateChannelInfo exception: " + response.Content);
@@ -415,16 +394,20 @@ namespace TwitchHelperBot
         private void updateChannelInfoTimer_Tick(object sender, EventArgs e)
         {
             if (paused)
-                return;
+                return;//return if paused
+
             updateChannelInfoTimer.Enabled = false;
+
             try
             {
+                //if foreground window changes
                 int windowID = GetForegroundWindow();
                 if (windowID != 0 && currentWindowID != windowID)
                 {
                     currentWindowID = windowID;
                     GetWindowThreadProcessId(currentWindowID, out int processID);
                     currentProcess = Process.GetProcessById(processID);
+                    //if to prevent exceptions
                     if (currentProcess != null && !currentProcess.HasExited && !string.IsNullOrEmpty(currentProcess?.MainWindowTitle))
                     {
                         string forgroundAppName = currentProcess?.MainModule?.FileName ?? string.Empty;
