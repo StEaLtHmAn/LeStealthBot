@@ -74,7 +74,6 @@
             this.Controls.Add(this.notificationIcon);
             this.Controls.Add(this.notificationText);
             this.Controls.Add(this.trackBar1);
-            this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
