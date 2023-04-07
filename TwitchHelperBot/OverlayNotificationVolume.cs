@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Windows.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace TwitchHelperBot
 {
@@ -29,39 +28,43 @@ namespace TwitchHelperBot
         public OverlayNotificationVolume(string Message, int Volume, Bitmap Icon = null)
         {
             InitializeComponent();
-
+            Opacity = 0;
+            //if already open
             if (Application.OpenForms.OfType<OverlayNotificationVolume>().Count() > 0)
             {
                 Application.OpenForms.OfType<OverlayNotificationVolume>().First().UpdateInfo(Message, Volume, Icon);
                 Globals.DelayAction(0, new Action(() => { Dispose(); }));
             }
-
-            Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
-
-            notificationText.Text = $"{Message}";
-            progressBar1.Value = Volume;
-
-            //close after 5 seconds
-            Globals.DelayAction(int.Parse(Globals.iniHelper.Read("NotificationDuration") ?? "5000"), new Action(() => { Dispose(); }));
-
-            //move form bottom right
-            Rectangle bounds = Screen.FromPoint(Cursor.Position).Bounds;
-            Location = new Point(bounds.Width - Width, 0);
-
-            if (Icon != null)
+            else
             {
-                if (notificationIcon.Image != null)
+                Opacity = 1;
+                Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
+
+                notificationText.Text = $"{Message}";
+                trackBar1.Value = Volume;
+
+                //move form bottom right
+                Rectangle bounds = Screen.FromPoint(Cursor.Position).Bounds;
+                Location = new Point(bounds.Width - Width, 0);
+
+                if (Icon != null)
                 {
-                    notificationIcon.Image.Dispose();
+                    if (notificationIcon.Image != null)
+                    {
+                        notificationIcon.Image.Dispose();
+                    }
+                    notificationIcon.Image = Icon;
                 }
-                notificationIcon.Image = Icon;
+
+                //close after 5 seconds
+                Globals.DelayAction(int.Parse(Globals.iniHelper.Read("VolumeNotificationDuration") ?? "5000"), new Action(() => { Dispose(); }));
             }
         }
 
         public void UpdateInfo(string Message, int Volume, Bitmap icon = null)
         {
             notificationText.Text = $"{Message}";
-            progressBar1.Value = Volume;
+            trackBar1.Value = Volume;
 
             if (icon != null)
             {

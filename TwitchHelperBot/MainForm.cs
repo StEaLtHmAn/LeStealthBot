@@ -189,6 +189,10 @@ namespace TwitchHelperBot
             {
                 Globals.iniHelper.Write("NotificationDuration", "5000");
             }
+            if (string.IsNullOrEmpty(Globals.iniHelper.Read("VolumeNotificationDuration")))
+            {
+                Globals.iniHelper.Write("VolumeNotificationDuration", "5000");
+            }
 
             //Login
             Globals.access_token = Globals.iniHelper.Read("access_token");
