@@ -250,22 +250,49 @@ namespace TwitchHelperBot
                         {
                             using (var sessionControl = session.QueryInterface<AudioSessionControl2>())
                             {
+                                bool shouldSkip = true;
                                 try
                                 {
-                                    if ((processPath == "0" && sessionControl.ProcessID == 0) || (processPath == sessionControl.Process.MainModule.FileName))
-                                    {
-                                        using (var simpleVolume = session.QueryInterface<SimpleAudioVolume>())
-                                        {
-                                            if (isUp)
-                                                AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume + 0.01f);
-                                            else
-                                                AudioManager.SetVolumeForProcess(sessionControl.Process.Id, simpleVolume.MasterVolume - 0.01f);
-                                        }
-                                    }
+                                    if ((processPath == "0" && sessionControl.ProcessID == 0) || processPath == sessionControl.Process.MainModule.FileName)
+                                        shouldSkip = false;
                                 }
-                                catch (Exception ex)
+                                catch { }
+
+                                if (!shouldSkip)
                                 {
-                                    Globals.LogMessage("KeyboardHook_KeyPressed exception: " + ex);
+                                    using (var simpleVolume = session.QueryInterface<SimpleAudioVolume>())
+                                    {
+                                        if (isUp)
+                                            AudioManager.SetVolumeForProcess(sessionControl.Process.Id, Math.Min(simpleVolume.MasterVolume + 0.01f, 1f));
+                                        else
+                                            AudioManager.SetVolumeForProcess(sessionControl.Process.Id, Math.Max(simpleVolume.MasterVolume - 0.01f, 0));
+
+                                        string name = string.Empty;
+                                        if (sessionControl.Process.Id == 0)
+                                            name = "System Sounds";
+                                        else
+                                            try
+                                            {
+                                                name = sessionControl.Process?.MainModule?.ModuleName ?? "Unknown";
+                                            }
+                                            catch { }
+                                        Bitmap icon = null;
+                                        try
+                                        {
+                                            if (sessionControl.Process != null && sessionControl.Process.MainModule != null && sessionControl.Process.MainModule.FileName != null)
+                                            {
+                                                icon = Bitmap.FromHicon(Icon.ExtractAssociatedIcon(sessionControl.Process.MainModule.FileName).Handle);
+                                            }
+                                        }
+                                        catch { }
+                                        if (icon == null)
+                                        {
+                                            icon = Bitmap.FromHicon(SystemIcons.WinLogo.Handle);
+                                        }
+                                        Invoke(new Action(()=> {
+                                            OverlayNotificationVolume form = new OverlayNotificationVolume($"{name} - {(int)(simpleVolume.MasterVolume * 100f)}%", (int)(simpleVolume.MasterVolume * 100f), icon);
+                                            form.Show(); }));
+                                    }
                                 }
                             }
                         }

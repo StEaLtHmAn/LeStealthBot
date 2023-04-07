@@ -185,6 +185,12 @@
     <Compile Include="OverlayNotificationMessage.Designer.cs">
       <DependentUpon>OverlayNotificationMessage.cs</DependentUpon>
     </Compile>
+    <Compile Include="OverlayNotificationVolume.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="OverlayNotificationVolume.Designer.cs">
+      <DependentUpon>OverlayNotificationVolume.cs</DependentUpon>
+    </Compile>
     <Compile Include="PopupWindow.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -228,6 +234,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="OverlayNotificationMessage.resx">
       <DependentUpon>OverlayNotificationMessage.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="OverlayNotificationVolume.resx">
+      <DependentUpon>OverlayNotificationVolume.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
