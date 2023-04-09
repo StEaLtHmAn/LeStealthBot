@@ -116,20 +116,20 @@ namespace TwitchHelperBot
         public static void ToggleDarkMode(Form form, bool enabled)
         {
             UseImmersiveDarkMode(form.Handle, enabled);
-            if (enabled && form.BackColor == SystemColors.Control)
+            if (enabled)
             {
-                form.BackColor = DarkColour;
-                form.ForeColor = SystemColors.ControlLightLight;
-            }
-            foreach (Control component in form.Controls)
-            {
-                if (enabled)
+                if (form.BackColor == SystemColors.Control)
+                {
+                    form.BackColor = DarkColour;
+                    form.ForeColor = SystemColors.ControlLightLight;
+                }
+                foreach (Control component in form.Controls)
                 {
                     if (component.BackColor == SystemColors.Control)
                         component.BackColor = DarkColour;
-                    else if(component.BackColor == SystemColors.Window)
+                    else if (component.BackColor == SystemColors.Window)
                         component.BackColor = DarkColour2;
-                    if(!(component is Button))
+                    if (!(component is Button))
                         component.ForeColor = SystemColors.ControlLightLight;
                 }
             }

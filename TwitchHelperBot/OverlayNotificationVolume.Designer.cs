@@ -46,6 +46,7 @@
             // 
             // notificationText
             // 
+            this.notificationText.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.notificationText.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.notificationText.Location = new System.Drawing.Point(36, 0);
             this.notificationText.Margin = new System.Windows.Forms.Padding(3);
@@ -58,13 +59,14 @@
             // trackBar1
             // 
             this.trackBar1.AutoSize = false;
-            this.trackBar1.Location = new System.Drawing.Point(38, 14);
+            this.trackBar1.Enabled = false;
+            this.trackBar1.Location = new System.Drawing.Point(38, 15);
             this.trackBar1.Maximum = 100;
             this.trackBar1.Name = "trackBar1";
             this.trackBar1.Size = new System.Drawing.Size(158, 36);
             this.trackBar1.TabIndex = 2;
             this.trackBar1.TickFrequency = 10;
-            this.trackBar1.TickStyle = System.Windows.Forms.TickStyle.Both;
+            this.trackBar1.TickStyle = System.Windows.Forms.TickStyle.TopLeft;
             // 
             // OverlayNotificationVolume
             // 
