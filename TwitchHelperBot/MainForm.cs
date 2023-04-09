@@ -191,7 +191,7 @@ namespace TwitchHelperBot
             }
             if (string.IsNullOrEmpty(Globals.iniHelper.Read("VolumeNotificationDuration")))
             {
-                Globals.iniHelper.Write("VolumeNotificationDuration", "5000");
+                Globals.iniHelper.Write("VolumeNotificationDuration", "3000");
             }
 
             //Login
@@ -271,31 +271,36 @@ namespace TwitchHelperBot
                                         else
                                             AudioManager.SetVolumeForProcess(sessionControl.Process.Id, Math.Max(simpleVolume.MasterVolume - 0.01f, 0));
 
-                                        string name = string.Empty;
-                                        if (sessionControl.Process.Id == 0)
-                                            name = "System Sounds";
-                                        else
+                                        if (int.Parse(Globals.iniHelper.Read("VolumeNotificationDuration") ?? "3000") > 0)
+                                        {
+                                            string name = string.Empty;
+                                            if (sessionControl.Process.Id == 0)
+                                                name = "System Sounds";
+                                            else
+                                                try
+                                                {
+                                                    name = sessionControl.Process?.MainModule?.ModuleName ?? "Unknown";
+                                                }
+                                                catch { }
+                                            Bitmap icon = null;
                                             try
                                             {
-                                                name = sessionControl.Process?.MainModule?.ModuleName ?? "Unknown";
+                                                if (sessionControl.Process != null && sessionControl.Process.MainModule != null && sessionControl.Process.MainModule.FileName != null)
+                                                {
+                                                    icon = Bitmap.FromHicon(Icon.ExtractAssociatedIcon(sessionControl.Process.MainModule.FileName).Handle);
+                                                }
                                             }
                                             catch { }
-                                        Bitmap icon = null;
-                                        try
-                                        {
-                                            if (sessionControl.Process != null && sessionControl.Process.MainModule != null && sessionControl.Process.MainModule.FileName != null)
+                                            if (icon == null)
                                             {
-                                                icon = Bitmap.FromHicon(Icon.ExtractAssociatedIcon(sessionControl.Process.MainModule.FileName).Handle);
+                                                icon = Bitmap.FromHicon(SystemIcons.WinLogo.Handle);
                                             }
+                                            Invoke(new Action(() =>
+                                            {
+                                                OverlayNotificationVolume form = new OverlayNotificationVolume($"{name} - {(int)(simpleVolume.MasterVolume * 100f)}%", (int)(simpleVolume.MasterVolume * 100f), icon);
+                                                form.Show();
+                                            }));
                                         }
-                                        catch { }
-                                        if (icon == null)
-                                        {
-                                            icon = Bitmap.FromHicon(SystemIcons.WinLogo.Handle);
-                                        }
-                                        Invoke(new Action(()=> {
-                                            OverlayNotificationVolume form = new OverlayNotificationVolume($"{name} - {(int)(simpleVolume.MasterVolume * 100f)}%", (int)(simpleVolume.MasterVolume * 100f), icon);
-                                            form.Show(); }));
                                     }
                                 }
                             }

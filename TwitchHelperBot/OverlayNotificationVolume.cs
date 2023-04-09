@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Windows.Forms;
+using System.Windows.Threading;
 
 namespace TwitchHelperBot
 {
@@ -27,10 +28,11 @@ namespace TwitchHelperBot
             }
         }
 
+        private DateTime _lastUpdateTime = DateTime.MinValue;
         public OverlayNotificationVolume(string Message, int Volume, Bitmap Icon = null)
         {
             InitializeComponent();
-            Opacity = 0;
+            int VolumeNotificationDuration = int.Parse(Globals.iniHelper.Read("VolumeNotificationDuration") ?? "3000");
             //if already open
             if (Application.OpenForms.OfType<OverlayNotificationVolume>().Count() > 0)
             {
@@ -39,33 +41,40 @@ namespace TwitchHelperBot
             }
             else
             {
-                Opacity = 1;
-                Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
-
-                notificationText.Text = $"{Message}";
-                trackBar1.Value = Volume;
-
-                //move form bottom right
+                //move form top right
                 Rectangle bounds = Screen.FromPoint(Cursor.Position).Bounds;
                 Location = new Point(bounds.Width - Width, 0);
+                Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
+                
+                UpdateInfo(Message, Volume, Icon);
 
-                if (Icon != null)
+                _lastUpdateTime = DateTime.UtcNow;
+                DispatcherTimer timer = new DispatcherTimer();
+                timer.Tick += delegate
                 {
-                    if (notificationIcon.Image != null)
+                    TimeSpan timePassed = DateTime.UtcNow - _lastUpdateTime;
+                    if (timePassed >= TimeSpan.FromMilliseconds(VolumeNotificationDuration))
                     {
-                        notificationIcon.Image.Dispose();
+                        if (Opacity > 0.1)
+                            Opacity -= 0.1;
+                        else
+                        {
+                            timer.Stop();
+                            Dispose();
+                        }
                     }
-                    notificationIcon.Image = Icon;
-                }
-
-                //close after 5 seconds
-                Globals.DelayAction(int.Parse(Globals.iniHelper.Read("VolumeNotificationDuration") ?? "5000"), new Action(() => { Dispose(); }));
+                    else if (Opacity < 0.9)
+                        Opacity += 0.45;
+                };
+                timer.Interval = TimeSpan.FromMilliseconds(80);
+                timer.Start();
             }
         }
 
         public void UpdateInfo(string Message, int Volume, Bitmap icon = null)
         {
-            notificationText.Text = $"{Message}";
+            _lastUpdateTime = DateTime.UtcNow;
+            notificationText.Text = Message;
             trackBar1.Value = Volume;
 
             if (icon != null)
