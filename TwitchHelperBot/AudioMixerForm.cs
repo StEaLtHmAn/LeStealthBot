@@ -39,11 +39,12 @@ namespace TwitchHelperBot
         {
             PictureBox pictureBox = new PictureBox();
             pictureBox.Size = new Size(32, 32);
+            pictureBox.SizeMode = PictureBoxSizeMode.StretchImage;
             try
             {
                 if (process != null && process.MainModule != null && process.MainModule.FileName != null)
                 {
-                    pictureBox.Image = Bitmap.FromHicon(Icon.ExtractAssociatedIcon(process.MainModule.FileName).Handle);
+                    pictureBox.Image = IconExtractor.GetIconFromPath(process.MainModule.FileName); 
                 }
             }
             catch { }

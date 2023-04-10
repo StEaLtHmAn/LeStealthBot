@@ -287,7 +287,7 @@ namespace TwitchHelperBot
                                             {
                                                 if (sessionControl.Process != null && sessionControl.Process.MainModule != null && sessionControl.Process.MainModule.FileName != null)
                                                 {
-                                                    icon = Bitmap.FromHicon(Icon.ExtractAssociatedIcon(sessionControl.Process.MainModule.FileName).Handle);
+                                                    icon = IconExtractor.GetIconFromPath(sessionControl.Process.MainModule.FileName);
                                                 }
                                             }
                                             catch { }

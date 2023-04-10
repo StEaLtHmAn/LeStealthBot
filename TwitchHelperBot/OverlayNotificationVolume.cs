@@ -28,7 +28,7 @@ namespace TwitchHelperBot
             }
         }
 
-        private DateTime _lastUpdateTime = DateTime.MinValue;
+        private DateTime _lastUpdateTime = DateTime.UtcNow;
         public OverlayNotificationVolume(string Message, int Volume, Bitmap Icon = null)
         {
             InitializeComponent();
