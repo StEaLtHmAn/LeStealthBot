@@ -5,6 +5,7 @@ using RestSharp;
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
@@ -198,7 +199,7 @@ namespace TwitchHelperBot
             Globals.access_token = Globals.iniHelper.Read("access_token");
             if (string.IsNullOrEmpty(Globals.access_token) || !ValidateToken())
             {
-                BrowserForm form = new BrowserForm($"https://id.twitch.tv/oauth2/authorize?client_id={Globals.clientId}&redirect_uri={RedirectURI}&response_type=token&scope=channel:manage:broadcast");
+                BrowserForm form = new BrowserForm($"https://id.twitch.tv/oauth2/authorize?client_id={Globals.clientId}&redirect_uri={RedirectURI}&response_type=token&scope=channel:manage:broadcast+moderator:read:chatters");
                 form.webView2.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_TwitchAuthNavigationCompleted);
                 form.ShowDialog();
 
@@ -212,6 +213,7 @@ namespace TwitchHelperBot
 
             //get user details
             userDetailsResponse = JObject.Parse(GetUserDetails());
+
             //show welcome message
             OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {userDetailsResponse["data"][0]["display_name"]}", userDetailsResponse["data"][0]["profile_image_url"].ToString(), userDetailsResponse["data"][0]["id"].ToString());
             form123.Show();
@@ -404,6 +406,40 @@ namespace TwitchHelperBot
             return response.IsSuccessful;
         }
 
+        public string GetChattersList()
+        {
+            RestClient client = new RestClient();
+            client.AddDefaultHeader("Client-ID", Globals.clientId);
+            client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+            RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
+            request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("moderator_id", userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("first", 1000);
+            RestResponse response = client.Execute(request);
+            return response.Content;
+        }
+
+        public string GetBotList()
+        {
+            //try get data from file
+            if (File.Exists("botList.data"))
+            {
+                string[] lines = File.ReadAllLines("botList.data");
+                if (DateTime.UtcNow - DateTime.Parse(lines[0]) <= TimeSpan.FromDays(1))
+                    return string.Join("\n", lines.Skip(1));
+            }
+
+            //if we cant find the file or if the file is old then we download a new file
+
+            RestClient client = new RestClient();
+            RestRequest request = new RestRequest("https://api.twitchinsights.net/v1/bots/all", Method.Get);
+            RestResponse response = client.Execute(request);
+
+            File.WriteAllText("botList.data", DateTime.UtcNow.ToString()+ "\n"+ response.Content);
+
+            return response.Content;
+        }
+
         private void updateChannelInfoTimer_Tick(object sender, EventArgs e)
         {
             if (paused)
@@ -514,6 +550,15 @@ namespace TwitchHelperBot
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             Globals.keyboardHook.Dispose();
+        }
+
+        private void showViewerListToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            string[] botNamesList = (JObject.Parse(GetBotList())["bots"] as JArray).Select(x => (x as JArray)[0].ToString()).ToArray();
+            JArray Viewers = JObject.Parse(GetChattersList())["data"] as JArray;
+            Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_name"].ToString())).ToList());
+            ResizableTextDisplayForm form1234 = new ResizableTextDisplayForm($"Viewers({Viewers.Count})", string.Join("\n", Viewers.Select(x => (x as JObject)["user_name"].ToString())));
+            form1234.Show();
         }
     }
 }

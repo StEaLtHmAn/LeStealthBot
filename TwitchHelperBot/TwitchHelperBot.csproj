@@ -209,6 +209,12 @@
     <Compile Include="SettingsForm.Designer.cs">
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="ResizableTextDisplayForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="ResizableTextDisplayForm.Designer.cs">
+      <DependentUpon>ResizableTextDisplayForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="TextInputForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -246,6 +252,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="SettingsForm.resx">
       <DependentUpon>SettingsForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="ResizableTextDisplayForm.resx">
+      <DependentUpon>ResizableTextDisplayForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="TextInputForm.resx">
       <DependentUpon>TextInputForm.cs</DependentUpon>
