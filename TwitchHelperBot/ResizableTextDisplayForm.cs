@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Windows.Forms;
 
 namespace TwitchHelperBot
@@ -6,13 +7,14 @@ namespace TwitchHelperBot
     public partial class ResizableTextDisplayForm : Form
     {
         Func<string[]> getText;
+        string[] text;
         public ResizableTextDisplayForm(Func<string[]> getText)
         {
             InitializeComponent();
 
             this.getText = getText;
 
-            string[] text = getText.Invoke();
+            text = getText.Invoke();
             if (text.Length == 2)
             {
                 Text = text[0];
@@ -24,12 +26,17 @@ namespace TwitchHelperBot
 
         private void button1_Click(object sender, EventArgs e)
         {
-            string[] text = getText.Invoke();
+            text = getText.Invoke();
             if (text.Length == 2)
             {
                 Text = text[0];
                 textBox1.Text = text[1];
             }
+        }
+
+        private void textBox2_TextChanged(object sender, EventArgs e)
+        {
+            textBox1.Lines = text[1].Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries).Where(x => x.Contains(textBox2.Text)).ToArray();
         }
     }
 }

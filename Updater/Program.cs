@@ -19,7 +19,9 @@ namespace Updater
             {
                 foreach (ZipArchiveEntry entry in archive.Entries)
                 {
-                    if (entry.FullName.Contains("."))
+                    if (entry.FullName.EndsWith("/"))
+                        Directory.CreateDirectory(entry.FullName);
+                    else
                     {
                         if (!entry.FullName.Contains("Updater.exe"))
                         {
@@ -27,8 +29,6 @@ namespace Updater
                             entry.ExtractToFile(entry.FullName, true);
                         }
                     }
-                    else
-                        Directory.CreateDirectory(entry.FullName);
                 }
             }
             Console.WriteLine("Done");

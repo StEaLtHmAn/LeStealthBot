@@ -568,5 +568,10 @@ namespace TwitchHelperBot
             });
             form1234.Show();
         }
+
+        private void NotificationMenuStrip_Opened(object sender, EventArgs e)
+        {
+            toolsToolStripMenuItem.ShowDropDown();
+        }
     }
 }

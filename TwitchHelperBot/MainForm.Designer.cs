@@ -72,26 +72,27 @@
             this.quitToolStripMenuItem});
             this.NotificationMenuStrip.Name = "contextMenuStrip1";
             this.NotificationMenuStrip.ShowImageMargin = false;
-            this.NotificationMenuStrip.Size = new System.Drawing.Size(154, 126);
+            this.NotificationMenuStrip.Size = new System.Drawing.Size(156, 148);
+            this.NotificationMenuStrip.Opened += new System.EventHandler(this.NotificationMenuStrip_Opened);
             // 
             // setupPresetsToolStripMenuItem
             // 
             this.setupPresetsToolStripMenuItem.Name = "setupPresetsToolStripMenuItem";
-            this.setupPresetsToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.setupPresetsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.setupPresetsToolStripMenuItem.Text = "Preset Manager";
             this.setupPresetsToolStripMenuItem.Click += new System.EventHandler(this.setupPresetsToolStripMenuItem_Click);
             // 
             // pauseToolStripMenuItem
             // 
             this.pauseToolStripMenuItem.Name = "pauseToolStripMenuItem";
-            this.pauseToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.pauseToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.pauseToolStripMenuItem.Text = "Pause channel edits";
             this.pauseToolStripMenuItem.Click += new System.EventHandler(this.pauseToolStripMenuItem_Click);
             // 
             // toolStripSeparator2
             // 
             this.toolStripSeparator2.Name = "toolStripSeparator2";
-            this.toolStripSeparator2.Size = new System.Drawing.Size(150, 6);
+            this.toolStripSeparator2.Size = new System.Drawing.Size(152, 6);
             // 
             // toolsToolStripMenuItem
             // 
@@ -99,39 +100,39 @@
             this.showViewerListToolStripMenuItem,
             this.AudioMixerToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
-            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.toolsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.toolsToolStripMenuItem.Text = "Tools";
             // 
             // showViewerListToolStripMenuItem
             // 
             this.showViewerListToolStripMenuItem.Name = "showViewerListToolStripMenuItem";
-            this.showViewerListToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.showViewerListToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.showViewerListToolStripMenuItem.Text = "Show Viewer List";
             this.showViewerListToolStripMenuItem.Click += new System.EventHandler(this.showViewerListToolStripMenuItem_Click);
             // 
             // AudioMixerToolStripMenuItem
             // 
             this.AudioMixerToolStripMenuItem.Name = "AudioMixerToolStripMenuItem";
-            this.AudioMixerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.AudioMixerToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
             this.AudioMixerToolStripMenuItem.Text = "Audio Mixer";
             this.AudioMixerToolStripMenuItem.Click += new System.EventHandler(this.AudioMixerToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
             this.settingsToolStripMenuItem.Name = "settingsToolStripMenuItem";
-            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.settingsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.settingsToolStripMenuItem.Text = "Settings";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(150, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(152, 6);
             // 
             // quitToolStripMenuItem
             // 
             this.quitToolStripMenuItem.Name = "quitToolStripMenuItem";
-            this.quitToolStripMenuItem.Size = new System.Drawing.Size(153, 22);
+            this.quitToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.quitToolStripMenuItem.Text = "Quit";
             this.quitToolStripMenuItem.Click += new System.EventHandler(this.quitToolStripMenuItem_Click);
             // 
