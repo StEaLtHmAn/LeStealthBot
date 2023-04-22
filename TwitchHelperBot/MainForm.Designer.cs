@@ -86,7 +86,7 @@
             // 
             this.pauseToolStripMenuItem.Name = "pauseToolStripMenuItem";
             this.pauseToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
-            this.pauseToolStripMenuItem.Text = "Pause channel edits";
+            this.pauseToolStripMenuItem.Text = "Pause Channel Edits";
             this.pauseToolStripMenuItem.Click += new System.EventHandler(this.pauseToolStripMenuItem_Click);
             // 
             // toolStripSeparator2
@@ -106,14 +106,14 @@
             // showViewerListToolStripMenuItem
             // 
             this.showViewerListToolStripMenuItem.Name = "showViewerListToolStripMenuItem";
-            this.showViewerListToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
-            this.showViewerListToolStripMenuItem.Text = "Show Viewer List";
+            this.showViewerListToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.showViewerListToolStripMenuItem.Text = "Viewer List";
             this.showViewerListToolStripMenuItem.Click += new System.EventHandler(this.showViewerListToolStripMenuItem_Click);
             // 
             // AudioMixerToolStripMenuItem
             // 
             this.AudioMixerToolStripMenuItem.Name = "AudioMixerToolStripMenuItem";
-            this.AudioMixerToolStripMenuItem.Size = new System.Drawing.Size(162, 22);
+            this.AudioMixerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.AudioMixerToolStripMenuItem.Text = "Audio Mixer";
             this.AudioMixerToolStripMenuItem.Click += new System.EventHandler(this.AudioMixerToolStripMenuItem_Click);
             // 

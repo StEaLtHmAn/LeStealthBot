@@ -535,9 +535,9 @@ namespace TwitchHelperBot
             paused = !paused;
 
             if (paused)
-                pauseToolStripMenuItem.Text = "Resume channel edits";
+                pauseToolStripMenuItem.Text = "Resume Channel Edits";
             else
-                pauseToolStripMenuItem.Text = "Pause channel edits"; 
+                pauseToolStripMenuItem.Text = "Pause Channel Edits"; 
         }
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
