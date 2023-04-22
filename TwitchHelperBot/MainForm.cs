@@ -174,6 +174,11 @@ namespace TwitchHelperBot
                     NotificationMenuStrip.BackColor = Globals.DarkColour;
                     NotificationMenuStrip.ForeColor = SystemColors.ControlLightLight;
                     NotificationMenuStrip.Renderer = new MyRenderer();
+                    foreach (ToolStripItem item in toolsToolStripMenuItem.DropDownItems)
+                    {
+                        item.BackColor = Globals.DarkColour;
+                        item.ForeColor = SystemColors.ControlLightLight;
+                    }
                 }
             }
             tmp = Globals.iniHelper.Read("ModifyChannelCooldown");
@@ -554,10 +559,13 @@ namespace TwitchHelperBot
 
         private void showViewerListToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            string[] botNamesList = (JObject.Parse(GetBotList())["bots"] as JArray).Select(x => (x as JArray)[0].ToString()).ToArray();
-            JArray Viewers = JObject.Parse(GetChattersList())["data"] as JArray;
-            Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_name"].ToString())).ToList());
-            ResizableTextDisplayForm form1234 = new ResizableTextDisplayForm($"Viewers({Viewers.Count})", string.Join("\n", Viewers.Select(x => (x as JObject)["user_name"].ToString())));
+            ResizableTextDisplayForm form1234 = new ResizableTextDisplayForm(()=>
+            {
+                string[] botNamesList = (JObject.Parse(GetBotList())["bots"] as JArray).Select(x => (x as JArray)[0].ToString()).ToArray();
+                JArray Viewers = JObject.Parse(GetChattersList())["data"] as JArray;
+                Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString())).ToList());
+                return new string[] { $"Viewers({Viewers.Count})", string.Join("\r\n", Viewers.Select(x => (x as JObject)["user_name"].ToString())) };
+            });
             form1234.Show();
         }
     }
