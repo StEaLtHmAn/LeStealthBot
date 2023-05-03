@@ -215,6 +215,12 @@
     <Compile Include="ResizableTextDisplayForm.Designer.cs">
       <DependentUpon>ResizableTextDisplayForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="SpotifyPreviewForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SpotifyPreviewForm.Designer.cs">
+      <DependentUpon>SpotifyPreviewForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="TextInputForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -255,6 +261,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="ResizableTextDisplayForm.resx">
       <DependentUpon>ResizableTextDisplayForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="SpotifyPreviewForm.resx">
+      <DependentUpon>SpotifyPreviewForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="TextInputForm.resx">
       <DependentUpon>TextInputForm.cs</DependentUpon>

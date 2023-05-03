@@ -5,12 +5,16 @@ using RestSharp;
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Drawing.Printing;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -35,6 +39,8 @@ namespace TwitchHelperBot
         public MainForm()
         {
             InitializeComponent();
+
+            ((ToolStripDropDownMenu)toolsToolStripMenuItem.DropDown).ShowImageMargin = false;
 
             if (!checkForUpdates())
             {
@@ -76,7 +82,7 @@ namespace TwitchHelperBot
                         if (asset["content_type"].ToString() == "application/x-zip-compressed")
                         {
                             MessageBox.Show(githubLatestReleaseJson["name"].ToString() + "\r\n\r\n" + githubLatestReleaseJson["body"].ToString(),
-                            "New Updates - Released " + Globals.getRelativeDateTime(DateTime.Parse(githubLatestReleaseJson["published_at"].ToString())), MessageBoxButtons.OK);
+                            "New Updates - Released " + Globals.getRelativeDateTime(DateTime.Parse(githubLatestReleaseJson["published_at"].ToString()).Add(DateTimeOffset.Now.Offset)), MessageBoxButtons.OK);
 
                             //download latest zip
                             client.DownloadFile(asset["browser_download_url"].ToString(), asset["name"].ToString());
@@ -572,6 +578,12 @@ namespace TwitchHelperBot
         private void NotificationMenuStrip_Opened(object sender, EventArgs e)
         {
             toolsToolStripMenuItem.ShowDropDown();
+        }
+
+        private void spotifyPreviewToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            SpotifyPreviewForm sForm = new SpotifyPreviewForm();
+            sForm.Show();
         }
     }
 }

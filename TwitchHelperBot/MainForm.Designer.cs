@@ -42,6 +42,7 @@
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.quitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.spotifyPreviewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.NotificationMenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -98,7 +99,8 @@
             // 
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.showViewerListToolStripMenuItem,
-            this.AudioMixerToolStripMenuItem});
+            this.AudioMixerToolStripMenuItem,
+            this.spotifyPreviewToolStripMenuItem});
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.toolsToolStripMenuItem.Text = "Tools";
@@ -136,6 +138,13 @@
             this.quitToolStripMenuItem.Text = "Quit";
             this.quitToolStripMenuItem.Click += new System.EventHandler(this.quitToolStripMenuItem_Click);
             // 
+            // spotifyPreviewToolStripMenuItem
+            // 
+            this.spotifyPreviewToolStripMenuItem.Name = "spotifyPreviewToolStripMenuItem";
+            this.spotifyPreviewToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.spotifyPreviewToolStripMenuItem.Text = "Spotify Preview";
+            this.spotifyPreviewToolStripMenuItem.Click += new System.EventHandler(this.spotifyPreviewToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -168,5 +177,6 @@
         private System.Windows.Forms.ToolStripMenuItem AudioMixerToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem showViewerListToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem spotifyPreviewToolStripMenuItem;
     }
 }
