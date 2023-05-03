@@ -16,7 +16,7 @@ namespace TwitchHelperBot
     {
         string SpotifyToken = string.Empty;
         string clientId = "05d20a65f2104bc3acbede97d3a2a928";
-        string clientSecret = "c2ce80595bb24152ba4c5fbfac2e0a6e";
+        string clientSecret = "-";
 
         [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
         private static extern IntPtr CreateRoundRectRgn
