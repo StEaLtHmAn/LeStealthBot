@@ -17,7 +17,7 @@ namespace TwitchHelperBot
     {
         string SpotifyToken = string.Empty;
         string clientId = "05d20a65f2104bc3acbede97d3a2a928";
-        string clientSecret = "-";
+        string clientSecret = "c2ce80595bb24152ba4c5fbfac2e0a6e";
 
         [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
         private static extern IntPtr CreateRoundRectRgn
@@ -70,6 +70,8 @@ namespace TwitchHelperBot
 
             if (string.IsNullOrEmpty(response.Content) || !response.Content.StartsWith("{"))
                 return;
+            if(response.Content.Contains("The access token expired"))
+                SpotifyToken = string.Empty;
 
             try
             {
@@ -83,6 +85,7 @@ namespace TwitchHelperBot
                 string name = string.Empty;
                 string imageURL = string.Empty;
                 string Artists = string.Empty;
+                duration_ms = 0;
                 if (trackData.ContainsKey("item") && trackData["item"] is JObject)
                 {
                     if ((trackData["item"] as JObject).ContainsKey("duration_ms"))
@@ -119,13 +122,9 @@ namespace TwitchHelperBot
 
                 label1.Text = name;
                 label2.Text = Artists;
-                if (progress_ms != 0 && duration_ms == 0)
+                label3.Text = TimeSpan.FromMilliseconds(progress_ms).ToString("m':'ss") + "/" + TimeSpan.FromMilliseconds(duration_ms).ToString("m':'ss");
+                if (progress_ms != 0 && duration_ms != 0)
                 {
-                    label3.Text = TimeSpan.FromMilliseconds(progress_ms).ToString("m':'ss");
-                }
-                else if (progress_ms != 0 && duration_ms != 0)
-                {
-                    label3.Text = TimeSpan.FromMilliseconds(progress_ms).ToString("m':'ss") + "/" + TimeSpan.FromMilliseconds(duration_ms).ToString("m':'ss");
                     panel2.Width = (int)(progress_ms / (double)duration_ms * 170);
                 }
             }
@@ -181,7 +180,7 @@ namespace TwitchHelperBot
                 request.AddParameter("redirect_uri", "http://localhost/");
                 RestResponse response = client.Execute(request);
 
-                if (string.IsNullOrEmpty(response.Content) || !response.Content.StartsWith("{"))
+                if (string.IsNullOrEmpty(response.Content) || !response.Content.StartsWith("{") || !response.Content.Contains("access_token"))
                     return;
 
                 SpotifyToken = JObject.Parse(response.Content)["access_token"].ToString();
@@ -215,7 +214,7 @@ namespace TwitchHelperBot
                 }
                 else if (progress_ms + offset <= duration_ms)
                 {
-                    label3.Text = TimeSpan.FromMilliseconds(progress_ms + offset).ToString("m':'ss") + "/" + TimeSpan.FromMilliseconds(duration_ms).ToString("mm':'ss");
+                    label3.Text = TimeSpan.FromMilliseconds(progress_ms + offset).ToString("m':'ss") + "/" + TimeSpan.FromMilliseconds(duration_ms).ToString("m':'ss");
                     panel2.Width = (int)((progress_ms + offset) / (double)duration_ms * 170);
                 }
             }
