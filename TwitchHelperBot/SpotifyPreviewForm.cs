@@ -9,6 +9,7 @@ using RestSharp;
 using System.Runtime.InteropServices;
 using System.IO;
 using System.Net;
+using System.Linq;
 
 namespace TwitchHelperBot
 {
@@ -39,14 +40,24 @@ namespace TwitchHelperBot
         public SpotifyPreviewForm()
         {
             InitializeComponent();
-            Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 20, 20));
+            Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 15, 15));
 
+            if (Application.OpenForms.OfType<SpotifyPreviewForm>().Count() > 0)
+            {
+                Globals.DelayAction(0, new Action(() => { Dispose(); }));
+                return;
+            }
+
+            SpotifyToken = Globals.iniHelper.Read("SpotifyToken");
+            if(!string.IsNullOrEmpty(SpotifyToken))
+                timer1.Enabled = true;
             GetSpotifyCurrentTrack();
         }
 
         long stamp = 0;
         int progress_ms = 0;
         int duration_ms = 0;
+        bool is_playing = false;
         private void GetSpotifyCurrentTrack()
         {
             if (string.IsNullOrEmpty(SpotifyToken))
@@ -64,39 +75,61 @@ namespace TwitchHelperBot
             {
                 JObject trackData = JObject.Parse(response.Content);
                 stamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                progress_ms = int.Parse(trackData["progress_ms"].ToString());
-                duration_ms = int.Parse(trackData["item"]["duration_ms"].ToString());
-                string id = trackData["item"]["id"].ToString();
-                string name = trackData["item"]["name"].ToString();
-                //string album = trackData["item"]["album"]["name"].ToString();
+                if (trackData.ContainsKey("progress_ms"))
+                    progress_ms = int.Parse(trackData["progress_ms"].ToString());
+                if (trackData.ContainsKey("is_playing"))
+                    is_playing = trackData.Value<bool>("is_playing");
+                string id = string.Empty;
+                string name = string.Empty;
                 string imageURL = string.Empty;
-                int imageSizeTmp = 0;
-                foreach (JObject imageItem in trackData["item"]["album"]["images"] as JArray)
-                {
-                    if (int.Parse(imageItem["width"].ToString()) > imageSizeTmp)
-                    {
-                        imageSizeTmp = int.Parse(imageItem["width"].ToString());
-                        imageURL = imageItem["url"].ToString();
-                    }
-                }
                 string Artists = string.Empty;
-                foreach (JObject artistItem in trackData["item"]["artists"] as JArray)
+                if (trackData.ContainsKey("item") && trackData["item"] is JObject)
                 {
-                    if (!string.IsNullOrEmpty(Artists))
-                        Artists += ", ";
-                    Artists += artistItem["name"].ToString();
+                    if ((trackData["item"] as JObject).ContainsKey("duration_ms"))
+                        duration_ms = int.Parse(trackData["item"]["duration_ms"].ToString());
+                    if ((trackData["item"] as JObject).ContainsKey("id"))
+                        id = trackData["item"]["id"].ToString();
+                    if ((trackData["item"] as JObject).ContainsKey("name"))
+                        name = trackData["item"]["name"].ToString();
+                    int imageSizeTmp = 0;
+                    if ((trackData["item"] as JObject).ContainsKey("album") && (trackData["item"]["album"] as JObject).ContainsKey("images"))
+                        foreach (JObject imageItem in trackData["item"]["album"]["images"] as JArray)
+                        {
+                            if (int.Parse(imageItem["width"].ToString()) > imageSizeTmp)
+                            {
+                                imageSizeTmp = int.Parse(imageItem["width"].ToString());
+                                imageURL = imageItem["url"].ToString();
+                            }
+                        }
+                    if ((trackData["item"] as JObject).ContainsKey("artists"))
+                        foreach (JObject artistItem in trackData["item"]["artists"] as JArray)
+                        {
+                            if (!string.IsNullOrEmpty(Artists))
+                                Artists += ", ";
+                            Artists += artistItem["name"].ToString();
+                        }
                 }
 
-                if (pictureBox1.Image != null)
-                    pictureBox1.Image.Dispose();
-                pictureBox1.Image = GetImageFromURL(imageURL, id);
+                if (!string.IsNullOrEmpty(imageURL))
+                {
+                    if (pictureBox1.Image != null)
+                        pictureBox1.Image.Dispose();
+                    pictureBox1.Image = GetImageFromURL(imageURL, id);
+                }
 
                 label1.Text = name;
                 label2.Text = Artists;
-                label3.Text = TimeSpan.FromMilliseconds(progress_ms).ToString("mm':'ss")+"/"+ TimeSpan.FromMilliseconds(duration_ms).ToString("mm':'ss");
-                panel1.Width = (int)(progress_ms / (double)duration_ms * 192);
+                if (progress_ms != 0 && duration_ms == 0)
+                {
+                    label3.Text = TimeSpan.FromMilliseconds(progress_ms).ToString("m':'ss");
+                }
+                else if (progress_ms != 0 && duration_ms != 0)
+                {
+                    label3.Text = TimeSpan.FromMilliseconds(progress_ms).ToString("m':'ss") + "/" + TimeSpan.FromMilliseconds(duration_ms).ToString("m':'ss");
+                    panel2.Width = (int)(progress_ms / (double)duration_ms * 170);
+                }
             }
-            catch
+            catch(Exception ex)
             {
                 SpotifyToken = string.Empty;
             }
@@ -152,6 +185,8 @@ namespace TwitchHelperBot
                     return;
 
                 SpotifyToken = JObject.Parse(response.Content)["access_token"].ToString();
+                Globals.iniHelper.Write("SpotifyToken", SpotifyToken);
+                timer1.Enabled = true;
             }
         }
 
@@ -171,7 +206,7 @@ namespace TwitchHelperBot
 
         private void timer2_Tick(object sender, EventArgs e)
         {
-            if (stamp != 0)
+            if (is_playing && stamp != 0)
             {
                 int offset = (int)(DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - stamp);
                 if (progress_ms + offset + 999 > duration_ms)
@@ -180,8 +215,8 @@ namespace TwitchHelperBot
                 }
                 else if (progress_ms + offset <= duration_ms)
                 {
-                    label3.Text = TimeSpan.FromMilliseconds(progress_ms + offset).ToString("mm':'ss") + "/" + TimeSpan.FromMilliseconds(duration_ms).ToString("mm':'ss");
-                    panel1.Width = (int)((progress_ms + offset) / (double)duration_ms * 192);
+                    label3.Text = TimeSpan.FromMilliseconds(progress_ms + offset).ToString("m':'ss") + "/" + TimeSpan.FromMilliseconds(duration_ms).ToString("mm':'ss");
+                    panel2.Width = (int)((progress_ms + offset) / (double)duration_ms * 170);
                 }
             }
         }
