@@ -582,6 +582,12 @@ namespace TwitchHelperBot
 
         private void spotifyPreviewToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (Application.OpenForms.OfType<SpotifyPreviewForm>().Count() > 0)
+            {
+                Application.OpenForms.OfType<SpotifyPreviewForm>().First().Dispose();
+                return;
+            }
+
             SpotifyPreviewForm sForm = new SpotifyPreviewForm();
             sForm.Show();
         }

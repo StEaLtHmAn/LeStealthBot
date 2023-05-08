@@ -122,13 +122,13 @@ namespace TwitchHelperBot
 
                 label1.Text = name;
                 label2.Text = Artists;
-                label3.Text = TimeSpan.FromMilliseconds(progress_ms).ToString("m':'ss") + "/" + TimeSpan.FromMilliseconds(duration_ms).ToString("m':'ss");
+                label3.Text = TimeSpan.FromMilliseconds(progress_ms).ToString("m':'ss") + " / " + TimeSpan.FromMilliseconds(duration_ms).ToString("m':'ss");
                 if (progress_ms != 0 && duration_ms != 0)
                 {
                     panel2.Width = (int)(progress_ms / (double)duration_ms * 170);
                 }
             }
-            catch(Exception ex)
+            catch//(Exception ex)
             {
                 SpotifyToken = string.Empty;
             }
@@ -214,7 +214,7 @@ namespace TwitchHelperBot
                 }
                 else if (progress_ms + offset <= duration_ms)
                 {
-                    label3.Text = TimeSpan.FromMilliseconds(progress_ms + offset).ToString("m':'ss") + "/" + TimeSpan.FromMilliseconds(duration_ms).ToString("m':'ss");
+                    label3.Text = TimeSpan.FromMilliseconds(progress_ms + offset).ToString("m':'ss") + " / " + TimeSpan.FromMilliseconds(duration_ms).ToString("m':'ss");
                     panel2.Width = (int)((progress_ms + offset) / (double)duration_ms * 170);
                 }
             }
