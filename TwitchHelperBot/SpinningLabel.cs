@@ -17,7 +17,7 @@ namespace TwitchHelperBot
 
         public SpinningLabel()
         {
-            spinningTimer.Interval = TimeSpan.FromMilliseconds(1000);
+            spinningTimer.Interval = TimeSpan.FromMilliseconds(400);
             spinningTimer.Tick += delegate
             {
                 try
