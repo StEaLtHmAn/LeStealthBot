@@ -215,6 +215,9 @@
     <Compile Include="ResizableTextDisplayForm.Designer.cs">
       <DependentUpon>ResizableTextDisplayForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="SpinningLabel.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="SpotifyPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
