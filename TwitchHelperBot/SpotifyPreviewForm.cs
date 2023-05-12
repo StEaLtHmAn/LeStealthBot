@@ -16,19 +16,17 @@ namespace TwitchHelperBot
     public partial class SpotifyPreviewForm : Form
     {
         string SpotifyToken = string.Empty;
-        string clientId = "-";
-        string clientSecret = "-";
 
-        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
-        private static extern IntPtr CreateRoundRectRgn
-        (
-            int nLeftRect,     // x-coordinate of upper-left corner
-            int nTopRect,      // y-coordinate of upper-left corner
-            int nRightRect,    // x-coordinate of lower-right corner
-            int nBottomRect,   // y-coordinate of lower-right corner
-            int nWidthEllipse, // width of ellipse
-            int nHeightEllipse // height of ellipse
-        );
+        //[DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        //private static extern IntPtr CreateRoundRectRgn
+        //(
+        //    int nLeftRect,     // x-coordinate of upper-left corner
+        //    int nTopRect,      // y-coordinate of upper-left corner
+        //    int nRightRect,    // x-coordinate of lower-right corner
+        //    int nBottomRect,   // y-coordinate of lower-right corner
+        //    int nWidthEllipse, // width of ellipse
+        //    int nHeightEllipse // height of ellipse
+        //);
         public const int WM_NCLBUTTONDOWN = 0xA1;
         public const int HT_CAPTION = 0x2;
 
@@ -40,7 +38,7 @@ namespace TwitchHelperBot
         public SpotifyPreviewForm()
         {
             InitializeComponent();
-            Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 15, 15));
+            //Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 15, 15));
 
             if (Application.OpenForms.OfType<SpotifyPreviewForm>().Count() > 0)
             {
@@ -136,9 +134,12 @@ namespace TwitchHelperBot
 
         private void SpotifyAuth()
         {
-            BrowserForm form = new BrowserForm($"https://accounts.spotify.com/authorize?client_id={clientId}&redirect_uri=" + "http://localhost/" + "&response_type=code&scope=user-read-currently-playing");
-            form.webView2.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_SpotifyAuthNavigationCompleted);
-            form.ShowDialog();
+            if (Application.OpenForms.OfType<BrowserForm>().Count() == 0)
+            {
+                BrowserForm form = new BrowserForm($"https://accounts.spotify.com/authorize?client_id={secrets.clientId}&redirect_uri=" + "http://localhost/" + "&response_type=code&scope=user-read-currently-playing");
+                form.webView2.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_SpotifyAuthNavigationCompleted);
+                form.ShowDialog();
+            }
         }
 
         private Image GetImageFromURL(string url, string filename)
@@ -174,7 +175,7 @@ namespace TwitchHelperBot
 
                 RestClient client = new RestClient();
                 RestRequest request = new RestRequest("https://accounts.spotify.com/api/token", Method.Post);
-                request.AddHeader("Authorization", "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(clientId + ":" + clientSecret)));
+                request.AddHeader("Authorization", "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(secrets.clientId + ":" + secrets.clientSecret)));
                 request.AddParameter("grant_type", "authorization_code");
                 request.AddParameter("code", SpotifyCode);
                 request.AddParameter("redirect_uri", "http://localhost/");
