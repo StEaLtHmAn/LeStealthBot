@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -16,6 +17,7 @@ namespace TwitchHelperBot
         public static Dictionary<string, string> CategoryCache = new Dictionary<string, string>();
         public static string access_token = null;
         public static string clientId = null;
+        public static JObject userDetailsResponse;
 
         public static void LogMessage(string message)
         {

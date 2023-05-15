@@ -5,16 +5,12 @@ using RestSharp;
 using System;
 using System.Diagnostics;
 using System.Drawing;
-using System.Drawing.Printing;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -29,7 +25,6 @@ namespace TwitchHelperBot
         [DllImport("User32.dll")]
         public static extern int GetWindowThreadProcessId(int hWnd, out int lpdwProcessId);
 
-        private JObject userDetailsResponse;
         private string loginName = null;
         private string RedirectURI = null;
         private int currentWindowID = -1;
@@ -223,10 +218,10 @@ namespace TwitchHelperBot
             }
 
             //get user details
-            userDetailsResponse = JObject.Parse(GetUserDetails());
+            Globals.userDetailsResponse = JObject.Parse(GetUserDetails());
 
             //show welcome message
-            OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {userDetailsResponse["data"][0]["display_name"]}", userDetailsResponse["data"][0]["profile_image_url"].ToString(), userDetailsResponse["data"][0]["id"].ToString());
+            OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {Globals.userDetailsResponse["data"][0]["display_name"]}", Globals.userDetailsResponse["data"][0]["profile_image_url"].ToString(), Globals.userDetailsResponse["data"][0]["id"].ToString());
             form123.Show();
         }
 
@@ -404,7 +399,7 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             client.AddDefaultHeader("Content-Type", "application/json");
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/channels", Method.Patch);
-            request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             JObject parameters = new JObject();
             if (!string.IsNullOrEmpty(game_id))
                 parameters.Add("game_id", game_id);
@@ -415,40 +410,6 @@ namespace TwitchHelperBot
             if(!response.IsSuccessful)
                 Globals.LogMessage("UpdateChannelInfo exception: " + response.Content);
             return response.IsSuccessful;
-        }
-
-        public string GetChattersList()
-        {
-            RestClient client = new RestClient();
-            client.AddDefaultHeader("Client-ID", Globals.clientId);
-            client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
-            RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
-            request.AddQueryParameter("moderator_id", userDetailsResponse["data"][0]["id"].ToString());
-            request.AddQueryParameter("first", 1000);
-            RestResponse response = client.Execute(request);
-            return response.Content;
-        }
-
-        public string GetBotList()
-        {
-            //try get data from file
-            if (File.Exists("botList.data"))
-            {
-                string[] lines = File.ReadAllLines("botList.data");
-                if (DateTime.UtcNow - DateTime.Parse(lines[0]) <= TimeSpan.FromDays(1))
-                    return string.Join("\n", lines.Skip(1));
-            }
-
-            //if we cant find the file or if the file is old then we download a new file
-
-            RestClient client = new RestClient();
-            RestRequest request = new RestRequest("https://api.twitchinsights.net/v1/bots/all", Method.Get);
-            RestResponse response = client.Execute(request);
-
-            File.WriteAllText("botList.data", DateTime.UtcNow.ToString()+ "\n"+ response.Content);
-
-            return response.Content;
         }
 
         private void updateChannelInfoTimer_Tick(object sender, EventArgs e)
@@ -565,13 +526,7 @@ namespace TwitchHelperBot
 
         private void showViewerListToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            ResizableTextDisplayForm form1234 = new ResizableTextDisplayForm(()=>
-            {
-                string[] botNamesList = (JObject.Parse(GetBotList())["bots"] as JArray).Select(x => (x as JArray)[0].ToString()).ToArray();
-                JArray Viewers = JObject.Parse(GetChattersList())["data"] as JArray;
-                Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString())).ToList());
-                return new string[] { $"Viewers({Viewers.Count})", string.Join("\r\n", Viewers.Select(x => (x as JObject)["user_name"].ToString())) };
-            });
+            ResizableTextDisplayForm form1234 = new ResizableTextDisplayForm();
             form1234.Show();
         }
 
