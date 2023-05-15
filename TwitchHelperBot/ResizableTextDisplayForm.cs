@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
@@ -32,6 +33,7 @@ namespace TwitchHelperBot
 
         private async void timer1_Tick(object sender, EventArgs e)
         {
+            timer1.Enabled = false;
             await Task.Run(() => {
                 try
                 {
@@ -40,11 +42,11 @@ namespace TwitchHelperBot
                     Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString())).ToList());
                     string[] ViewerNames = Viewers.Select(x => (x as JObject)["user_name"].ToString()).ToArray();
 
-                    if (AverageViewers == 0)
+                    if (AverageViewers == 0 || ViewerNames.Length == 0)
                         AverageViewers = ViewerNames.Length;
                     else
                         AverageViewers = (AverageViewers + ViewerNames.Length) / 2d;
-
+                    StringBuilder builder = new StringBuilder();
                     foreach (string name in ViewerNames)
                     {
                         if (WatchTimeDictionary.ContainsKey(name))
@@ -56,24 +58,29 @@ namespace TwitchHelperBot
                             WatchTimeDictionary.Add(name, TimeSpan.Zero);
                         }
                     }
+                    int count = 1;
+                    foreach (KeyValuePair<string, TimeSpan> kvp in WatchTimeDictionary.OrderByDescending(x => x.Value).OrderBy(x => x.Key))
+                    {
+                        if (kvp.Key.Contains(textBox2.Text))
+                        {
+                            builder.AppendLine($"{count}. {kvp.Key} - ({kvp.Value:hh':'mm':'ss})");
+                            count++;
+                        }
+                    }
 
                     Invoke(new Action(() =>
                     {
                         try
                         {
                             Text = $"Viewers - sum: {Viewers.Count} avg: {AverageViewers:#.##}";
-                            textBox1.Clear();
-                            foreach (string name in ViewerNames.Where(x => x.Contains(textBox2.Text)).ToArray())
-                            {
-                                textBox1.Text += $"{name} ({WatchTimeDictionary[name]:hh':'mm':'ss})\r\n";
-                            }
-                            //textBox1.Lines = ViewerNames.Where(x => x.Contains(textBox2.Text)).ToArray();
+                            textBox1.Text = builder.ToString();
                         }
                         catch{ }
                     }));
                 }
                 catch { }
             });
+            timer1.Enabled = true;
         }
 
         public string GetChattersList()
@@ -82,7 +89,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);

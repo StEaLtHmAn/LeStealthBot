@@ -48,6 +48,7 @@
             this.textBox1.Size = new System.Drawing.Size(203, 313);
             this.textBox1.TabIndex = 0;
             this.textBox1.TabStop = false;
+            this.textBox1.WordWrap = false;
             // 
             // textBox2
             // 
@@ -71,7 +72,7 @@
             // timer1
             // 
             this.timer1.Enabled = true;
-            this.timer1.Interval = 1000;
+            this.timer1.Interval = 3000;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // ResizableTextDisplayForm
