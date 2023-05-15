@@ -24,58 +24,93 @@ namespace TwitchHelperBot
             Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
         }
 
-        double AverageViewers = 0;
-
         private void textBox2_TextChanged(object sender, EventArgs e)
         {
-            textBox1.Lines = ViewerNames.Where(x => x.Contains(textBox2.Text)).ToArray();
+            richTextBox1.Clear();
+            int count = 1;
+            foreach (KeyValuePair<string, TimeSpan> kvp in WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key))
+            {
+                if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
+                {
+                    if (ViewerNames.Contains(kvp.Key))
+                    {
+                        AppendText($"{count}. {kvp.Key} - ({kvp.Value:hh':'mm':'ss})", richTextBox1.ForeColor);
+                        count++;
+                    }
+                    else
+                    {
+                        AppendText($"{kvp.Key} - ({kvp.Value:hh':'mm':'ss})", Color.Red);
+                    }
+                }
+            }
         }
 
         private async void timer1_Tick(object sender, EventArgs e)
         {
             timer1.Enabled = false;
-            await Task.Run(() => {
+            await Task.Run(() =>
+            {
                 try
                 {
                     string[] botNamesList = (JObject.Parse(GetBotList())["bots"] as JArray).Select(x => (x as JArray)[0].ToString()).ToArray();
-                    JArray Viewers = JObject.Parse(GetChattersList())["data"] as JArray;
+                    JArray Viewers = GetChattersList();
                     Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString())).ToList());
-                    string[] ViewerNames = Viewers.Select(x => (x as JObject)["user_name"].ToString()).ToArray();
+                    ViewerNames = Viewers.Select(x => (x as JObject)["user_name"].ToString()).ToArray();
 
-                    if (AverageViewers == 0 || ViewerNames.Length == 0)
-                        AverageViewers = ViewerNames.Length;
-                    else
-                        AverageViewers = (AverageViewers + ViewerNames.Length) / 2d;
-                    StringBuilder builder = new StringBuilder();
+                    TimeSpan span = DateTime.UtcNow - lastCheck;
+                    lastCheck = DateTime.UtcNow;
                     foreach (string name in ViewerNames)
                     {
                         if (WatchTimeDictionary.ContainsKey(name))
                         {
-                            WatchTimeDictionary[name] += DateTime.UtcNow - lastCheck;
+                            WatchTimeDictionary[name] += span;
                         }
                         else
                         {
                             WatchTimeDictionary.Add(name, TimeSpan.Zero);
                         }
                     }
-                    int count = 1;
-                    foreach (KeyValuePair<string, TimeSpan> kvp in WatchTimeDictionary.OrderByDescending(x => x.Value).OrderBy(x => x.Key))
+                    Invoke(new Action(() =>
                     {
-                        if (ViewerNames.Contains(kvp.Key) && kvp.Key.Contains(textBox2.Text))
+                        try
                         {
-                            builder.AppendLine($"{count}. {kvp.Key} - ({kvp.Value:hh':'mm':'ss})");
-                            count++;
+                            richTextBox1.Clear();
                         }
+                        catch { }
+                    }));
+                    int count = 1;
+                    double totalHours = 0;
+                    foreach (KeyValuePair<string, TimeSpan> kvp in WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key))
+                    {
+                        if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
+                        {
+                            Invoke(new Action(() =>
+                            {
+                                try
+                                {
+                                    if (ViewerNames.Contains(kvp.Key))
+                                    {
+                                        AppendText($"{count}. {kvp.Key} - ({kvp.Value:hh':'mm':'ss})", richTextBox1.ForeColor);
+                                        count++;
+                                    }
+                                    else
+                                    {
+                                        AppendText($"{kvp.Key} - ({kvp.Value:hh':'mm':'ss})", Color.Red);
+                                    }
+                                }
+                                catch { }
+                            }));
+                        }
+                        totalHours += kvp.Value.TotalHours;
                     }
 
                     Invoke(new Action(() =>
                     {
                         try
                         {
-                            Text = $"Viewers - sum: {Viewers.Count} avg: {AverageViewers:#.##}";
-                            textBox1.Text = builder.ToString();
+                            Text = $"Viewers - count: {Viewers.Count} combined hrs: {totalHours:0.##}";
                         }
-                        catch{ }
+                        catch { }
                     }));
                 }
                 catch { }
@@ -83,8 +118,19 @@ namespace TwitchHelperBot
             timer1.Enabled = true;
         }
 
-        public string GetChattersList()
+        public void AppendText(string text, Color color)
         {
+            richTextBox1.SuspendLayout();
+            richTextBox1.SelectionColor = color;
+            richTextBox1.AppendText($"{text}{Environment.NewLine}");
+            richTextBox1.ScrollToCaret();
+            richTextBox1.ResumeLayout();
+        }
+
+        public JArray GetChattersList()
+        {
+            JArray Viewers = new JArray();
+
             RestClient client = new RestClient();
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
@@ -94,7 +140,26 @@ namespace TwitchHelperBot
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
-            return response.Content;
+            JObject data = JObject.Parse(response.Content);
+            Viewers = data["data"] as JArray;
+
+            while (data?["pagination"]?["cursor"] != null)
+            {
+                client = new RestClient();
+                client.AddDefaultHeader("Client-ID", Globals.clientId);
+                client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+                request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
+                //request.AddQueryParameter("broadcaster_id", "526375465");
+                request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+                request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+                request.AddQueryParameter("first", 1000);
+                request.AddQueryParameter("after", data["pagination"]["cursor"].ToString());
+                response = client.Execute(request);
+                data = JObject.Parse(response.Content);
+                Viewers.Merge(data["data"]);
+            }
+
+            return Viewers;
         }
 
         public string GetBotList()
