@@ -61,7 +61,7 @@ namespace TwitchHelperBot
                     int count = 1;
                     foreach (KeyValuePair<string, TimeSpan> kvp in WatchTimeDictionary.OrderByDescending(x => x.Value).OrderBy(x => x.Key))
                     {
-                        if (kvp.Key.Contains(textBox2.Text))
+                        if (ViewerNames.Contains(kvp.Key) && kvp.Key.Contains(textBox2.Text))
                         {
                             builder.AppendLine($"{count}. {kvp.Key} - ({kvp.Value:hh':'mm':'ss})");
                             count++;
@@ -89,8 +89,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            request.AddQueryParameter("broadcaster_id", "526375465");
-            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            //request.AddQueryParameter("broadcaster_id", "526375465");
+            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
