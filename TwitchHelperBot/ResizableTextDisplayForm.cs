@@ -41,7 +41,7 @@ namespace TwitchHelperBot
             TimeSpan totalDuration = SessionDuration;
             double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours);
             double totalHours = SessionHoursWatched;
-            double currentAverage = ViewerCountPerMinute.Average();
+            double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
             double TotalAverage = currentAverage;
             int peakViewers = WatchTimeDictionary.Count;
             foreach (SessionData session in Sessions)
@@ -56,7 +56,7 @@ namespace TwitchHelperBot
             AppendText(
 
                 $"Overall Stats:{Environment.NewLine}" +
-                $"- Session Count: {Sessions.Count:hh':'mm':'ss}{Environment.NewLine}" +
+                $"- Session Count: {Sessions.Count}{Environment.NewLine}" +
                 $"- Duration: {totalDuration:hh':'mm':'ss}{Environment.NewLine}" +
                 $"- Average / Peak Viewers: {TotalAverage / (Sessions.Count+1):0.##} / {peakViewers}{Environment.NewLine}" +
                 $"- Hours Watched: {totalHours + WatchTimeDictionary.Sum(x => x.Value.TotalHours):0.##}{Environment.NewLine}"
@@ -128,7 +128,7 @@ namespace TwitchHelperBot
                             TimeSpan totalDuration = SessionDuration;
                             double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours);
                             double totalHours = SessionHoursWatched;
-                            double currentAverage = ViewerCountPerMinute.Average();
+                            double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
                             double TotalAverage = currentAverage;
                             int peakViewers = WatchTimeDictionary.Count;
                             foreach (SessionData session in Sessions)
@@ -143,7 +143,7 @@ namespace TwitchHelperBot
                             AppendText(
 
                                 $"Overall Stats:{Environment.NewLine}" +
-                                $"- Session Count: {Sessions.Count:hh':'mm':'ss}{Environment.NewLine}" +
+                                $"- Session Count: {Sessions.Count}{Environment.NewLine}" +
                                 $"- Duration: {totalDuration:hh':'mm':'ss}{Environment.NewLine}" +
                                 $"- Average / Peak Viewers: {TotalAverage / (Sessions.Count + 1):0.##} / {peakViewers}{Environment.NewLine}" +
                                 $"- Hours Watched: {totalHours + WatchTimeDictionary.Sum(x => x.Value.TotalHours):0.##}{Environment.NewLine}"
@@ -261,7 +261,7 @@ namespace TwitchHelperBot
             {
                 DateTimeStarted = sessionStart,
                 DateTimeEnded = DateTime.UtcNow,
-                AverageViewerCount = ViewerCountPerMinute.Average(),
+                AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
                 PeakViewerCount = WatchTimeDictionary.Count,
                 CombinedHoursWatched = WatchTimeDictionary.Sum(x=> x.Value.TotalHours),
                 WatchTimeData = WatchTimeDictionary
