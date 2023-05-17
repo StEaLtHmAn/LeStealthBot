@@ -1,6 +1,8 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
@@ -9,24 +11,67 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
+using static System.Collections.Specialized.BitVector32;
 
 namespace TwitchHelperBot
 {
     public partial class ResizableTextDisplayForm : Form
     {
         private string[] ViewerNames = new string[0];
+        List<SessionData> Sessions = new List<SessionData>();
         private Dictionary<string, TimeSpan> WatchTimeDictionary = new Dictionary<string, TimeSpan>();
+        List<int> ViewerCountPerMinute = new List<int>();
+        private DateTime lastViewerCountCheck = DateTime.UtcNow;
         private DateTime lastCheck = DateTime.UtcNow;
+        private DateTime sessionStart = DateTime.UtcNow;
         public ResizableTextDisplayForm()
         {
             InitializeComponent();
 
             Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
+            if(File.Exists("WatchTimeSessions.json"))
+                Sessions = JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json"));
         }
 
         private void textBox2_TextChanged(object sender, EventArgs e)
         {
             richTextBox1.Clear();
+
+            TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
+            TimeSpan totalDuration = SessionDuration;
+            double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours);
+            double totalHours = SessionHoursWatched;
+            double currentAverage = ViewerCountPerMinute.Average();
+            double TotalAverage = currentAverage;
+            int peakViewers = WatchTimeDictionary.Count;
+            foreach (SessionData session in Sessions)
+            {
+                totalDuration += session.DateTimeEnded - session.DateTimeStarted;
+                TotalAverage += session.AverageViewerCount;
+                totalHours += session.WatchTimeData.Sum(x => x.Value.TotalHours);
+                if(session.PeakViewerCount > peakViewers)
+                    peakViewers = session.PeakViewerCount;
+            }
+
+            AppendText(
+
+                $"Overall Stats:{Environment.NewLine}" +
+                $"- Session Count: {Sessions.Count:hh':'mm':'ss}{Environment.NewLine}" +
+                $"- Duration: {totalDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                $"- Average / Peak Viewers: {TotalAverage / (Sessions.Count+1):0.##} / {peakViewers}{Environment.NewLine}" +
+                $"- Hours Watched: {totalHours + WatchTimeDictionary.Sum(x => x.Value.TotalHours):0.##}{Environment.NewLine}"
+
+                , Color.Gold);
+            AppendText(
+
+                $"Session Stats:{Environment.NewLine}" +
+                $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                $"- Average / Peak Viewers: {currentAverage:0.##} / {WatchTimeDictionary.Count}{Environment.NewLine}" +
+                $"- Hours Watched: {SessionHoursWatched:0.##}{Environment.NewLine}" +
+                $"{Environment.NewLine}"
+
+                , Color.Green);
+
             int count = 1;
             foreach (KeyValuePair<string, TimeSpan> kvp in WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key))
             {
@@ -34,12 +79,12 @@ namespace TwitchHelperBot
                 {
                     if (ViewerNames.Contains(kvp.Key))
                     {
-                        AppendText($"{count}. {kvp.Key} - ({kvp.Value:hh':'mm':'ss})", richTextBox1.ForeColor);
+                        AppendText($"{count}. {kvp.Key} - ({kvp.Value:hh':'mm':'ss}){Environment.NewLine}", richTextBox1.ForeColor);
                         count++;
                     }
                     else
                     {
-                        AppendText($"{kvp.Key} - ({kvp.Value:hh':'mm':'ss})", Color.Red);
+                        AppendText($"{kvp.Key} - ({kvp.Value:hh':'mm':'ss}){Environment.NewLine}", Color.Red);
                     }
                 }
             }
@@ -57,6 +102,9 @@ namespace TwitchHelperBot
                     Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString())).ToList());
                     ViewerNames = Viewers.Select(x => (x as JObject)["user_name"].ToString()).ToArray();
 
+                    TimeSpan lastViewerCountSpan = DateTime.UtcNow - lastViewerCountCheck;
+                    if (lastViewerCountSpan.TotalMinutes >= 1 || ViewerCountPerMinute.Count == 0)
+                        ViewerCountPerMinute.Add(Viewers.Count);
                     TimeSpan span = DateTime.UtcNow - lastCheck;
                     lastCheck = DateTime.UtcNow;
                     foreach (string name in ViewerNames)
@@ -75,11 +123,45 @@ namespace TwitchHelperBot
                         try
                         {
                             richTextBox1.Clear();
+
+                            TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
+                            TimeSpan totalDuration = SessionDuration;
+                            double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours);
+                            double totalHours = SessionHoursWatched;
+                            double currentAverage = ViewerCountPerMinute.Average();
+                            double TotalAverage = currentAverage;
+                            int peakViewers = WatchTimeDictionary.Count;
+                            foreach (SessionData session in Sessions)
+                            {
+                                totalDuration += session.DateTimeEnded - session.DateTimeStarted;
+                                TotalAverage += session.AverageViewerCount;
+                                totalHours += session.WatchTimeData.Sum(x => x.Value.TotalHours);
+                                if (session.PeakViewerCount > peakViewers)
+                                    peakViewers = session.PeakViewerCount;
+                            }
+
+                            AppendText(
+
+                                $"Overall Stats:{Environment.NewLine}" +
+                                $"- Session Count: {Sessions.Count:hh':'mm':'ss}{Environment.NewLine}" +
+                                $"- Duration: {totalDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                                $"- Average / Peak Viewers: {TotalAverage / (Sessions.Count + 1):0.##} / {peakViewers}{Environment.NewLine}" +
+                                $"- Hours Watched: {totalHours + WatchTimeDictionary.Sum(x => x.Value.TotalHours):0.##}{Environment.NewLine}"
+
+                                , Color.Gold);
+                            AppendText(
+
+                                $"Session Stats:{Environment.NewLine}" +
+                                $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                                $"- Average / Peak Viewers: {currentAverage:0.##} / {WatchTimeDictionary.Count}{Environment.NewLine}" +
+                                $"- Hours Watched: {SessionHoursWatched:0.##}{Environment.NewLine}" +
+                                $"{Environment.NewLine}"
+
+                                , Color.Green);
                         }
                         catch { }
                     }));
                     int count = 1;
-                    double totalHours = 0;
                     foreach (KeyValuePair<string, TimeSpan> kvp in WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key))
                     {
                         if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
@@ -90,28 +172,18 @@ namespace TwitchHelperBot
                                 {
                                     if (ViewerNames.Contains(kvp.Key))
                                     {
-                                        AppendText($"{count}. {kvp.Key} - ({kvp.Value:hh':'mm':'ss})", richTextBox1.ForeColor);
+                                        AppendText($"{count}. {kvp.Key} - ({kvp.Value:hh':'mm':'ss}){Environment.NewLine}", richTextBox1.ForeColor);
                                         count++;
                                     }
                                     else
                                     {
-                                        AppendText($"{kvp.Key} - ({kvp.Value:hh':'mm':'ss})", Color.Red);
+                                        AppendText($"{kvp.Key} - ({kvp.Value:hh':'mm':'ss}){Environment.NewLine}", Color.Red);
                                     }
                                 }
                                 catch { }
                             }));
                         }
-                        totalHours += kvp.Value.TotalHours;
                     }
-
-                    Invoke(new Action(() =>
-                    {
-                        try
-                        {
-                            Text = $"Viewers - count: {Viewers.Count} combined hrs: {totalHours:0.##}";
-                        }
-                        catch { }
-                    }));
                 }
                 catch { }
             });
@@ -122,7 +194,7 @@ namespace TwitchHelperBot
         {
             richTextBox1.SuspendLayout();
             richTextBox1.SelectionColor = color;
-            richTextBox1.AppendText($"{text}{Environment.NewLine}");
+            richTextBox1.AppendText(text);
             richTextBox1.ScrollToCaret();
             richTextBox1.ResumeLayout();
         }
@@ -181,6 +253,31 @@ namespace TwitchHelperBot
             File.WriteAllText("botList.data", DateTime.UtcNow.ToString() + "\n" + response.Content);
 
             return response.Content;
+        }
+
+        private void ResizableTextDisplayForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Sessions.Add(new SessionData()
+            {
+                DateTimeStarted = sessionStart,
+                DateTimeEnded = DateTime.UtcNow,
+                AverageViewerCount = ViewerCountPerMinute.Average(),
+                PeakViewerCount = WatchTimeDictionary.Count,
+                CombinedHoursWatched = WatchTimeDictionary.Sum(x=> x.Value.TotalHours),
+                WatchTimeData = WatchTimeDictionary
+            });
+            
+            File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
+        }
+
+        public class SessionData
+        {
+            public DateTime DateTimeStarted { get; set; }
+            public DateTime DateTimeEnded { get; set; }
+            public double AverageViewerCount { get; set; }
+            public int PeakViewerCount { get; set; }
+            public double CombinedHoursWatched { get; set; }
+            public Dictionary<string, TimeSpan> WatchTimeData { get; set; }
         }
     }
 }

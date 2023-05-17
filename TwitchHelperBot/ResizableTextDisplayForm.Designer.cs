@@ -91,7 +91,8 @@
             this.Padding = new System.Windows.Forms.Padding(3);
             this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Loading...";
+            this.Text = "Viewer List";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ResizableTextDisplayForm_FormClosing);
             this.ResumeLayout(false);
             this.PerformLayout();
 
