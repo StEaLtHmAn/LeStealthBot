@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
+using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -18,6 +19,7 @@ namespace TwitchHelperBot
         public static string access_token = null;
         public static string clientId = null;
         public static JObject userDetailsResponse;
+        public static string loginName = null;
 
         public static void LogMessage(string message)
         {
@@ -42,23 +44,41 @@ namespace TwitchHelperBot
             timer.Start();
         }
 
+        public static string getRelativeTimeSpan(TimeSpan ts)
+        {
+            if (ts.TotalMinutes < 1)//seconds ago
+                return (int)ts.TotalSeconds == 1 ? "1 Second" : (int)ts.TotalMinutes + " Seconds";
+            if (ts.TotalHours < 1)//min ago
+                return (int)ts.TotalMinutes == 1 ? "1 Minute" : (int)ts.TotalMinutes + " Minutes";
+            if (ts.TotalDays < 1)//hours ago
+                return (int)ts.TotalHours == 1 ? "1 Hour" : (int)ts.TotalHours + " Hours";
+            if (ts.TotalDays < 7)//days ago
+                return (int)ts.TotalDays == 1 ? "1 Day" : (int)ts.TotalDays + " Days";
+            if (ts.TotalDays < 30.4368)//weeks ago
+                return (int)(ts.TotalDays / 7) == 1 ? "1 Week" : (int)(ts.TotalDays / 7) + " Weeks";
+            if (ts.TotalDays < 365.242)//months ago
+                return (int)(ts.TotalDays / 30.4368) == 1 ? "1 Month" : (int)(ts.TotalDays / 30.4368) + " Months";
+            //years ago
+            return (int)(ts.TotalDays / 365.242) == 1 ? "1 Year" : (int)(ts.TotalDays / 365.242) + " Years";
+        }
+
         public static string getRelativeDateTime(DateTime date)
         {
             TimeSpan ts = DateTime.Now - date;
             if (ts.TotalMinutes < 1)//seconds ago
                 return "just now";
             if (ts.TotalHours < 1)//min ago
-                return (int)ts.TotalMinutes == 1 ? "1 Minute ago" : (int)ts.TotalMinutes + " Minutes ago";
+                return (int)ts.TotalMinutes == 1 ? "1 Minute" : (int)ts.TotalMinutes + " Minutes";
             if (ts.TotalDays < 1)//hours ago
-                return (int)ts.TotalHours == 1 ? "1 Hour ago" : (int)ts.TotalHours + " Hours ago";
+                return (int)ts.TotalHours == 1 ? "1 Hour" : (int)ts.TotalHours + " Hours";
             if (ts.TotalDays < 7)//days ago
-                return (int)ts.TotalDays == 1 ? "1 Day ago" : (int)ts.TotalDays + " Days ago";
+                return (int)ts.TotalDays == 1 ? "1 Day" : (int)ts.TotalDays + " Days";
             if (ts.TotalDays < 30.4368)//weeks ago
-                return (int)(ts.TotalDays / 7) == 1 ? "1 Week ago" : (int)(ts.TotalDays / 7) + " Weeks ago";
+                return (int)(ts.TotalDays / 7) == 1 ? "1 Week" : (int)(ts.TotalDays / 7) + " Weeks";
             if (ts.TotalDays < 365.242)//months ago
-                return (int)(ts.TotalDays / 30.4368) == 1 ? "1 Month ago" : (int)(ts.TotalDays / 30.4368) + " Months ago";
+                return (int)(ts.TotalDays / 30.4368) == 1 ? "1 Month" : (int)(ts.TotalDays / 30.4368) + " Months";
             //years ago
-            return (int)(ts.TotalDays / 365.242) == 1 ? "1 Year ago" : (int)(ts.TotalDays / 365.242) + " Years ago";
+            return (int)(ts.TotalDays / 365.242) == 1 ? "1 Year" : (int)(ts.TotalDays / 365.242) + " Years";
         }
 
         public static void registerAudioMixerHotkeys()
@@ -134,6 +154,17 @@ namespace TwitchHelperBot
                         component.ForeColor = SystemColors.ControlLightLight;
                 }
             }
+        }
+
+        public static string GetUserDetails(string loginName)
+        {
+            RestClient client = new RestClient();
+            client.AddDefaultHeader("Client-ID", Globals.clientId);
+            client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+            RestRequest request = new RestRequest("https://api.twitch.tv/helix/users", Method.Get);
+            request.AddQueryParameter("login", loginName);
+            RestResponse response = client.Execute(request);
+            return response.Content;
         }
     }
 }

@@ -34,8 +34,7 @@
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.richTextBox1 = new TwitchHelperBot.RichTextBoxEx();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.viewUserDetailsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.banUserToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.viewerDetailsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -70,6 +69,7 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.richTextBox1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.richTextBox1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.richTextBox1.Location = new System.Drawing.Point(3, 27);
             this.richTextBox1.Margin = new System.Windows.Forms.Padding(0);
             this.richTextBox1.Name = "richTextBox1";
@@ -79,26 +79,22 @@
             this.richTextBox1.TabIndex = 4;
             this.richTextBox1.Text = "";
             this.richTextBox1.WordWrap = false;
+            this.richTextBox1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.richTextBox1_MouseUp);
             // 
             // contextMenuStrip1
             // 
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.viewUserDetailsToolStripMenuItem,
-            this.banUserToolStripMenuItem});
+            this.viewerDetailsToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.Size = new System.Drawing.Size(164, 48);
+            this.contextMenuStrip1.ShowImageMargin = false;
+            this.contextMenuStrip1.Size = new System.Drawing.Size(123, 26);
             // 
-            // viewUserDetailsToolStripMenuItem
+            // viewerDetailsToolStripMenuItem
             // 
-            this.viewUserDetailsToolStripMenuItem.Name = "viewUserDetailsToolStripMenuItem";
-            this.viewUserDetailsToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.viewUserDetailsToolStripMenuItem.Text = "View User Details";
-            // 
-            // banUserToolStripMenuItem
-            // 
-            this.banUserToolStripMenuItem.Name = "banUserToolStripMenuItem";
-            this.banUserToolStripMenuItem.Size = new System.Drawing.Size(163, 22);
-            this.banUserToolStripMenuItem.Text = "Ban User";
+            this.viewerDetailsToolStripMenuItem.Name = "viewerDetailsToolStripMenuItem";
+            this.viewerDetailsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.viewerDetailsToolStripMenuItem.Text = "Viewer Details";
+            this.viewerDetailsToolStripMenuItem.Click += new System.EventHandler(this.viewerDetailsToolStripMenuItem_Click);
             // 
             // ResizableTextDisplayForm
             // 
@@ -130,7 +126,6 @@
         private System.Windows.Forms.Timer timer1;
         private RichTextBoxEx richTextBox1;
         private System.Windows.Forms.ContextMenuStrip contextMenuStrip1;
-        private System.Windows.Forms.ToolStripMenuItem viewUserDetailsToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem banUserToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem viewerDetailsToolStripMenuItem;
     }
 }

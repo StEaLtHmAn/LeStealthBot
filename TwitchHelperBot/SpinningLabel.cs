@@ -40,7 +40,7 @@ namespace TwitchHelperBot
                     Invalidate();
                     spinningTextIndex++;
                 }
-                catch (Exception ex)
+                catch// (Exception ex)
                 {
                     spinningTextIndex = 0;
                 }

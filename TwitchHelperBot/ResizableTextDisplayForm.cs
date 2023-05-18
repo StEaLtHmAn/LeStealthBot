@@ -2,19 +2,12 @@
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
-using System.Web.UI.WebControls;
 using System.Windows.Forms;
-using System.Xml.Linq;
-using static System.Collections.Specialized.BitVector32;
 
 namespace TwitchHelperBot
 {
@@ -93,12 +86,12 @@ namespace TwitchHelperBot
             double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours);
             double totalHours = SessionHoursWatched;
             double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
-            double TotalAverage = currentAverage;
+            double totalAverage = currentAverage;
             int peakViewers = WatchTimeDictionary.Count;
             foreach (SessionData session in Sessions)
             {
                 totalDuration += session.DateTimeEnded - session.DateTimeStarted;
-                TotalAverage += session.AverageViewerCount;
+                totalAverage += session.AverageViewerCount;
                 totalHours += session.WatchTimeData.Sum(x => x.Value.TotalHours);
                 if (session.PeakViewerCount > peakViewers)
                     peakViewers = session.PeakViewerCount;
@@ -111,7 +104,7 @@ namespace TwitchHelperBot
                 $"Overall Stats:{Environment.NewLine}" +
                 $"- Session Count: {Sessions.Count}{Environment.NewLine}" +
                 $"- Duration: {totalDuration:hh':'mm':'ss}{Environment.NewLine}" +
-                $"- Average/Peak Viewers: {TotalAverage / (Sessions.Count + 1):0.##} / {peakViewers}{Environment.NewLine}" +
+                $"- Average/Peak Viewers: {totalAverage / (Sessions.Count + 1):0.##} / {peakViewers}{Environment.NewLine}" +
                 $"- Hours Watched: {totalHours + WatchTimeDictionary.Sum(x => x.Value.TotalHours):0.##}{Environment.NewLine}"
                 );
             richTextBox1.SelectionColor = Color.Green;
@@ -131,13 +124,20 @@ namespace TwitchHelperBot
                     if (ViewerNames.Contains(kvp.Key))
                     {
                         richTextBox1.SelectionColor = richTextBox1.ForeColor;
-                        richTextBox1.AppendText($"{count}. {kvp.Key} - ({kvp.Value:hh':'mm':'ss}){Environment.NewLine}");
+                        richTextBox1.AppendText($"{count}. ");
+                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
+                        richTextBox1.AppendText(kvp.Key);
+                        richTextBox1.SelectionFont = richTextBox1.Font;
+                        richTextBox1.AppendText($" - ({kvp.Value:hh':'mm':'ss}){Environment.NewLine}");
                         count++;
                     }
                     else
                     {
                         richTextBox1.SelectionColor = Color.Red;
-                        richTextBox1.AppendText($"{kvp.Key} - ({kvp.Value:hh':'mm':'ss}){Environment.NewLine}");
+                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
+                        richTextBox1.AppendText(kvp.Key);
+                        richTextBox1.SelectionFont = richTextBox1.Font;
+                        richTextBox1.AppendText($" - ({kvp.Value:hh':'mm':'ss}){Environment.NewLine}");
                     }
                 }
             }
@@ -152,8 +152,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            request.AddQueryParameter("broadcaster_id", "526375465");
-            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            //request.AddQueryParameter("broadcaster_id", "526375465");
+            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -202,17 +202,39 @@ namespace TwitchHelperBot
 
         private void ResizableTextDisplayForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Sessions.Add(new SessionData()
+            int attemptsNo = 0;
+            bool added = false;
+            retry:
+            try
             {
-                DateTimeStarted = sessionStart,
-                DateTimeEnded = DateTime.UtcNow,
-                AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
-                PeakViewerCount = WatchTimeDictionary.Count,
-                CombinedHoursWatched = WatchTimeDictionary.Sum(x=> x.Value.TotalHours),
-                WatchTimeData = WatchTimeDictionary
-            });
-            
-            File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
+                if (!added)
+                {
+                    Sessions.Add(new SessionData()
+                    {
+                        DateTimeStarted = sessionStart,
+                        DateTimeEnded = DateTime.UtcNow,
+                        AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
+                        PeakViewerCount = WatchTimeDictionary.Count,
+                        CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
+                        WatchTimeData = WatchTimeDictionary
+                    });
+                    added = true;
+                }
+
+                File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
+            }
+            catch
+            {
+                attemptsNo++;
+                if (attemptsNo < 5)
+                {
+                    goto retry;
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
 
         public class SessionData
@@ -225,18 +247,73 @@ namespace TwitchHelperBot
             public Dictionary<string, TimeSpan> WatchTimeData { get; set; }
         }
 
+        string RightClickedWord = string.Empty;
         private void richTextBox1_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
             {
                 int wordIndex = richTextBox1.Text.Substring(0, richTextBox1.GetCharIndexFromPosition(e.Location)).LastIndexOfAny(new char[] { ' ', '\r', '\n' }) + 1;
-                string word = richTextBox1.Text.Substring(wordIndex, richTextBox1.Text.IndexOfAny(new char[] { ' ', '\r', '\n' }, wordIndex) - wordIndex);
+                RightClickedWord = richTextBox1.Text.Substring(wordIndex, richTextBox1.Text.IndexOfAny(new char[] { ' ', '\r', '\n' }, wordIndex) - wordIndex);
 
-                if (WatchTimeDictionary.ContainsKey(word))
+                if (WatchTimeDictionary.ContainsKey(RightClickedWord))
                 {
                     contextMenuStrip1.Show(richTextBox1, e.Location);
                 }
             }
+        }
+
+        PopupWindow popup;
+        private void viewerDetailsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
+            string userdata = userDetails.ToString(Formatting.Indented);
+            string followdata = GetFollowedDataByUser(userDetails["data"][0]["id"].ToString()).ToString(Formatting.Indented);
+            string subscribedata = GetSubscribedDataByUser(userDetails["data"][0]["id"].ToString()).ToString(Formatting.Indented);
+            Label label = new Label
+            {
+                Text = $"UserDetails:\r\n{userdata}\r\n\r\nFollowedDetails:\r\n{followdata}\r\n\r\nSubscribedDetails:\r\n{subscribedata}",
+                Dock = DockStyle.Fill,
+            };
+
+            Panel panel = new Panel()
+            {
+                AutoSize = true,
+                MinimumSize = new Size(500, 500)
+            };
+            panel.Controls.Add(label);
+
+            popup = new PopupWindow(panel, true);
+            popup.Show(Cursor.Position);
+
+            popup.Size = new Size(500, 500);
+        }
+
+        public JArray GetFollowedDataByUser(string user_id)
+        {
+            RestClient client = new RestClient();
+            client.AddDefaultHeader("Client-ID", Globals.clientId);
+            client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+            RestRequest request = new RestRequest("https://api.twitch.tv/helix/channels/followers", Method.Get);
+            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("user_id", user_id);
+            RestResponse response = client.Execute(request);
+            JObject data = JObject.Parse(response.Content);
+
+            return data["data"] as JArray;
+        }
+
+        public JArray GetSubscribedDataByUser(string user_id)
+        {
+            RestClient client = new RestClient();
+            client.AddDefaultHeader("Client-ID", Globals.clientId);
+            client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+            RestRequest request = new RestRequest("https://api.twitch.tv/helix/subscriptions", Method.Get);
+            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("user_id", user_id);
+            RestResponse response = client.Execute(request);
+            JObject data = JObject.Parse(response.Content);
+
+            return data["data"] as JArray;
         }
     }
 }

@@ -4,13 +4,13 @@ public class PopupWindow : System.Windows.Forms.ToolStripDropDown
 {
     private System.Windows.Forms.ToolStripControlHost _host;
 
-    public PopupWindow(System.Windows.Forms.Control content)
+    public PopupWindow(System.Windows.Forms.Control content, bool autoClose = false)
     {
         //Basic setup...
         AutoSize = false;
         DoubleBuffered = true;
         ResizeRedraw = true;
-        AutoClose = false;
+        AutoClose = autoClose;
         DropShadowEnabled = true;
         Margin = System.Windows.Forms.Padding.Empty;
         Padding = System.Windows.Forms.Padding.Empty;

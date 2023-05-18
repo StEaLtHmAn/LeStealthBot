@@ -25,7 +25,6 @@ namespace TwitchHelperBot
         [DllImport("User32.dll")]
         public static extern int GetWindowThreadProcessId(int hWnd, out int lpdwProcessId);
 
-        private string loginName = null;
         private string RedirectURI = null;
         private int currentWindowID = -1;
         private Process currentProcess = null;
@@ -77,7 +76,7 @@ namespace TwitchHelperBot
                         if (asset["content_type"].ToString() == "application/x-zip-compressed")
                         {
                             MessageBox.Show(githubLatestReleaseJson["name"].ToString() + "\r\n\r\n" + githubLatestReleaseJson["body"].ToString(),
-                            "New Updates - Released " + Globals.getRelativeDateTime(DateTime.Parse(githubLatestReleaseJson["published_at"].ToString()).Add(DateTimeOffset.Now.Offset)), MessageBoxButtons.OK);
+                            "New Updates - Released " + Globals.getRelativeDateTime(DateTime.Parse(githubLatestReleaseJson["published_at"].ToString()).Add(DateTimeOffset.Now.Offset)) +" ago", MessageBoxButtons.OK);
 
                             //download latest zip
                             client.DownloadFile(asset["browser_download_url"].ToString(), asset["name"].ToString());
@@ -104,15 +103,15 @@ namespace TwitchHelperBot
         {
             //get LoginName, if we dont have LoginName in the config then we ask the user for his LoginName with a popup textbox
             //without a LoginName we cannot continue so not entering it closes the app
-            loginName = Globals.iniHelper.Read("LoginName");
-            if (string.IsNullOrEmpty(loginName))
+            Globals.loginName = Globals.iniHelper.Read("LoginName");
+            if (string.IsNullOrEmpty(Globals.loginName))
             {
                 using (TextInputForm testDialog = new TextInputForm("Setup LoginName", "Please enter your twitch LoginName to continue."))
                 {
                     if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox.Text.Length > 0)
                     {
-                        loginName = testDialog.textBox.Text;
-                        Globals.iniHelper.Write("LoginName", loginName);
+                        Globals.loginName = testDialog.textBox.Text;
+                        Globals.iniHelper.Write("LoginName", Globals.loginName);
                     }
                     else
                     {
@@ -203,9 +202,9 @@ namespace TwitchHelperBot
 
             //Login
             Globals.access_token = Globals.iniHelper.Read("access_token");
-            if (string.IsNullOrEmpty(Globals.access_token) || !ValidateToken())
+            if (string.IsNullOrWhiteSpace(Globals.access_token) || !ValidateToken())
             {
-                BrowserForm form = new BrowserForm($"https://id.twitch.tv/oauth2/authorize?client_id={Globals.clientId}&redirect_uri={RedirectURI}&response_type=token&scope=channel:manage:broadcast+moderator:read:chatters");
+                BrowserForm form = new BrowserForm($"https://id.twitch.tv/oauth2/authorize?client_id={Globals.clientId}&redirect_uri={RedirectURI}&response_type=token&scope=channel:manage:broadcast+moderator:read:chatters+moderator:read:followers+channel:read:subscriptions");
                 form.webView2.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_TwitchAuthNavigationCompleted);
                 form.ShowDialog();
 
@@ -218,7 +217,7 @@ namespace TwitchHelperBot
             }
 
             //get user details
-            Globals.userDetailsResponse = JObject.Parse(GetUserDetails());
+            Globals.userDetailsResponse = JObject.Parse(Globals.GetUserDetails(Globals.loginName));
 
             //show welcome message
             OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {Globals.userDetailsResponse["data"][0]["display_name"]}", Globals.userDetailsResponse["data"][0]["profile_image_url"].ToString(), Globals.userDetailsResponse["data"][0]["id"].ToString());
@@ -368,7 +367,7 @@ namespace TwitchHelperBot
             else if ((sender as WebView2).CoreWebView2.Source.StartsWith("https://www.twitch.tv/login"))
             {
                 (sender as WebView2).CoreWebView2.ExecuteScriptAsync(
-                    $"document.getElementById(\"login-username\").value = \"{loginName}\";document.getElementById(\"password-input\").focus();");
+                    $"document.getElementById(\"login-username\").value = \"{Globals.loginName}\";document.getElementById(\"password-input\").focus();");
             }
         }
 
@@ -379,17 +378,6 @@ namespace TwitchHelperBot
             RestRequest request = new RestRequest("https://id.twitch.tv/oauth2/validate", Method.Get);
             RestResponse response = client.Execute(request);
             return response.StatusCode == HttpStatusCode.OK;
-        }
-
-        private string GetUserDetails()
-        {
-            RestClient client = new RestClient();
-            client.AddDefaultHeader("Client-ID", Globals.clientId);
-            client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
-            RestRequest request = new RestRequest("https://api.twitch.tv/helix/users", Method.Get);
-            request.AddQueryParameter("login", loginName);
-            RestResponse response = client.Execute(request);
-            return response.Content;
         }
 
         public bool UpdateChannelInfo(string game_id, string title)
