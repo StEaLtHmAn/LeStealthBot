@@ -203,6 +203,9 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="RichTextBoxEx.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="secrets.cs" />
     <Compile Include="SettingsForm.cs">
       <SubType>Form</SubType>
