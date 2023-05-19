@@ -275,7 +275,8 @@ namespace TwitchHelperBot
                 RightClickedWord = richTextBox1.Text.Substring(wordIndex, richTextBox1.Text.IndexOfAny(new char[] { ' ', '\r', '\n' }, wordIndex) - wordIndex);
                 if (WatchTimeDictionary.ContainsKey(RightClickedWord))
                 {
-                    contextMenuStrip1.Show(richTextBox1, e.Location);
+                    //contextMenuStrip1.Show(richTextBox1, e.Location);
+                    viewerDetailsToolStripMenuItem_Click(null, null);
                 }
             }
         }
