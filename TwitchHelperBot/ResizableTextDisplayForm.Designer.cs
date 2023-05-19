@@ -44,7 +44,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox2.Location = new System.Drawing.Point(40, 3);
             this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(208, 20);
+            this.textBox2.Size = new System.Drawing.Size(228, 20);
             this.textBox2.TabIndex = 2;
             this.textBox2.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
             // 
@@ -75,7 +75,7 @@
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.ReadOnly = true;
             this.richTextBox1.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.richTextBox1.Size = new System.Drawing.Size(248, 271);
+            this.richTextBox1.Size = new System.Drawing.Size(268, 282);
             this.richTextBox1.TabIndex = 4;
             this.richTextBox1.Text = "";
             this.richTextBox1.WordWrap = false;
@@ -92,7 +92,7 @@
             // viewerDetailsToolStripMenuItem
             // 
             this.viewerDetailsToolStripMenuItem.Name = "viewerDetailsToolStripMenuItem";
-            this.viewerDetailsToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.viewerDetailsToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
             this.viewerDetailsToolStripMenuItem.Text = "Viewer Details";
             this.viewerDetailsToolStripMenuItem.Click += new System.EventHandler(this.viewerDetailsToolStripMenuItem_Click);
             // 
@@ -100,7 +100,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(254, 301);
+            this.ClientSize = new System.Drawing.Size(274, 312);
             this.Controls.Add(this.richTextBox1);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.textBox2);

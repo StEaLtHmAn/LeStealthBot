@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -237,6 +238,22 @@ namespace TwitchHelperBot
             }
         }
 
+        private Image GetImageFromURL(string url, string filename)
+        {
+            if (!filename.EndsWith(".jpg"))
+                filename = filename + ".jpg";
+            if (!File.Exists("ImageCache\\" + filename))
+            {
+                Directory.CreateDirectory("ImageCache");
+                using (WebClient client = new WebClient())
+                {
+                    client.DownloadFile(url, "ImageCache\\" + filename);
+                }
+            }
+
+            return Image.FromFile("ImageCache\\" + filename);
+        }
+
         public class SessionData
         {
             public DateTime DateTimeStarted { get; set; }
@@ -248,13 +265,14 @@ namespace TwitchHelperBot
         }
 
         string RightClickedWord = string.Empty;
+        Point RightClickedWordPos = Point.Empty;
         private void richTextBox1_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
             {
+                RightClickedWordPos = Cursor.Position;
                 int wordIndex = richTextBox1.Text.Substring(0, richTextBox1.GetCharIndexFromPosition(e.Location)).LastIndexOfAny(new char[] { ' ', '\r', '\n' }) + 1;
                 RightClickedWord = richTextBox1.Text.Substring(wordIndex, richTextBox1.Text.IndexOfAny(new char[] { ' ', '\r', '\n' }, wordIndex) - wordIndex);
-
                 if (WatchTimeDictionary.ContainsKey(RightClickedWord))
                 {
                     contextMenuStrip1.Show(richTextBox1, e.Location);
@@ -266,29 +284,100 @@ namespace TwitchHelperBot
         private void viewerDetailsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
-            string userdata = userDetails.ToString(Formatting.Indented);
-            string followdata = GetFollowedDataByUser(userDetails["data"][0]["id"].ToString()).ToString(Formatting.Indented);
-            string subscribedata = GetSubscribedDataByUser(userDetails["data"][0]["id"].ToString()).ToString(Formatting.Indented);
-            Label label = new Label
+            JObject followdata = GetFollowedDataByUser(userDetails["data"][0]["id"].ToString());
+            JObject subscribedata = GetSubscribedDataByUser(userDetails["data"][0]["id"].ToString());
+            JArray watchTimeData = JArray.FromObject(Sessions.Where(x => x.WatchTimeData.ContainsKey(RightClickedWord)));
+
+            Label lblDisplayName = new Label();
+            Label lblDescription = new Label();
+            Label lblSubscribed = new Label();
+            Label lblFollowed = new Label();
+            PictureBox pbxProfileImage = new PictureBox();
+            Label lblTotalWatchedSessions = new Label();
+            Label lblTotalHoursWatched = new Label();
+            Label lblAccountCreated = new Label();
+
+            pbxProfileImage.Location = new Point(12, 12);
+            pbxProfileImage.Size = new Size(150, 150);
+            pbxProfileImage.SizeMode = PictureBoxSizeMode.Zoom;
+
+            lblDisplayName.AutoSize = true;
+            lblDisplayName.Location = new Point(174, 12);
+
+            lblDescription.AutoSize = true;
+            lblDescription.Location = new Point(12, 174);
+            lblDescription.MaximumSize = new Size(376, 48);
+
+            lblAccountCreated.AutoSize = true;
+            lblAccountCreated.Location = new Point(174, 36);
+
+            lblSubscribed.AutoSize = true;
+            lblSubscribed.Location = new Point(174, 60);
+
+            lblFollowed.AutoSize = true;
+            lblFollowed.Location = new Point(174, 84);
+
+            lblTotalWatchedSessions.AutoSize = true;
+            lblTotalWatchedSessions.Location = new Point(174, 108);
+            
+            lblTotalHoursWatched.AutoSize = true;
+            lblTotalHoursWatched.Location = new Point(174, 132);
+
+            // Display the user details.
+            lblDisplayName.Text = userDetails["data"][0]["display_name"].ToString();
+            lblDescription.Text = userDetails["data"][0]["description"].ToString();
+            lblAccountCreated.Text = "Account created " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(userDetails["data"][0]["created_at"].ToString())) +" ago";
+            pbxProfileImage.Image = GetImageFromURL(userDetails["data"][0]["profile_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString());
+
+            // Display the watched sessions.
+            lblTotalWatchedSessions.Text = "Total Watched Sessions: "+watchTimeData.Count;
+            TimeSpan total = new TimeSpan();
+            foreach (var x in watchTimeData)
             {
-                Text = $"UserDetails:\r\n{userdata}\r\n\r\nFollowedDetails:\r\n{followdata}\r\n\r\nSubscribedDetails:\r\n{subscribedata}",
-                Dock = DockStyle.Fill,
-            };
+                total += x["WatchTimeData"][userDetails["data"][0]["display_name"].ToString()].Value<TimeSpan>();
+            }
+            lblTotalHoursWatched.Text = $"Total Hours Watched: {total.TotalHours:0.###}";
+
+            //gifter_name, is_gift, tier, plan_name
+            if ((subscribedata["data"] as JArray).Count > 0)
+            {
+                lblSubscribed.Text = "Subscribed";
+                if (subscribedata?["data"]?[0]?["tier"] != null)
+                {
+                    lblSubscribed.Text += $" (tier {subscribedata["data"][0]["tier"]})";
+                }
+                if (subscribedata?["data"]?[0]?["gifter_name"] != null)
+                {
+                    lblSubscribed.Text += $" (gift from {subscribedata["data"][0]["gifter_name"]})";
+                }
+            }
+            else
+            {
+                lblSubscribed.Text = "Not Subscribed";
+            }
+            lblFollowed.Text = (followdata["data"] as JArray).Count > 0 ? "Following for " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(followdata["data"][0]["followed_at"].ToString())) : "Not Following";
 
             Panel panel = new Panel()
             {
-                AutoSize = true,
-                MinimumSize = new Size(500, 500)
+                MinimumSize = new Size(400, 222)
             };
-            panel.Controls.Add(label);
+            panel.Controls.Add(lblDisplayName);
+            panel.Controls.Add(lblDescription);
+            panel.Controls.Add(lblAccountCreated);
+            panel.Controls.Add(pbxProfileImage);
+            panel.Controls.Add(lblTotalWatchedSessions);
+            panel.Controls.Add(lblTotalHoursWatched);
+            panel.Controls.Add(lblSubscribed);
+            panel.Controls.Add(lblFollowed);
+
+            if(!string.IsNullOrWhiteSpace(userDetails["data"][0]["offline_image_url"].ToString()))
+                panel.BackgroundImage = GetImageFromURL(userDetails["data"][0]["offline_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString()+ "_offline");
 
             popup = new PopupWindow(panel, true);
-            popup.Show(Cursor.Position);
-
-            popup.Size = new Size(500, 500);
+            popup.Show(RightClickedWordPos);
         }
 
-        public JArray GetFollowedDataByUser(string user_id)
+        public JObject GetFollowedDataByUser(string user_id)
         {
             RestClient client = new RestClient();
             client.AddDefaultHeader("Client-ID", Globals.clientId);
@@ -297,12 +386,11 @@ namespace TwitchHelperBot
             request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("user_id", user_id);
             RestResponse response = client.Execute(request);
-            JObject data = JObject.Parse(response.Content);
 
-            return data["data"] as JArray;
+            return JObject.Parse(response.Content);
         }
 
-        public JArray GetSubscribedDataByUser(string user_id)
+        public JObject GetSubscribedDataByUser(string user_id)
         {
             RestClient client = new RestClient();
             client.AddDefaultHeader("Client-ID", Globals.clientId);
@@ -311,9 +399,8 @@ namespace TwitchHelperBot
             request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("user_id", user_id);
             RestResponse response = client.Execute(request);
-            JObject data = JObject.Parse(response.Content);
 
-            return data["data"] as JArray;
+            return JObject.Parse(response.Content);
         }
     }
 }
