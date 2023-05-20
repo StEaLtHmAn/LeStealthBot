@@ -149,51 +149,51 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AudioManager.cs" />
-    <Compile Include="AudioMixerForm.cs">
+    <Compile Include="Tools\AudioManager.cs" />
+    <Compile Include="Forms\AudioMixerForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="AudioMixerForm.Designer.cs">
+    <Compile Include="Forms\AudioMixerForm.Designer.cs">
       <DependentUpon>AudioMixerForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="AutoCompleteTextBox.cs">
+    <Compile Include="CustomUI\AutoCompleteTextBox.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="BrowserForm.cs">
+    <Compile Include="Forms\BrowserForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="BrowserForm.Designer.cs">
+    <Compile Include="Forms\BrowserForm.Designer.cs">
       <DependentUpon>BrowserForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="GameMatcherForm.cs">
+    <Compile Include="Forms\GameMatcherForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="GameMatcherForm.Designer.cs">
+    <Compile Include="Forms\GameMatcherForm.Designer.cs">
       <DependentUpon>GameMatcherForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="Globals.cs" />
-    <Compile Include="IconExtractor.cs" />
-    <Compile Include="IniHelper.cs" />
-    <Compile Include="KeyboardHook.cs" />
-    <Compile Include="MainForm.cs">
+    <Compile Include="Tools\Globals.cs" />
+    <Compile Include="Tools\IconExtractor.cs" />
+    <Compile Include="Tools\IniHelper.cs" />
+    <Compile Include="Tools\KeyboardHook.cs" />
+    <Compile Include="Forms\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="MainForm.Designer.cs">
+    <Compile Include="Forms\MainForm.Designer.cs">
       <DependentUpon>MainForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="OverlayNotificationMessage.cs">
+    <Compile Include="Forms\OverlayNotificationMessage.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="OverlayNotificationMessage.Designer.cs">
+    <Compile Include="Forms\OverlayNotificationMessage.Designer.cs">
       <DependentUpon>OverlayNotificationMessage.cs</DependentUpon>
     </Compile>
-    <Compile Include="OverlayNotificationVolume.cs">
+    <Compile Include="Forms\OverlayNotificationVolume.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="OverlayNotificationVolume.Designer.cs">
+    <Compile Include="Forms\OverlayNotificationVolume.Designer.cs">
       <DependentUpon>OverlayNotificationVolume.cs</DependentUpon>
     </Compile>
-    <Compile Include="PopupWindow.cs">
+    <Compile Include="CustomUI\PopupWindow.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="Program.cs" />
@@ -203,35 +203,35 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="RichTextBoxEx.cs">
+    <Compile Include="CustomUI\RichTextBoxEx.cs">
       <SubType>Component</SubType>
     </Compile>
     <Compile Include="secrets.cs" />
-    <Compile Include="SettingsForm.cs">
+    <Compile Include="Forms\SettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="SettingsForm.Designer.cs">
+    <Compile Include="Forms\SettingsForm.Designer.cs">
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="ResizableTextDisplayForm.cs">
+    <Compile Include="Forms\ResizableTextDisplayForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="ResizableTextDisplayForm.Designer.cs">
+    <Compile Include="Forms\ResizableTextDisplayForm.Designer.cs">
       <DependentUpon>ResizableTextDisplayForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="SpinningLabel.cs">
+    <Compile Include="CustomUI\SpinningLabel.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="SpotifyPreviewForm.cs">
+    <Compile Include="Forms\SpotifyPreviewForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="SpotifyPreviewForm.Designer.cs">
+    <Compile Include="Forms\SpotifyPreviewForm.Designer.cs">
       <DependentUpon>SpotifyPreviewForm.cs</DependentUpon>
     </Compile>
-    <Compile Include="TextInputForm.cs">
+    <Compile Include="Forms\TextInputForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="TextInputForm.Designer.cs">
+    <Compile Include="Forms\TextInputForm.Designer.cs">
       <DependentUpon>TextInputForm.cs</DependentUpon>
     </Compile>
   </ItemGroup>
@@ -241,38 +241,38 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="AudioMixerForm.resx">
+    <EmbeddedResource Include="Forms\AudioMixerForm.resx">
       <DependentUpon>AudioMixerForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="BrowserForm.resx">
+    <EmbeddedResource Include="Forms\BrowserForm.resx">
       <DependentUpon>BrowserForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="GameMatcherForm.resx">
+    <EmbeddedResource Include="Forms\GameMatcherForm.resx">
       <DependentUpon>GameMatcherForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="MainForm.resx">
+    <EmbeddedResource Include="Forms\MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="OverlayNotificationMessage.resx">
+    <EmbeddedResource Include="Forms\OverlayNotificationMessage.resx">
       <DependentUpon>OverlayNotificationMessage.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="OverlayNotificationVolume.resx">
+    <EmbeddedResource Include="Forms\OverlayNotificationVolume.resx">
       <DependentUpon>OverlayNotificationVolume.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="SettingsForm.resx">
+    <EmbeddedResource Include="Forms\SettingsForm.resx">
       <DependentUpon>SettingsForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="ResizableTextDisplayForm.resx">
+    <EmbeddedResource Include="Forms\ResizableTextDisplayForm.resx">
       <DependentUpon>ResizableTextDisplayForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="SpotifyPreviewForm.resx">
+    <EmbeddedResource Include="Forms\SpotifyPreviewForm.resx">
       <DependentUpon>SpotifyPreviewForm.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="TextInputForm.resx">
+    <EmbeddedResource Include="Forms\TextInputForm.resx">
       <DependentUpon>TextInputForm.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>

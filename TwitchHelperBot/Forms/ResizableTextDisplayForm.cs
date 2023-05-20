@@ -104,7 +104,7 @@ namespace TwitchHelperBot
             richTextBox1.AppendText(
                 $"Overall Stats:{Environment.NewLine}" +
                 $"- Session Count: {Sessions.Count}{Environment.NewLine}" +
-                $"- Duration: {totalDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                $"- Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
                 $"- Average/Peak Viewers: {totalAverage / (Sessions.Count + 1):0.##} / {peakViewers}{Environment.NewLine}" +
                 $"- Hours Watched: {totalHours + WatchTimeDictionary.Sum(x => x.Value.TotalHours):0.##}{Environment.NewLine}"
                 );
@@ -113,7 +113,7 @@ namespace TwitchHelperBot
                 $"Session Stats:{Environment.NewLine}" +
                 $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
                 $"- Current/Average/Peak Viewers: {ViewerNames.Length} / {currentAverage:0.##} / {WatchTimeDictionary.Count}{Environment.NewLine}" +
-                $"- Hours Watched: {SessionHoursWatched:0.##}{Environment.NewLine}" +
+                $"- Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}" +
                 $"{Environment.NewLine}"
                 );
 
@@ -129,7 +129,7 @@ namespace TwitchHelperBot
                         richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
                         richTextBox1.AppendText(kvp.Key);
                         richTextBox1.SelectionFont = richTextBox1.Font;
-                        richTextBox1.AppendText($" - ({kvp.Value:hh':'mm':'ss}){Environment.NewLine}");
+                        richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
                         count++;
                     }
                     else
@@ -138,7 +138,7 @@ namespace TwitchHelperBot
                         richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
                         richTextBox1.AppendText(kvp.Key);
                         richTextBox1.SelectionFont = richTextBox1.Font;
-                        richTextBox1.AppendText($" - ({kvp.Value:hh':'mm':'ss}){Environment.NewLine}");
+                        richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
                     }
                 }
             }
@@ -287,14 +287,24 @@ namespace TwitchHelperBot
             JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
             JObject followdata = GetFollowedDataByUser(userDetails["data"][0]["id"].ToString());
             JObject subscribedata = GetSubscribedDataByUser(userDetails["data"][0]["id"].ToString());
-            JArray watchTimeData = JArray.FromObject(Sessions.Where(x => x.WatchTimeData.ContainsKey(RightClickedWord)));
+            var watchTimeData = Sessions;
+            watchTimeData.Add(new SessionData()
+            {
+                DateTimeStarted = sessionStart,
+                DateTimeEnded = DateTime.UtcNow,
+                AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
+                PeakViewerCount = WatchTimeDictionary.Count,
+                CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
+                WatchTimeData = WatchTimeDictionary
+            });
+            watchTimeData = watchTimeData.Where(x => x.WatchTimeData.ContainsKey(RightClickedWord)).ToList();
 
             Label lblDisplayName = new Label();
             Label lblDescription = new Label();
             Label lblSubscribed = new Label();
             Label lblFollowed = new Label();
             PictureBox pbxProfileImage = new PictureBox();
-            Label lblTotalWatchedSessions = new Label();
+            Label lblLastSession = new Label();
             Label lblTotalHoursWatched = new Label();
             Label lblAccountCreated = new Label();
 
@@ -303,6 +313,7 @@ namespace TwitchHelperBot
             pbxProfileImage.SizeMode = PictureBoxSizeMode.Zoom;
 
             lblDisplayName.AutoSize = true;
+            lblDisplayName.Font = new Font(lblDisplayName.Font, FontStyle.Bold);
             lblDisplayName.Location = new Point(174, 12);
 
             lblDescription.AutoSize = true;
@@ -318,26 +329,26 @@ namespace TwitchHelperBot
             lblFollowed.AutoSize = true;
             lblFollowed.Location = new Point(174, 84);
 
-            lblTotalWatchedSessions.AutoSize = true;
-            lblTotalWatchedSessions.Location = new Point(174, 108);
+            lblLastSession.AutoSize = true;
+            lblLastSession.Location = new Point(174, 108);
             
             lblTotalHoursWatched.AutoSize = true;
             lblTotalHoursWatched.Location = new Point(174, 132);
 
             // Display the user details.
-            lblDisplayName.Text = userDetails["data"][0]["display_name"].ToString();
+            lblDisplayName.Text = RightClickedWord;
             lblDescription.Text = userDetails["data"][0]["description"].ToString();
             lblAccountCreated.Text = "Account created " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(userDetails["data"][0]["created_at"].ToString())) +" ago";
             pbxProfileImage.Image = GetImageFromURL(userDetails["data"][0]["profile_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString());
 
             // Display the watched sessions.
-            lblTotalWatchedSessions.Text = "Total Watched Sessions: "+watchTimeData.Count;
-            TimeSpan total = new TimeSpan();
+            lblLastSession.Text = "Watching since " + Globals.getRelativeTimeSpan(DateTime.UtcNow-watchTimeData.First().DateTimeEnded) + " ago";
+            TimeSpan total = WatchTimeDictionary[RightClickedWord];
             foreach (var x in watchTimeData)
             {
-                total += x["WatchTimeData"][userDetails["data"][0]["display_name"].ToString()].Value<TimeSpan>();
+                total += x.WatchTimeData[userDetails["data"][0]["display_name"].ToString()];
             }
-            lblTotalHoursWatched.Text = $"Total Hours Watched: {total.TotalHours:0.###}";
+            lblTotalHoursWatched.Text = $"Watched for {Globals.getRelativeTimeSpan(total)}";
 
             //gifter_name, is_gift, tier, plan_name
             if ((subscribedata["data"] as JArray).Count > 0)
@@ -366,7 +377,7 @@ namespace TwitchHelperBot
             panel.Controls.Add(lblDescription);
             panel.Controls.Add(lblAccountCreated);
             panel.Controls.Add(pbxProfileImage);
-            panel.Controls.Add(lblTotalWatchedSessions);
+            panel.Controls.Add(lblLastSession);
             panel.Controls.Add(lblTotalHoursWatched);
             panel.Controls.Add(lblSubscribed);
             panel.Controls.Add(lblFollowed);
@@ -376,6 +387,15 @@ namespace TwitchHelperBot
 
             popup = new PopupWindow(panel, true);
             popup.Show(RightClickedWordPos);
+            popup.Closing += delegate
+            {
+                try
+                {
+                    pbxProfileImage.Image?.Dispose();
+                    panel.BackgroundImage?.Dispose();
+                }
+                catch { }
+            };
         }
 
         public JObject GetFollowedDataByUser(string user_id)
