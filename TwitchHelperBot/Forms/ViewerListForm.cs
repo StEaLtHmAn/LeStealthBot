@@ -12,7 +12,7 @@ using System.Windows.Forms;
 
 namespace TwitchHelperBot
 {
-    public partial class ResizableTextDisplayForm : Form
+    public partial class ViewerListForm : Form
     {
         private string[] ViewerNames = new string[0];
         List<SessionData> Sessions = new List<SessionData>();
@@ -21,7 +21,7 @@ namespace TwitchHelperBot
         private DateTime lastViewerCountCheck = DateTime.UtcNow;
         private DateTime lastCheck = DateTime.UtcNow;
         private DateTime sessionStart = DateTime.UtcNow;
-        public ResizableTextDisplayForm()
+        public ViewerListForm()
         {
             InitializeComponent();
 
@@ -97,7 +97,6 @@ namespace TwitchHelperBot
                 if (session.PeakViewerCount > peakViewers)
                     peakViewers = session.PeakViewerCount;
             }
-
             richTextBox1.SuspendPainting();
             richTextBox1.Clear();
             richTextBox1.SelectionColor = Color.Gold;
@@ -371,7 +370,8 @@ namespace TwitchHelperBot
 
             Panel panel = new Panel()
             {
-                MinimumSize = new Size(400, 222)
+                MinimumSize = new Size(400, 222),
+                BackgroundImageLayout = ImageLayout.Zoom
             };
             panel.Controls.Add(lblDisplayName);
             panel.Controls.Add(lblDescription);

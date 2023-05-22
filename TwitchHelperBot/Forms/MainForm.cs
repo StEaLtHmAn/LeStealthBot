@@ -476,8 +476,11 @@ namespace TwitchHelperBot
 
         private void setupPresetsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            GameMatcherForm form = new GameMatcherForm();
-            form.ShowDialog();
+            if (Application.OpenForms.OfType<GameMatcherForm>().Count() == 0)
+            {
+                GameMatcherForm form = new GameMatcherForm();
+                form.ShowDialog();
+            }
         }
 
         private void quitToolStripMenuItem_Click(object sender, EventArgs e)
@@ -497,14 +500,20 @@ namespace TwitchHelperBot
 
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            SettingsForm form = new SettingsForm();
-            form.ShowDialog();
+            if (Application.OpenForms.OfType<SettingsForm>().Count() == 0)
+            {
+                SettingsForm form = new SettingsForm();
+                form.ShowDialog();
+            }
         }
 
         private void AudioMixerToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            AudioMixerForm form = new AudioMixerForm();
-            form.ShowDialog();
+            if (Application.OpenForms.OfType<AudioMixerForm>().Count() == 0)
+            {
+                AudioMixerForm form = new AudioMixerForm();
+                form.ShowDialog();
+            }
         }
 
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
@@ -514,8 +523,11 @@ namespace TwitchHelperBot
 
         private void showViewerListToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            ResizableTextDisplayForm form1234 = new ResizableTextDisplayForm();
-            form1234.Show();
+            if (Application.OpenForms.OfType<ViewerListForm>().Count() == 0)
+            {
+                ViewerListForm form1234 = new ViewerListForm();
+                form1234.Show();
+            }
         }
 
         private void NotificationMenuStrip_Opened(object sender, EventArgs e)

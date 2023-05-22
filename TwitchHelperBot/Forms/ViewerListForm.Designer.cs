@@ -1,6 +1,6 @@
 ﻿namespace TwitchHelperBot
 {
-    partial class ResizableTextDisplayForm
+    partial class ViewerListForm
     {
         /// <summary>
         /// Required designer variable.
@@ -32,9 +32,9 @@
             this.textBox2 = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
-            this.richTextBox1 = new TwitchHelperBot.RichTextBoxEx();
             this.contextMenuStrip1 = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.viewerDetailsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.richTextBox1 = new TwitchHelperBot.RichTextBoxEx();
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -63,6 +63,21 @@
             this.timer1.Interval = 5000;
             this.timer1.Tick += new System.EventHandler(this.timer1_Tick);
             // 
+            // contextMenuStrip1
+            // 
+            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.viewerDetailsToolStripMenuItem});
+            this.contextMenuStrip1.Name = "contextMenuStrip1";
+            this.contextMenuStrip1.ShowImageMargin = false;
+            this.contextMenuStrip1.Size = new System.Drawing.Size(123, 26);
+            // 
+            // viewerDetailsToolStripMenuItem
+            // 
+            this.viewerDetailsToolStripMenuItem.Name = "viewerDetailsToolStripMenuItem";
+            this.viewerDetailsToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
+            this.viewerDetailsToolStripMenuItem.Text = "Viewer Details";
+            this.viewerDetailsToolStripMenuItem.Click += new System.EventHandler(this.viewerDetailsToolStripMenuItem_Click);
+            // 
             // richTextBox1
             // 
             this.richTextBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -81,22 +96,7 @@
             this.richTextBox1.WordWrap = false;
             this.richTextBox1.MouseUp += new System.Windows.Forms.MouseEventHandler(this.richTextBox1_MouseUp);
             // 
-            // contextMenuStrip1
-            // 
-            this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.viewerDetailsToolStripMenuItem});
-            this.contextMenuStrip1.Name = "contextMenuStrip1";
-            this.contextMenuStrip1.ShowImageMargin = false;
-            this.contextMenuStrip1.Size = new System.Drawing.Size(123, 26);
-            // 
-            // viewerDetailsToolStripMenuItem
-            // 
-            this.viewerDetailsToolStripMenuItem.Name = "viewerDetailsToolStripMenuItem";
-            this.viewerDetailsToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
-            this.viewerDetailsToolStripMenuItem.Text = "Viewer Details";
-            this.viewerDetailsToolStripMenuItem.Click += new System.EventHandler(this.viewerDetailsToolStripMenuItem_Click);
-            // 
-            // ResizableTextDisplayForm
+            // ViewerListForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -107,7 +107,7 @@
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.Name = "ResizableTextDisplayForm";
+            this.Name = "ViewerListForm";
             this.Padding = new System.Windows.Forms.Padding(3);
             this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
