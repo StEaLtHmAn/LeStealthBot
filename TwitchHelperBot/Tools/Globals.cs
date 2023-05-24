@@ -19,6 +19,7 @@ namespace TwitchHelperBot
         public static string access_token = null;
         public static string clientId = null;
         public static JObject userDetailsResponse;
+        public static JObject windowLocations;
         public static string loginName = null;
 
         public static void LogMessage(string message)

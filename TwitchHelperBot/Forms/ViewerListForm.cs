@@ -15,9 +15,9 @@ namespace TwitchHelperBot
     public partial class ViewerListForm : Form
     {
         private string[] ViewerNames = new string[0];
-        List<SessionData> Sessions = new List<SessionData>();
+        private List<SessionData> Sessions = new List<SessionData>();
         private Dictionary<string, TimeSpan> WatchTimeDictionary = new Dictionary<string, TimeSpan>();
-        List<int> ViewerCountPerMinute = new List<int>();
+        private List<int> ViewerCountPerMinute = new List<int>();
         private DateTime lastViewerCountCheck = DateTime.UtcNow;
         private DateTime lastCheck = DateTime.UtcNow;
         private DateTime sessionStart = DateTime.UtcNow;
@@ -200,11 +200,22 @@ namespace TwitchHelperBot
             return response.Content;
         }
 
-        private void ResizableTextDisplayForm_FormClosing(object sender, FormClosingEventArgs e)
+        public new void Dispose()
         {
+            SaveSession();
+            base.Dispose();
+        }
+
+        private void SaveSession()
+        {
+            //if its less than 5 minutes - dont save
+            if (DateTime.UtcNow - sessionStart < TimeSpan.FromMinutes(5))
+                return;
+
+
             int attemptsNo = 0;
             bool added = false;
-            retry:
+        retry:
             try
             {
                 if (!added)
@@ -263,8 +274,8 @@ namespace TwitchHelperBot
             public Dictionary<string, TimeSpan> WatchTimeData { get; set; }
         }
 
-        string RightClickedWord = string.Empty;
-        Point RightClickedWordPos = Point.Empty;
+        private string RightClickedWord = string.Empty;
+        private Point RightClickedWordPos = Point.Empty;
         private void richTextBox1_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -280,7 +291,7 @@ namespace TwitchHelperBot
             }
         }
 
-        PopupWindow popup;
+        private PopupWindow popup;
         private void viewerDetailsToolStripMenuItem_Click(object sender, EventArgs e)
         {
             JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
@@ -422,6 +433,34 @@ namespace TwitchHelperBot
             RestResponse response = client.Execute(request);
 
             return JObject.Parse(response.Content);
+        }
+
+        private void ViewerListForm_Move(object sender, EventArgs e)
+        {
+            if (Globals.windowLocations[Name]["Location"].ToString() != $"{Location.X}x{Location.Y}")
+            {
+                Globals.windowLocations[Name]["Location"] = $"{Location.X}x{Location.Y}";
+                File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+            }
+        }
+
+        private void ViewerListForm_Shown(object sender, EventArgs e)
+        {
+            if (Globals.windowLocations[Name]?["Location"] != null)
+            {
+                string[] locationString = Globals.windowLocations[Name]["Location"].ToString().Split('x');
+                Globals.DelayAction(0, delegate
+                {
+                    Location = new Point(int.Parse(locationString[0]), int.Parse(locationString[1]));
+                });
+            }
+        }
+
+        private void ViewerListForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Globals.windowLocations[Name]["IsOpen"] = "false";
+            File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+            SaveSession();
         }
     }
 }

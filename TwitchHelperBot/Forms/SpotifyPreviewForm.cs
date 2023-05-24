@@ -10,12 +10,13 @@ using System.Runtime.InteropServices;
 using System.IO;
 using System.Net;
 using System.Linq;
+using Newtonsoft.Json;
 
 namespace TwitchHelperBot
 {
     public partial class SpotifyPreviewForm : Form
     {
-        string SpotifyToken = string.Empty;
+        private string SpotifyToken = string.Empty;
 
         //[DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
         //private static extern IntPtr CreateRoundRectRgn
@@ -52,10 +53,10 @@ namespace TwitchHelperBot
             GetSpotifyCurrentTrack();
         }
 
-        long stamp = 0;
-        int progress_ms = 0;
-        int duration_ms = 0;
-        bool is_playing = false;
+        private long stamp = 0;
+        private int progress_ms = 0;
+        private int duration_ms = 0;
+        private bool is_playing = false;
         private void GetSpotifyCurrentTrack()
         {
             if (string.IsNullOrEmpty(SpotifyToken))
@@ -219,6 +220,30 @@ namespace TwitchHelperBot
                     panel2.Width = (int)((progress_ms + offset) / (double)duration_ms * 170);
                 }
             }
+        }
+
+        private void SpotifyPreviewForm_Shown(object sender, EventArgs e)
+        {
+            if (Globals.windowLocations[Name]?["Location"] != null)
+            {
+                string[] locationString = Globals.windowLocations[Name]["Location"].ToString().Split('x');
+                Location = new Point(int.Parse(locationString[0]), int.Parse(locationString[1]));
+            }
+        }
+
+        private void SpotifyPreviewForm_Move(object sender, EventArgs e)
+        {
+            if (Globals.windowLocations[Name]["Location"].ToString() != $"{Location.X}x{Location.Y}")
+            {
+                Globals.windowLocations[Name]["Location"] = $"{Location.X}x{Location.Y}";
+                File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+            }
+        }
+
+        private void SpotifyPreviewForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            Globals.windowLocations[Name]["IsOpen"] = "false";
+            File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using CSCore.CoreAudioAPI;
 using Microsoft.Web.WebView2.Core;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
@@ -222,6 +223,18 @@ namespace TwitchHelperBot
             //show welcome message
             OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {Globals.userDetailsResponse["data"][0]["display_name"]}", Globals.userDetailsResponse["data"][0]["profile_image_url"].ToString(), Globals.userDetailsResponse["data"][0]["id"].ToString());
             form123.Show();
+
+            Globals.windowLocations = File.Exists("WindowLocations.json") ? JObject.Parse(File.ReadAllText("WindowLocations.json")) : new JObject();
+            if (Globals.windowLocations["SpotifyPreviewForm"]?["IsOpen"]?.ToString() == "true")
+            {
+                SpotifyPreviewForm sForm = new SpotifyPreviewForm();
+                sForm.Show();
+            }
+            if (Globals.windowLocations["ViewerListForm"]?["IsOpen"]?.ToString() == "true")
+            {
+                ViewerListForm sForm = new ViewerListForm();
+                sForm.Show();
+            }
         }
 
         private void KeyboardHook_KeyPressed(object sender, KeyPressedEventArgs e)
@@ -525,8 +538,32 @@ namespace TwitchHelperBot
         {
             if (Application.OpenForms.OfType<ViewerListForm>().Count() == 0)
             {
-                ViewerListForm form1234 = new ViewerListForm();
-                form1234.Show();
+                ViewerListForm sForm = new ViewerListForm();
+                sForm.Show();
+
+                if (Globals.windowLocations[sForm.Name] == null)
+                {
+                    Globals.windowLocations.Add(sForm.Name, new JObject()
+                    {
+                        { "Location", $"{sForm.Location.X}x{sForm.Location.Y}"},
+                        { "IsOpen", "true"}
+                    });
+                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+                }
+                else if (Globals.windowLocations[sForm.Name]?["IsOpen"].ToString() != "true")
+                {
+                    Globals.windowLocations[sForm.Name]["IsOpen"] = "true";
+                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+                }
+            }
+            else
+            {
+                var form = Application.OpenForms.OfType<ViewerListForm>().First();
+
+                Globals.windowLocations[form.Name]["IsOpen"] = "false";
+                File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+
+                form.Dispose();
             }
         }
 
@@ -537,14 +574,44 @@ namespace TwitchHelperBot
 
         private void spotifyPreviewToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (Application.OpenForms.OfType<SpotifyPreviewForm>().Count() > 0)
+            if (Application.OpenForms.OfType<SpotifyPreviewForm>().Count() == 0)
             {
-                Application.OpenForms.OfType<SpotifyPreviewForm>().First().Dispose();
-                return;
-            }
+                SpotifyPreviewForm sForm = new SpotifyPreviewForm();
+                sForm.Show();
 
-            SpotifyPreviewForm sForm = new SpotifyPreviewForm();
-            sForm.Show();
+                if (Globals.windowLocations[sForm.Name] == null)
+                {
+                    Globals.windowLocations.Add(sForm.Name, new JObject()
+                    {
+                        { "Location", $"{sForm.Location.X}x{sForm.Location.Y}"},
+                        { "IsOpen", "true"}
+                    });
+                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+                }
+                else if (Globals.windowLocations[sForm.Name]?["IsOpen"].ToString() != "true")
+                {
+                    Globals.windowLocations[sForm.Name]["IsOpen"] = "true";
+                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+                }
+            }
+            else
+            {
+                var form = Application.OpenForms.OfType<SpotifyPreviewForm>().First();
+
+                Globals.windowLocations[form.Name]["IsOpen"] = "false";
+                File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+
+                form.Dispose();
+            }
+        }
+
+        public new void Dispose()
+        {
+            if (Application.OpenForms.OfType<SpotifyPreviewForm>().Count() > 0)
+                Application.OpenForms.OfType<SpotifyPreviewForm>().First().Dispose();
+            if (Application.OpenForms.OfType<ViewerListForm>().Count() > 0)
+                Application.OpenForms.OfType<ViewerListForm>().First().Dispose();
+            base.Dispose();
         }
     }
 }

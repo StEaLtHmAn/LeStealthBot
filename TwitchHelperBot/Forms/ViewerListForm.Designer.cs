@@ -110,10 +110,12 @@
             this.Name = "ViewerListForm";
             this.Padding = new System.Windows.Forms.Padding(3);
             this.ShowIcon = false;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Viewer List";
             this.TopMost = true;
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ResizableTextDisplayForm_FormClosing);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ViewerListForm_FormClosing);
+            this.Shown += new System.EventHandler(this.ViewerListForm_Shown);
+            this.Move += new System.EventHandler(this.ViewerListForm_Move);
             this.contextMenuStrip1.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();

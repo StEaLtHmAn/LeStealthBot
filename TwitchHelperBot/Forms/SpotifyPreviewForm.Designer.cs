@@ -136,9 +136,12 @@
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "SpotifyPreviewForm";
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Spotify Preview";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SpotifyPreviewForm_FormClosing);
+            this.Shown += new System.EventHandler(this.SpotifyPreviewForm_Shown);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Form1_MouseDown);
+            this.Move += new System.EventHandler(this.SpotifyPreviewForm_Move);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel1.ResumeLayout(false);
             this.ResumeLayout(false);
