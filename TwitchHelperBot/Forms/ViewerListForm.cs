@@ -117,7 +117,13 @@ namespace TwitchHelperBot
                 );
 
             int count = 1;
-            foreach (KeyValuePair<string, TimeSpan> kvp in WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key))
+
+            IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
+            if (button2.Text == "Sort W")
+                sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
+            else
+                sortedList = WatchTimeDictionary.OrderByDescending(x => ViewerNames.Contains(x.Key)).ThenBy(x => x.Key);
+            foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
             {
                 if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
                 {
@@ -152,8 +158,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            //request.AddQueryParameter("broadcaster_id", "526375465");
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -461,6 +467,58 @@ namespace TwitchHelperBot
             Globals.windowLocations[Name]["IsOpen"] = "false";
             File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
             SaveSession();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            if (button1.Text == "History")
+            {
+                button1.Text = "Back";
+
+                RefreshSessionHistoryUI();
+
+                flowLayoutPanel1.Show();
+            }
+            else
+            {
+                button1.Text = "History";
+                flowLayoutPanel1.Hide();
+            }
+        }
+
+        private void RefreshSessionHistoryUI()
+        {
+            flowLayoutPanel1.Controls.Clear();
+            foreach (var sessionData in Sessions.OrderByDescending(x => x.DateTimeStarted))
+            {
+                SessionHistoryItem sessionHistoryItem = new SessionHistoryItem();
+                sessionHistoryItem.Width = flowLayoutPanel1.Width - 24;
+                sessionHistoryItem.label1.Text = $"DateTime: {sessionData.DateTimeStarted}";
+                sessionHistoryItem.label2.Text = $"Duration: {sessionData.DateTimeEnded - sessionData.DateTimeStarted:hh':'mm':'ss}";
+                sessionHistoryItem.label3.Text = $"Average/Peak Viewers: {sessionData.AverageViewerCount:0.##} / {sessionData.PeakViewerCount}";
+                sessionHistoryItem.label4.Text = $"CombinedHoursWatched: {sessionData.CombinedHoursWatched:0.##}";
+                sessionHistoryItem.button1.Click += delegate
+                {
+                    if (Sessions.Remove(sessionData))
+                    {
+                        File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
+                        RefreshSessionHistoryUI();
+                    }
+                };
+                flowLayoutPanel1.Controls.Add(sessionHistoryItem);
+            }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            if (button2.Text == "Sort W")
+            {
+                button2.Text = "Sort O";
+            }
+            else
+            {
+                button2.Text = "Sort W";
+            }
         }
     }
 }

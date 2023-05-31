@@ -149,6 +149,12 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CustomUI\SessionHistoryItem.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CustomUI\SessionHistoryItem.Designer.cs">
+      <DependentUpon>SessionHistoryItem.cs</DependentUpon>
+    </Compile>
     <Compile Include="Tools\AudioManager.cs" />
     <Compile Include="Forms\AudioMixerForm.cs">
       <SubType>Form</SubType>
@@ -241,6 +247,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="CustomUI\SessionHistoryItem.resx">
+      <DependentUpon>SessionHistoryItem.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Forms\AudioMixerForm.resx">
       <DependentUpon>AudioMixerForm.cs</DependentUpon>
     </EmbeddedResource>
