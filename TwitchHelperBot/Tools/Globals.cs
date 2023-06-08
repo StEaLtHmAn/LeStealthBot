@@ -47,14 +47,14 @@ namespace TwitchHelperBot
 
         public static string getRelativeTimeSpan(TimeSpan ts)
         {
-            if (ts.Minutes < 1)//seconds ago
+            if (ts.TotalMinutes < 1)//seconds ago
                 return ts.Seconds == 1 ? "1 Second" : ts.Seconds + " Seconds";
-            if (ts.Hours < 1)//min ago
-                return ts.Minutes == 1 ? "1 Minute" : ts.Minutes + " Minutes";
-            if (ts.Days < 1)//hours ago
-                return ts.Hours == 1 ? "1 Hour" : ts.Hours + " Hours";
-            if (ts.Days < 7)//days ago
-                return ts.Days == 1 ? "1 Day" : ts.Days + " Days";
+            if (ts.TotalHours < 1)//min ago
+                return ts.TotalMinutes == 1 ? "1 Minute" : ts.Minutes + " Minutes";
+            if (ts.TotalHours < 1)//hours ago
+                return ts.TotalHours == 1 ? "1 Hour" : ts.Hours + " Hours";
+            if (ts.TotalDays < 7)//days ago
+                return ts.TotalDays == 1 ? "1 Day" : ts.Days + " Days";
             if (ts.TotalDays < 30.4368)//weeks ago
                 return (int)(ts.TotalDays / 7) == 1 ? "1 Week" : (int)(ts.TotalDays / 7) + " Weeks";
             if (ts.TotalDays < 365.242)//months ago

@@ -88,7 +88,7 @@ namespace TwitchHelperBot
             double totalHours = SessionHoursWatched;
             double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
             double totalAverage = currentAverage;
-            int peakViewers = WatchTimeDictionary.Count;
+            int peakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
             foreach (SessionData session in Sessions)
             {
                 totalDuration += session.DateTimeEnded - session.DateTimeStarted;
@@ -158,8 +158,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            //request.AddQueryParameter("broadcaster_id", "526375465");
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -218,7 +218,6 @@ namespace TwitchHelperBot
             if (DateTime.UtcNow - sessionStart < TimeSpan.FromMinutes(5))
                 return;
 
-
             int attemptsNo = 0;
             bool added = false;
         retry:
@@ -231,7 +230,7 @@ namespace TwitchHelperBot
                         DateTimeStarted = sessionStart,
                         DateTimeEnded = DateTime.UtcNow,
                         AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
-                        PeakViewerCount = WatchTimeDictionary.Count,
+                        PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
                         CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
                         WatchTimeData = WatchTimeDictionary
                     });
@@ -309,7 +308,7 @@ namespace TwitchHelperBot
                 DateTimeStarted = sessionStart,
                 DateTimeEnded = DateTime.UtcNow,
                 AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
-                PeakViewerCount = WatchTimeDictionary.Count,
+                PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
                 CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
                 WatchTimeData = WatchTimeDictionary
             });
