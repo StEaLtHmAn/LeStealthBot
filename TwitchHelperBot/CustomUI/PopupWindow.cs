@@ -21,6 +21,10 @@ public class PopupWindow : ToolStripDropDown
         //Positioning and Sizing
         content.Location = Point.Empty;
         Size = content.Size;
+        content.SizeChanged += delegate
+        {
+            Size = content.Size;
+        };
 
         //Add the host to the list
         Items.Add(_host);

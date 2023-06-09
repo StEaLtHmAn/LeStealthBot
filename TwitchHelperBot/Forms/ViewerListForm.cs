@@ -281,6 +281,7 @@ namespace TwitchHelperBot
 
         private string RightClickedWord = string.Empty;
         private Point RightClickedWordPos = Point.Empty;
+        private PopupWindow popup;
         private void richTextBox1_MouseUp(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Right)
@@ -290,128 +291,121 @@ namespace TwitchHelperBot
                 RightClickedWord = richTextBox1.Text.Substring(wordIndex, richTextBox1.Text.IndexOfAny(new char[] { ' ', '\r', '\n' }, wordIndex) - wordIndex);
                 if (WatchTimeDictionary.ContainsKey(RightClickedWord))
                 {
-                    //contextMenuStrip1.Show(richTextBox1, e.Location);
-                    viewerDetailsToolStripMenuItem_Click(null, null);
+                    JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
+                    JObject followdata = GetFollowedDataByUser(userDetails["data"][0]["id"].ToString());
+                    JObject subscribedata = GetSubscribedDataByUser(userDetails["data"][0]["id"].ToString());
+                    var watchTimeData = Sessions;
+                    watchTimeData.Add(new SessionData()
+                    {
+                        DateTimeStarted = sessionStart,
+                        DateTimeEnded = DateTime.UtcNow,
+                        AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
+                        PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
+                        CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
+                        WatchTimeData = WatchTimeDictionary
+                    });
+                    watchTimeData = watchTimeData.Where(x => x.WatchTimeData.ContainsKey(RightClickedWord)).ToList();
+
+                    Label lblDisplayName = new Label();
+                    Label lblDescription = new Label();
+                    Label lblSubscribed = new Label();
+                    Label lblFollowed = new Label();
+                    PictureBox pbxProfileImage = new PictureBox();
+                    Label lblLastSession = new Label();
+                    Label lblTotalHoursWatched = new Label();
+                    Label lblAccountCreated = new Label();
+
+                    pbxProfileImage.Location = new Point(12, 12);
+                    pbxProfileImage.Size = new Size(150, 150);
+                    pbxProfileImage.SizeMode = PictureBoxSizeMode.Zoom;
+
+                    lblDisplayName.AutoSize = true;
+                    lblDisplayName.Font = new Font(lblDisplayName.Font, FontStyle.Bold);
+                    lblDisplayName.Location = new Point(174, 12);
+
+                    lblDescription.AutoSize = true;
+                    lblDescription.Location = new Point(12, 174);
+                    lblDescription.MaximumSize = new Size(376, 48);
+
+                    lblAccountCreated.AutoSize = true;
+                    lblAccountCreated.Location = new Point(174, 36);
+
+                    lblSubscribed.AutoSize = true;
+                    lblSubscribed.Location = new Point(174, 60);
+
+                    lblFollowed.AutoSize = true;
+                    lblFollowed.Location = new Point(174, 84);
+
+                    lblLastSession.AutoSize = true;
+                    lblLastSession.Location = new Point(174, 108);
+
+                    lblTotalHoursWatched.AutoSize = true;
+                    lblTotalHoursWatched.Location = new Point(174, 132);
+
+                    // Display the user details.
+                    lblDisplayName.Text = RightClickedWord;
+                    lblDescription.Text = userDetails["data"][0]["description"].ToString();
+                    lblAccountCreated.Text = "Account created " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(userDetails["data"][0]["created_at"].ToString())) + " ago";
+                    pbxProfileImage.Image = GetImageFromURL(userDetails["data"][0]["profile_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString());
+
+                    // Display the watched sessions.
+                    lblLastSession.Text = "Watching since " + Globals.getRelativeTimeSpan(DateTime.UtcNow - watchTimeData.First().DateTimeEnded) + " ago";
+                    TimeSpan total = WatchTimeDictionary[RightClickedWord];
+                    foreach (var x in watchTimeData)
+                    {
+                        total += x.WatchTimeData[userDetails["data"][0]["display_name"].ToString()];
+                    }
+                    lblTotalHoursWatched.Text = $"Watched for {Globals.getRelativeTimeSpan(total)}";
+
+                    //gifter_name, is_gift, tier, plan_name
+                    if ((subscribedata["data"] as JArray).Count > 0)
+                    {
+                        lblSubscribed.Text = "Subscribed";
+                        if (subscribedata?["data"]?[0]?["tier"] != null)
+                        {
+                            lblSubscribed.Text += $" (tier {subscribedata["data"][0]["tier"]})";
+                        }
+                        if (subscribedata?["data"]?[0]?["gifter_name"] != null)
+                        {
+                            lblSubscribed.Text += $" (gift from {subscribedata["data"][0]["gifter_name"]})";
+                        }
+                    }
+                    else
+                    {
+                        lblSubscribed.Text = "Not Subscribed";
+                    }
+                    lblFollowed.Text = (followdata["data"] as JArray).Count > 0 ? "Following for " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(followdata["data"][0]["followed_at"].ToString())) : "Not Following";
+
+                    Panel panel = new Panel()
+                    {
+                        MinimumSize = new Size(400, 222),
+                        BackgroundImageLayout = ImageLayout.Zoom
+                    };
+                    panel.Controls.Add(lblDisplayName);
+                    panel.Controls.Add(lblDescription);
+                    panel.Controls.Add(lblAccountCreated);
+                    panel.Controls.Add(pbxProfileImage);
+                    panel.Controls.Add(lblLastSession);
+                    panel.Controls.Add(lblTotalHoursWatched);
+                    panel.Controls.Add(lblSubscribed);
+                    panel.Controls.Add(lblFollowed);
+
+                    if (!string.IsNullOrWhiteSpace(userDetails["data"][0]["offline_image_url"].ToString()))
+                        panel.BackgroundImage = GetImageFromURL(userDetails["data"][0]["offline_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString() + "_offline");
+
+                    popup = new PopupWindow(panel, true);
+                    popup.Show(RightClickedWordPos);
+                    popup.Closing += delegate
+                    {
+                        try
+                        {
+                            pbxProfileImage.Image?.Dispose();
+                            panel.BackgroundImage?.Dispose();
+                        }
+                        catch { }
+                    };
                 }
             }
-        }
-
-        private PopupWindow popup;
-        private void viewerDetailsToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
-            JObject followdata = GetFollowedDataByUser(userDetails["data"][0]["id"].ToString());
-            JObject subscribedata = GetSubscribedDataByUser(userDetails["data"][0]["id"].ToString());
-            var watchTimeData = Sessions;
-            watchTimeData.Add(new SessionData()
-            {
-                DateTimeStarted = sessionStart,
-                DateTimeEnded = DateTime.UtcNow,
-                AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
-                PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
-                CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
-                WatchTimeData = WatchTimeDictionary
-            });
-            watchTimeData = watchTimeData.Where(x => x.WatchTimeData.ContainsKey(RightClickedWord)).ToList();
-
-            Label lblDisplayName = new Label();
-            Label lblDescription = new Label();
-            Label lblSubscribed = new Label();
-            Label lblFollowed = new Label();
-            PictureBox pbxProfileImage = new PictureBox();
-            Label lblLastSession = new Label();
-            Label lblTotalHoursWatched = new Label();
-            Label lblAccountCreated = new Label();
-
-            pbxProfileImage.Location = new Point(12, 12);
-            pbxProfileImage.Size = new Size(150, 150);
-            pbxProfileImage.SizeMode = PictureBoxSizeMode.Zoom;
-
-            lblDisplayName.AutoSize = true;
-            lblDisplayName.Font = new Font(lblDisplayName.Font, FontStyle.Bold);
-            lblDisplayName.Location = new Point(174, 12);
-
-            lblDescription.AutoSize = true;
-            lblDescription.Location = new Point(12, 174);
-            lblDescription.MaximumSize = new Size(376, 48);
-
-            lblAccountCreated.AutoSize = true;
-            lblAccountCreated.Location = new Point(174, 36);
-
-            lblSubscribed.AutoSize = true;
-            lblSubscribed.Location = new Point(174, 60);
-
-            lblFollowed.AutoSize = true;
-            lblFollowed.Location = new Point(174, 84);
-
-            lblLastSession.AutoSize = true;
-            lblLastSession.Location = new Point(174, 108);
-            
-            lblTotalHoursWatched.AutoSize = true;
-            lblTotalHoursWatched.Location = new Point(174, 132);
-
-            // Display the user details.
-            lblDisplayName.Text = RightClickedWord;
-            lblDescription.Text = userDetails["data"][0]["description"].ToString();
-            lblAccountCreated.Text = "Account created " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(userDetails["data"][0]["created_at"].ToString())) +" ago";
-            pbxProfileImage.Image = GetImageFromURL(userDetails["data"][0]["profile_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString());
-
-            // Display the watched sessions.
-            lblLastSession.Text = "Watching since " + Globals.getRelativeTimeSpan(DateTime.UtcNow-watchTimeData.First().DateTimeEnded) + " ago";
-            TimeSpan total = WatchTimeDictionary[RightClickedWord];
-            foreach (var x in watchTimeData)
-            {
-                total += x.WatchTimeData[userDetails["data"][0]["display_name"].ToString()];
-            }
-            lblTotalHoursWatched.Text = $"Watched for {Globals.getRelativeTimeSpan(total)}";
-
-            //gifter_name, is_gift, tier, plan_name
-            if ((subscribedata["data"] as JArray).Count > 0)
-            {
-                lblSubscribed.Text = "Subscribed";
-                if (subscribedata?["data"]?[0]?["tier"] != null)
-                {
-                    lblSubscribed.Text += $" (tier {subscribedata["data"][0]["tier"]})";
-                }
-                if (subscribedata?["data"]?[0]?["gifter_name"] != null)
-                {
-                    lblSubscribed.Text += $" (gift from {subscribedata["data"][0]["gifter_name"]})";
-                }
-            }
-            else
-            {
-                lblSubscribed.Text = "Not Subscribed";
-            }
-            lblFollowed.Text = (followdata["data"] as JArray).Count > 0 ? "Following for " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(followdata["data"][0]["followed_at"].ToString())) : "Not Following";
-
-            Panel panel = new Panel()
-            {
-                MinimumSize = new Size(400, 222),
-                BackgroundImageLayout = ImageLayout.Zoom
-            };
-            panel.Controls.Add(lblDisplayName);
-            panel.Controls.Add(lblDescription);
-            panel.Controls.Add(lblAccountCreated);
-            panel.Controls.Add(pbxProfileImage);
-            panel.Controls.Add(lblLastSession);
-            panel.Controls.Add(lblTotalHoursWatched);
-            panel.Controls.Add(lblSubscribed);
-            panel.Controls.Add(lblFollowed);
-
-            if(!string.IsNullOrWhiteSpace(userDetails["data"][0]["offline_image_url"].ToString()))
-                panel.BackgroundImage = GetImageFromURL(userDetails["data"][0]["offline_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString()+ "_offline");
-
-            popup = new PopupWindow(panel, true);
-            popup.Show(RightClickedWordPos);
-            popup.Closing += delegate
-            {
-                try
-                {
-                    pbxProfileImage.Image?.Dispose();
-                    panel.BackgroundImage?.Dispose();
-                }
-                catch { }
-            };
         }
 
         public JObject GetFollowedDataByUser(string user_id)
@@ -488,11 +482,12 @@ namespace TwitchHelperBot
         private void RefreshSessionHistoryUI()
         {
             flowLayoutPanel1.Controls.Clear();
+            int count = 0;
             foreach (var sessionData in Sessions.OrderByDescending(x => x.DateTimeStarted))
             {
                 SessionHistoryItem sessionHistoryItem = new SessionHistoryItem();
                 sessionHistoryItem.Width = flowLayoutPanel1.Width - 24;
-                sessionHistoryItem.label1.Text = $"DateTime: {sessionData.DateTimeStarted}";
+                sessionHistoryItem.label1.Text = $"DateTime: {Globals.getRelativeDateTime(sessionData.DateTimeStarted)}";
                 sessionHistoryItem.label2.Text = $"Duration: {sessionData.DateTimeEnded - sessionData.DateTimeStarted:hh':'mm':'ss}";
                 sessionHistoryItem.label3.Text = $"Average/Peak Viewers: {sessionData.AverageViewerCount:0.##} / {sessionData.PeakViewerCount}";
                 sessionHistoryItem.label4.Text = $"CombinedHoursWatched: {sessionData.CombinedHoursWatched:0.##}";
@@ -503,6 +498,27 @@ namespace TwitchHelperBot
                         File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
                         RefreshSessionHistoryUI();
                     }
+                };
+                sessionHistoryItem.button2.Click += delegate
+                {
+                    Label lblDescription = new Label();
+                    lblDescription.AutoSize = true;
+                    lblDescription.Location = new Point(12, 12);
+                    lblDescription.Text = string.Join(Environment.NewLine, sessionData.WatchTimeData.OrderByDescending(x => x.Value).ThenBy(x => x.Key).Select(x => $"{x.Key} - {Globals.getRelativeTimeSpan(x.Value)}"));
+
+                    Panel panel = new Panel()
+                    {
+                        MinimumSize = new Size(200, 200),
+                        MaximumSize = new Size(200, 400),
+                        BackgroundImageLayout = ImageLayout.Zoom,
+                        AutoSize = true,
+                        AutoSizeMode = AutoSizeMode.GrowOnly,
+                        AutoScroll = true
+                    };
+                    panel.Controls.Add(lblDescription);
+
+                    popup = new PopupWindow(panel, true);
+                    popup.Show(Location);
                 };
                 flowLayoutPanel1.Controls.Add(sessionHistoryItem);
             }

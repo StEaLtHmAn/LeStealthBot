@@ -79,7 +79,6 @@
             this.viewerDetailsToolStripMenuItem.Name = "viewerDetailsToolStripMenuItem";
             this.viewerDetailsToolStripMenuItem.Size = new System.Drawing.Size(122, 22);
             this.viewerDetailsToolStripMenuItem.Text = "Viewer Details";
-            this.viewerDetailsToolStripMenuItem.Click += new System.EventHandler(this.viewerDetailsToolStripMenuItem_Click);
             // 
             // button1
             // 
