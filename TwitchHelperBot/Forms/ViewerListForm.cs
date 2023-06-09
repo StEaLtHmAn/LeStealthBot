@@ -119,7 +119,7 @@ namespace TwitchHelperBot
             int count = 1;
 
             IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
-            if (button2.Text == "Sort W")
+            if (button2.Text == "Sort WT")
                 sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
             else
                 sortedList = WatchTimeDictionary.OrderByDescending(x => ViewerNames.Contains(x.Key)).ThenBy(x => x.Key);
@@ -131,9 +131,14 @@ namespace TwitchHelperBot
                     {
                         richTextBox1.SelectionColor = richTextBox1.ForeColor;
                         richTextBox1.AppendText($"{count}. ");
+
+                        if (Sessions.Count(x => x.WatchTimeData.ContainsKey(kvp.Key)) < 1)
+                            richTextBox1.SelectionColor = Color.LightGreen;
+
                         richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
                         richTextBox1.AppendText(kvp.Key);
                         richTextBox1.SelectionFont = richTextBox1.Font;
+                        richTextBox1.SelectionColor = richTextBox1.ForeColor;
                         richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
                         count++;
                     }
@@ -143,6 +148,7 @@ namespace TwitchHelperBot
                         richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
                         richTextBox1.AppendText(kvp.Key);
                         richTextBox1.SelectionFont = richTextBox1.Font;
+                        richTextBox1.SelectionColor = richTextBox1.ForeColor;
                         richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
                     }
                 }
@@ -158,8 +164,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            //request.AddQueryParameter("broadcaster_id", "526375465");
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -526,13 +532,13 @@ namespace TwitchHelperBot
 
         private void button2_Click(object sender, EventArgs e)
         {
-            if (button2.Text == "Sort W")
+            if (button2.Text == "Sort WT")
             {
-                button2.Text = "Sort O";
+                button2.Text = "Sort ON";
             }
             else
             {
-                button2.Text = "Sort W";
+                button2.Text = "Sort WT";
             }
         }
     }
