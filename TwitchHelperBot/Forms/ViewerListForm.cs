@@ -28,6 +28,8 @@ namespace TwitchHelperBot
             Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
             if(File.Exists("WatchTimeSessions.json"))
                 Sessions = JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json"));
+
+            timer1_Tick(null,null);
         }
 
         private void textBox2_TextChanged(object sender, EventArgs e)
