@@ -124,7 +124,7 @@ namespace TwitchHelperBot
             if (button2.Text == "Sort WT")
                 sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
             else
-                sortedList = WatchTimeDictionary.OrderByDescending(x => ViewerNames.Contains(x.Key)).ThenBy(x => x.Key);
+                sortedList = WatchTimeDictionary.OrderByDescending(x => ViewerNames.Contains(x.Key)).ThenBy(x => x.Value).ThenBy(x => x.Key);
             foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
             {
                 if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
@@ -465,8 +465,11 @@ namespace TwitchHelperBot
 
         private void ViewerListForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            Globals.windowLocations[Name]["IsOpen"] = "false";
-            File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+            if (e.CloseReason == CloseReason.UserClosing)
+            {
+                Globals.windowLocations[Name]["IsOpen"] = "false";
+                File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+            }
             SaveSession();
         }
 
@@ -490,15 +493,16 @@ namespace TwitchHelperBot
         private void RefreshSessionHistoryUI()
         {
             flowLayoutPanel1.Controls.Clear();
-            int count = 0;
+            int count = 1;
             foreach (var sessionData in Sessions.OrderByDescending(x => x.DateTimeStarted))
             {
                 SessionHistoryItem sessionHistoryItem = new SessionHistoryItem();
                 sessionHistoryItem.Width = flowLayoutPanel1.Width - 24;
-                sessionHistoryItem.label1.Text = $"DateTime: {Globals.getRelativeDateTime(sessionData.DateTimeStarted)}";
+                sessionHistoryItem.label1.Text = $"DateTime: {Globals.getRelativeDateTime(sessionData.DateTimeStarted)} ago";
                 sessionHistoryItem.label2.Text = $"Duration: {sessionData.DateTimeEnded - sessionData.DateTimeStarted:hh':'mm':'ss}";
                 sessionHistoryItem.label3.Text = $"Average/Peak Viewers: {sessionData.AverageViewerCount:0.##} / {sessionData.PeakViewerCount}";
                 sessionHistoryItem.label4.Text = $"CombinedHoursWatched: {sessionData.CombinedHoursWatched:0.##}";
+                sessionHistoryItem.label5.Text = $"#{count}";
                 sessionHistoryItem.button1.Click += delegate
                 {
                     if (Sessions.Remove(sessionData))
@@ -516,8 +520,8 @@ namespace TwitchHelperBot
 
                     Panel panel = new Panel()
                     {
-                        MinimumSize = new Size(200, 200),
-                        MaximumSize = new Size(200, 400),
+                        MinimumSize = new Size(250, 200),
+                        MaximumSize = new Size(250, 400),
                         BackgroundImageLayout = ImageLayout.Zoom,
                         AutoSize = true,
                         AutoSizeMode = AutoSizeMode.GrowOnly,
@@ -529,6 +533,7 @@ namespace TwitchHelperBot
                     popup.Show(Location);
                 };
                 flowLayoutPanel1.Controls.Add(sessionHistoryItem);
+                count++;
             }
         }
 
@@ -542,6 +547,7 @@ namespace TwitchHelperBot
             {
                 button2.Text = "Sort WT";
             }
+            UpdateText();
         }
     }
 }
