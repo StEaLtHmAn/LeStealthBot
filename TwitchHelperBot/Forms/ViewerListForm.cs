@@ -168,8 +168,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            request.AddQueryParameter("broadcaster_id", "526375465");
-            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            //request.AddQueryParameter("broadcaster_id", "526375465");
+            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -548,24 +548,22 @@ namespace TwitchHelperBot
             flowLayoutPanel1.Controls.Clear();
 
             Chart chart1 = new Chart();
-            chart1.Width = flowLayoutPanel1.Width - 18;
-            chart1.Height = flowLayoutPanel1.Height - 18;
+            chart1.Width = flowLayoutPanel1.Width - 8;
+            chart1.Height = flowLayoutPanel1.Height - 8;
             chart1.Anchor = AnchorStyles.Left | AnchorStyles.Top;
+            chart1.BackColor = Globals.DarkColour;
+            chart1.ForeColor = Color.Red;
             flowLayoutPanel1.Controls.Add(chart1);
 
 
             // chartArea
             ChartArea chartArea = new ChartArea("Average Viewers");
             chart1.ChartAreas.Add(chartArea);
-            chartArea.BackGradientStyle = GradientStyle.HorizontalCenter;
-            chartArea.BackHatchStyle = ChartHatchStyle.LargeGrid;
-            chartArea.AxisX.MajorGrid.Enabled = false;//x axis
-            chartArea.AxisY.MajorGrid.Enabled = false;//y axis
+            chartArea.BackColor = Globals.DarkColour;
 
             chartArea.CursorX.IsUserEnabled = true;
             chartArea.CursorX.AxisType = AxisType.Primary;//act on primary x axis
             chartArea.CursorX.Interval = 1;
-            chartArea.CursorX.LineWidth = 1;
             chartArea.CursorX.LineDashStyle = ChartDashStyle.Dash;
             chartArea.CursorX.IsUserSelectionEnabled = true;
             chartArea.CursorX.SelectionColor = Color.Blue;
@@ -573,18 +571,29 @@ namespace TwitchHelperBot
 
             // Y
             chartArea.AxisY.Title = "Viewers";
+            chartArea.AxisX.LabelStyle.Enabled = false;
+            chartArea.AxisY.MajorGrid.Enabled = true;
+            chartArea.AxisY.TitleForeColor = SystemColors.ControlLightLight;
+            chartArea.AxisY.LabelStyle.ForeColor = SystemColors.ControlLightLight;
+            chartArea.AxisY.MajorGrid.LineColor = SystemColors.ControlLightLight;
+            chartArea.AxisY.LineColor = SystemColors.ControlLightLight;
+            chartArea.AxisX.MajorTickMark.LineColor = SystemColors.ControlLightLight;
             // X
-            chartArea.AxisX.LabelStyle.IsEndLabelVisible = true;//show the last label
             chartArea.AxisX.Title = "Days ago";
-            chartArea.AxisX.LineWidth = 1;
-            chartArea.AxisX.Enabled = AxisEnabled.True;
+            chartArea.AxisX.LabelStyle.IsEndLabelVisible = true;
+            chartArea.AxisX.MajorGrid.Enabled = false;
+            chartArea.AxisX.MinorGrid.Enabled = false;
+            chartArea.AxisX.LabelStyle.Enabled = true;
             chartArea.AxisX.IsReversed = true;
             chartArea.AxisX.ScrollBar = new AxisScrollBar();
+            chartArea.AxisX.TitleForeColor = SystemColors.ControlLightLight;
+            chartArea.AxisX.LabelStyle.ForeColor = SystemColors.ControlLightLight;
+            chartArea.AxisX.LineColor = SystemColors.ControlLightLight;
+            chartArea.AxisX.MajorTickMark.LineColor = SystemColors.ControlLightLight;
 
             // 1
             Series series1 = new Series("Peak Viewers");
             chart1.Series.Add(series1);
-            series1.YAxisType = AxisType.Secondary;
             series1.ChartType = SeriesChartType.SplineArea;
             series1.Color = Color.FromArgb(169, 255, 255, 0);
             series1.XValueType = ChartValueType.Int32;
@@ -592,11 +601,21 @@ namespace TwitchHelperBot
             // 2
             Series series2 = new Series("Average Viewers");
             chart1.Series.Add(series2);
-            series2.YAxisType = AxisType.Secondary;
             series2.ChartType = SeriesChartType.SplineArea;
             series2.Color = Color.FromArgb(169, 255, 0, 0);
             series2.XValueType = ChartValueType.Int32;
             series2.YValueType = ChartValueType.Double;
+
+            // Legend
+            Legend legend1 = new Legend("Legend");
+            legend1.BackColor = Globals.DarkColour;
+            legend1.ForeColor = SystemColors.ControlLightLight;
+            legend1.Docking = Docking.Bottom;
+            chart1.Legends.Add(legend1);
+            series1.Legend = "Legend";
+            series1.IsVisibleInLegend = true;
+            series2.Legend = "Legend";
+            series2.IsVisibleInLegend = true;
 
             Dictionary<int, double> graphAverageViewersData = new Dictionary<int, double>();
             Dictionary<int, double> graphPeakViewersData = new Dictionary<int, double>();
