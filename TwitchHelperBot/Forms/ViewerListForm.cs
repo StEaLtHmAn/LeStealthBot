@@ -9,6 +9,8 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Forms.DataVisualization.Charting;
+using static TwitchHelperBot.ViewerListForm;
 
 namespace TwitchHelperBot
 {
@@ -166,8 +168,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            //request.AddQueryParameter("broadcaster_id", "526375465");
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -294,7 +296,7 @@ namespace TwitchHelperBot
         {
             if (e.Button == MouseButtons.Right)
             {
-                RightClickedWordPos = Cursor.Position;
+                RightClickedWordPos = System.Windows.Forms.Cursor.Position;
                 int wordIndex = richTextBox1.Text.Substring(0, richTextBox1.GetCharIndexFromPosition(e.Location)).LastIndexOfAny(new char[] { ' ', '\r', '\n' }) + 1;
                 RightClickedWord = richTextBox1.Text.Substring(wordIndex, richTextBox1.Text.IndexOfAny(new char[] { ' ', '\r', '\n' }, wordIndex) - wordIndex);
                 if (WatchTimeDictionary.ContainsKey(RightClickedWord))
@@ -477,13 +479,17 @@ namespace TwitchHelperBot
         {
             if (button1.Text == "History")
             {
-                button1.Text = "Back";
-
+                button1.Text = "Stats";
                 RefreshSessionHistoryUI();
-
                 flowLayoutPanel1.Show();
             }
-            else
+            else if (button1.Text == "Stats")
+            {
+                button1.Text = "Viewers";
+                RefreshStatsUI();
+                flowLayoutPanel1.Show();
+            }
+            else if (button1.Text == "Viewers")
             {
                 button1.Text = "History";
                 flowLayoutPanel1.Hide();
@@ -534,6 +540,96 @@ namespace TwitchHelperBot
                 };
                 flowLayoutPanel1.Controls.Add(sessionHistoryItem);
                 count++;
+            }
+        }
+
+        private void RefreshStatsUI()
+        {
+            flowLayoutPanel1.Controls.Clear();
+
+            Chart chart1 = new Chart();
+            chart1.Width = flowLayoutPanel1.Width - 18;
+            chart1.Height = flowLayoutPanel1.Height - 18;
+            chart1.Anchor = AnchorStyles.Left | AnchorStyles.Top;
+            flowLayoutPanel1.Controls.Add(chart1);
+
+
+            // chartArea
+            ChartArea chartArea = new ChartArea("Average Viewers");
+            chart1.ChartAreas.Add(chartArea);
+            chartArea.BackGradientStyle = GradientStyle.HorizontalCenter;
+            chartArea.BackHatchStyle = ChartHatchStyle.LargeGrid;
+            chartArea.AxisX.MajorGrid.Enabled = false;//x axis
+            chartArea.AxisY.MajorGrid.Enabled = false;//y axis
+
+            chartArea.CursorX.IsUserEnabled = true;
+            chartArea.CursorX.AxisType = AxisType.Primary;//act on primary x axis
+            chartArea.CursorX.Interval = 1;
+            chartArea.CursorX.LineWidth = 1;
+            chartArea.CursorX.LineDashStyle = ChartDashStyle.Dash;
+            chartArea.CursorX.IsUserSelectionEnabled = true;
+            chartArea.CursorX.SelectionColor = Color.Blue;
+            chartArea.CursorX.AutoScroll = true;
+
+            // Y
+            chartArea.AxisY.Title = "Viewers";
+            // X
+            chartArea.AxisX.LabelStyle.IsEndLabelVisible = true;//show the last label
+            chartArea.AxisX.Title = "Days ago";
+            chartArea.AxisX.LineWidth = 1;
+            chartArea.AxisX.Enabled = AxisEnabled.True;
+            chartArea.AxisX.IsReversed = true;
+            chartArea.AxisX.ScrollBar = new AxisScrollBar();
+
+            // 1
+            Series series1 = new Series("Peak Viewers");
+            chart1.Series.Add(series1);
+            series1.YAxisType = AxisType.Secondary;
+            series1.ChartType = SeriesChartType.SplineArea;
+            series1.Color = Color.FromArgb(169, 255, 255, 0);
+            series1.XValueType = ChartValueType.Int32;
+            series1.YValueType = ChartValueType.Double;
+            // 2
+            Series series2 = new Series("Average Viewers");
+            chart1.Series.Add(series2);
+            series2.YAxisType = AxisType.Secondary;
+            series2.ChartType = SeriesChartType.SplineArea;
+            series2.Color = Color.FromArgb(169, 255, 0, 0);
+            series2.XValueType = ChartValueType.Int32;
+            series2.YValueType = ChartValueType.Double;
+
+            Dictionary<int, double> graphAverageViewersData = new Dictionary<int, double>();
+            Dictionary<int, double> graphPeakViewersData = new Dictionary<int, double>();
+            foreach (var sessionData in Sessions)
+            {
+                int daysAgo = (int)(DateTime.UtcNow - sessionData.DateTimeStarted).TotalDays;
+
+                if (!graphAverageViewersData.ContainsKey(daysAgo))
+                {
+                    graphAverageViewersData.Add(daysAgo, sessionData.AverageViewerCount);
+                }
+                else
+                {
+                    graphAverageViewersData[daysAgo] = graphAverageViewersData[daysAgo] + sessionData.AverageViewerCount / 2;
+                }
+                if (!graphPeakViewersData.ContainsKey(daysAgo))
+                {
+                    graphPeakViewersData.Add(daysAgo, sessionData.PeakViewerCount);
+                }
+                else
+                {
+                    graphPeakViewersData[daysAgo] = graphPeakViewersData[daysAgo] + sessionData.PeakViewerCount / 2;
+                }
+            }
+            foreach (var kvp in graphPeakViewersData)
+            {
+                int index = series1.Points.AddXY(kvp.Key, kvp.Value);
+                series1.Points[index].ToolTip = $"Days ago: {kvp.Key}, Peak viewers: {kvp.Value}";
+            }
+            foreach (var kvp in graphAverageViewersData)
+            {
+                int index = series2.Points.AddXY(kvp.Key, kvp.Value);
+                series2.Points[index].ToolTip = $"Days ago: {kvp.Key}, Average viewers: {kvp.Value}";
             }
         }
 
