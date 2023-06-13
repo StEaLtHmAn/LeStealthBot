@@ -10,7 +10,6 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
-using static TwitchHelperBot.ViewerListForm;
 
 namespace TwitchHelperBot
 {
@@ -86,77 +85,154 @@ namespace TwitchHelperBot
 
         private void UpdateText()
         {
-            TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
-            TimeSpan totalDuration = SessionDuration;
-            double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours);
-            double totalHours = SessionHoursWatched;
-            double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
-            double totalAverage = currentAverage;
-            int peakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
-            foreach (SessionData session in Sessions)
-            {
-                totalDuration += session.DateTimeEnded - session.DateTimeStarted;
-                totalAverage += session.AverageViewerCount;
-                totalHours += session.WatchTimeData.Sum(x => x.Value.TotalHours);
-                if (session.PeakViewerCount > peakViewers)
-                    peakViewers = session.PeakViewerCount;
-            }
             richTextBox1.SuspendPainting();
             richTextBox1.Clear();
-            richTextBox1.SelectionColor = Color.Gold;
-            richTextBox1.AppendText(
-                $"Overall Stats:{Environment.NewLine}" +
-                $"- Session Count: {Sessions.Count}{Environment.NewLine}" +
-                $"- Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
-                $"- Average/Peak Viewers: {totalAverage / (Sessions.Count + 1):0.##} / {peakViewers}{Environment.NewLine}" +
-                $"- Hours Watched: {totalHours + WatchTimeDictionary.Sum(x => x.Value.TotalHours):0.##}{Environment.NewLine}"
-                );
-            richTextBox1.SelectionColor = Color.Green;
-            richTextBox1.AppendText(
-                $"Session Stats:{Environment.NewLine}" +
-                $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
-                $"- Current/Average/Peak Viewers: {ViewerNames.Length} / {currentAverage:0.##} / {WatchTimeDictionary.Count}{Environment.NewLine}" +
-                $"- Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}" +
-                $"{Environment.NewLine}"
-                );
 
-            int count = 1;
-
-            IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
-            if (button2.Text == "Sort WT")
-                sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
-            else
-                sortedList = WatchTimeDictionary.OrderByDescending(x => ViewerNames.Contains(x.Key)).ThenBy(x => x.Value).ThenBy(x => x.Key);
-            foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
+            if (TextDisplaying == button1.Text)
             {
-                if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
+                Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
+                var SessionsListClone = Sessions;
+                SessionsListClone.Add(new SessionData()
                 {
-                    if (ViewerNames.Contains(kvp.Key))
+                    DateTimeStarted = sessionStart,
+                    DateTimeEnded = DateTime.UtcNow,
+                    AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
+                    PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
+                    CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
+                    WatchTimeData = WatchTimeDictionary
+                });
+                foreach (var sessionData in SessionsListClone)
+                {
+                    foreach (var viewerData in sessionData.WatchTimeData)
+                    {
+                        if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
+                        {
+                            tmpWatchTimeList.Add(viewerData.Key, viewerData.Value);
+                        }
+                        else
+                        {
+                            tmpWatchTimeList[viewerData.Key] += viewerData.Value;
+                        }
+                    }
+                }
+
+                int count = 1;
+                IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
+                if (button2.Text == "Sort WT")
+                    sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
+                else
+                    sortedList = tmpWatchTimeList.OrderByDescending(x => ViewerNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
+                foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
+                {
+                    if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
                     {
                         richTextBox1.SelectionColor = richTextBox1.ForeColor;
                         richTextBox1.AppendText($"{count}. ");
 
-                        if (Sessions.Count(x => x.WatchTimeData.ContainsKey(kvp.Key)) < 1)
-                            richTextBox1.SelectionColor = Color.LightGreen;
+                        if (ViewerNames.Contains(kvp.Key))
+                        {
+                            if (Sessions.Count(x => x.WatchTimeData.ContainsKey(kvp.Key)) < 1)
+                                richTextBox1.SelectionColor = Color.LightGreen;
 
-                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
-                        richTextBox1.AppendText(kvp.Key);
+                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
+                            richTextBox1.AppendText(kvp.Key);
+                        }
+                        else
+                        {
+                            richTextBox1.SelectionColor = Color.Red;
+                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
+                            richTextBox1.AppendText(kvp.Key);
+                        }
                         richTextBox1.SelectionFont = richTextBox1.Font;
                         richTextBox1.SelectionColor = richTextBox1.ForeColor;
                         richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
                         count++;
                     }
-                    else
+                }
+            }
+            else if (TextDisplaying == button3.Text)
+            {
+                TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
+                TimeSpan totalDuration = SessionDuration;
+                double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours);
+                double totalHours = SessionHoursWatched;
+                double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
+                double totalAverage = currentAverage;
+                int peakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
+                foreach (SessionData session in Sessions)
+                {
+                    totalDuration += session.DateTimeEnded - session.DateTimeStarted;
+                    totalAverage += session.AverageViewerCount;
+                    totalHours += session.WatchTimeData.Sum(x => x.Value.TotalHours);
+                    if (session.PeakViewerCount > peakViewers)
+                        peakViewers = session.PeakViewerCount;
+                }
+                richTextBox1.SelectionColor = Color.Gold;
+                richTextBox1.AppendText(
+                    $"Overall Stats:{Environment.NewLine}" +
+                    $"- Session Count: {Sessions.Count}{Environment.NewLine}" +
+                    $"- Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
+                    $"- Average/Peak Viewers: {totalAverage / (Sessions.Count + 1):0.##} / {peakViewers}{Environment.NewLine}" +
+                    $"- Hours Watched: {totalHours + WatchTimeDictionary.Sum(x => x.Value.TotalHours):0.##}{Environment.NewLine}"
+                    );
+                richTextBox1.SelectionColor = Color.Green;
+                richTextBox1.AppendText(
+                    $"Session Stats:{Environment.NewLine}" +
+                    $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                    $"- Current/Average/Peak Viewers: {ViewerNames.Length} / {currentAverage:0.##} / {WatchTimeDictionary.Count}{Environment.NewLine}" +
+                    $"- Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}");
+            }
+            else
+            {
+                TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
+                double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
+                double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours);
+
+                richTextBox1.SelectionColor = Color.Green;
+                richTextBox1.AppendText(
+                    $"Session Stats:{Environment.NewLine}" +
+                    $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                    $"- Current/Average/Peak Viewers: {ViewerNames.Length} / {currentAverage:0.##} / {WatchTimeDictionary.Count}{Environment.NewLine}" +
+                    $"- Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}{Environment.NewLine}");
+
+                int count = 1;
+                IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
+                if (button2.Text == "Sort WT")
+                    sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
+                else
+                    sortedList = WatchTimeDictionary.OrderByDescending(x => ViewerNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
+                foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
+                {
+                    if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
                     {
-                        richTextBox1.SelectionColor = Color.Red;
-                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
-                        richTextBox1.AppendText(kvp.Key);
-                        richTextBox1.SelectionFont = richTextBox1.Font;
-                        richTextBox1.SelectionColor = richTextBox1.ForeColor;
-                        richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
+                        if (ViewerNames.Contains(kvp.Key))
+                        {
+                            richTextBox1.SelectionColor = richTextBox1.ForeColor;
+                            richTextBox1.AppendText($"{count}. ");
+
+                            if (Sessions.Count(x => x.WatchTimeData.ContainsKey(kvp.Key)) < 1)
+                                richTextBox1.SelectionColor = Color.LightGreen;
+
+                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
+                            richTextBox1.AppendText(kvp.Key);
+                            richTextBox1.SelectionFont = richTextBox1.Font;
+                            richTextBox1.SelectionColor = richTextBox1.ForeColor;
+                            richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
+                            count++;
+                        }
+                        else
+                        {
+                            richTextBox1.SelectionColor = Color.Red;
+                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
+                            richTextBox1.AppendText(kvp.Key);
+                            richTextBox1.SelectionFont = richTextBox1.Font;
+                            richTextBox1.SelectionColor = richTextBox1.ForeColor;
+                            richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
+                        }
                     }
                 }
             }
+
             richTextBox1.ResumePainting();
         }
 
@@ -241,6 +317,7 @@ namespace TwitchHelperBot
                         DateTimeEnded = DateTime.UtcNow,
                         AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
                         PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
+                        UniqueViewerCount = WatchTimeDictionary.Count,
                         CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
                         WatchTimeData = WatchTimeDictionary
                     });
@@ -285,6 +362,7 @@ namespace TwitchHelperBot
             public DateTime DateTimeEnded { get; set; }
             public double AverageViewerCount { get; set; }
             public int PeakViewerCount { get; set; }
+            public int UniqueViewerCount { get; set; }
             public double CombinedHoursWatched { get; set; }
             public Dictionary<string, TimeSpan> WatchTimeData { get; set; }
         }
@@ -299,7 +377,7 @@ namespace TwitchHelperBot
                 RightClickedWordPos = System.Windows.Forms.Cursor.Position;
                 int wordIndex = richTextBox1.Text.Substring(0, richTextBox1.GetCharIndexFromPosition(e.Location)).LastIndexOfAny(new char[] { ' ', '\r', '\n' }) + 1;
                 RightClickedWord = richTextBox1.Text.Substring(wordIndex, richTextBox1.Text.IndexOfAny(new char[] { ' ', '\r', '\n' }, wordIndex) - wordIndex);
-                if (WatchTimeDictionary.ContainsKey(RightClickedWord))
+                if (Sessions.Any(x => x.WatchTimeData.ContainsKey(RightClickedWord)))
                 {
                     JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
                     JObject followdata = GetFollowedDataByUser(userDetails["data"][0]["id"].ToString());
@@ -360,7 +438,7 @@ namespace TwitchHelperBot
 
                     // Display the watched sessions.
                     lblLastSession.Text = "Watching since " + Globals.getRelativeTimeSpan(DateTime.UtcNow - watchTimeData.First().DateTimeEnded) + " ago";
-                    TimeSpan total = WatchTimeDictionary[RightClickedWord];
+                    TimeSpan total = WatchTimeDictionary.ContainsKey(RightClickedWord) ? WatchTimeDictionary[RightClickedWord] : TimeSpan.Zero;
                     foreach (var x in watchTimeData)
                     {
                         total += x.WatchTimeData[userDetails["data"][0]["display_name"].ToString()];
@@ -475,25 +553,12 @@ namespace TwitchHelperBot
             SaveSession();
         }
 
+        string TextDisplaying = string.Empty;
         private void button1_Click(object sender, EventArgs e)
         {
-            if (button1.Text == "History")
-            {
-                button1.Text = "Stats";
-                RefreshSessionHistoryUI();
-                flowLayoutPanel1.Show();
-            }
-            else if (button1.Text == "Stats")
-            {
-                button1.Text = "Viewers";
-                RefreshStatsUI();
-                flowLayoutPanel1.Show();
-            }
-            else if (button1.Text == "Viewers")
-            {
-                button1.Text = "History";
-                flowLayoutPanel1.Hide();
-            }
+            TextDisplaying = button1.Text;
+            flowLayoutPanel1.Hide();
+            UpdateText();
         }
 
         private void RefreshSessionHistoryUI()
@@ -543,113 +608,119 @@ namespace TwitchHelperBot
             }
         }
 
-        private void RefreshStatsUI()
+        private void RefreshGraphUI()
         {
+            void generateViewerCountChart()
+            {
+                Chart chart1 = new Chart();
+                chart1.Width = flowLayoutPanel1.Width - 7;
+                chart1.Height = flowLayoutPanel1.Height - 7;
+                chart1.Anchor = AnchorStyles.Left | AnchorStyles.Top;
+                chart1.BackColor = Globals.DarkColour;
+                flowLayoutPanel1.Controls.Add(chart1);
+
+                // chartArea
+                ChartArea chartArea = new ChartArea("Average Viewers");
+                chart1.ChartAreas.Add(chartArea);
+                chartArea.BackColor = Globals.DarkColour;
+
+                chartArea.CursorX.IsUserEnabled = true;
+                chartArea.CursorX.AxisType = AxisType.Primary;//act on primary x axis
+                chartArea.CursorX.Interval = 1;
+                chartArea.CursorX.LineDashStyle = ChartDashStyle.Dash;
+                chartArea.CursorX.IsUserSelectionEnabled = true;
+                chartArea.CursorX.SelectionColor = Color.Blue;
+                chartArea.CursorX.AutoScroll = true;
+
+                // Y
+                chartArea.AxisY.Title = "Viewers";
+                chartArea.AxisX.LabelStyle.Enabled = false;
+                chartArea.AxisY.MajorGrid.Enabled = true;
+                chartArea.AxisY.TitleForeColor = SystemColors.ControlLightLight;
+                chartArea.AxisY.LabelStyle.ForeColor = SystemColors.ControlLightLight;
+                chartArea.AxisY.MajorGrid.LineColor = SystemColors.ControlLightLight;
+                chartArea.AxisY.LineColor = SystemColors.ControlLightLight;
+                chartArea.AxisX.MajorTickMark.LineColor = SystemColors.ControlLightLight;
+                // X
+                chartArea.AxisX.Title = "Days ago";
+                chartArea.AxisX.LabelStyle.IsEndLabelVisible = true;
+                chartArea.AxisX.MajorGrid.Enabled = false;
+                chartArea.AxisX.MinorGrid.Enabled = false;
+                chartArea.AxisX.LabelStyle.Enabled = true;
+                chartArea.AxisX.IsReversed = true;
+                chartArea.AxisX.ScrollBar = new AxisScrollBar();
+                chartArea.AxisX.TitleForeColor = SystemColors.ControlLightLight;
+                chartArea.AxisX.LabelStyle.ForeColor = SystemColors.ControlLightLight;
+                chartArea.AxisX.LineColor = SystemColors.ControlLightLight;
+                chartArea.AxisX.MajorTickMark.LineColor = SystemColors.ControlLightLight;
+                chartArea.AxisX.Minimum = 0;
+
+                // 1
+                Series series1 = new Series("Peak Viewers");
+                chart1.Series.Add(series1);
+                series1.ChartType = SeriesChartType.SplineArea;
+                series1.Color = Color.FromArgb(165, 85, 0, 255);
+                series1.XValueType = ChartValueType.Int32;
+                series1.YValueType = ChartValueType.Double;
+
+                // 2
+                Series series2 = new Series("Average Viewers");
+                chart1.Series.Add(series2);
+                series2.ChartType = SeriesChartType.SplineArea;
+                series2.Color = Color.FromArgb(165, 135, 0, 255);
+                series2.XValueType = ChartValueType.Int32;
+                series2.YValueType = ChartValueType.Double;
+
+                // Legend
+                Legend legend1 = new Legend("Legend");
+                legend1.BackColor = Globals.DarkColour;
+                legend1.ForeColor = SystemColors.ControlLightLight;
+                legend1.Docking = Docking.Bottom;
+                chart1.Legends.Add(legend1);
+                series1.Legend = "Legend";
+                series1.IsVisibleInLegend = true;
+                series2.Legend = "Legend";
+                series2.IsVisibleInLegend = true;
+
+                Dictionary<int, double> graphAverageViewersData = new Dictionary<int, double>();
+                Dictionary<int, double> graphPeakViewersData = new Dictionary<int, double>();
+                foreach (var sessionData in Sessions)
+                {
+                    int daysAgo = (int)(DateTime.UtcNow - sessionData.DateTimeStarted).TotalDays;
+
+                    if (!graphAverageViewersData.ContainsKey(daysAgo))
+                    {
+                        graphAverageViewersData.Add(daysAgo, sessionData.AverageViewerCount);
+                    }
+                    else
+                    {
+                        graphAverageViewersData[daysAgo] = (graphAverageViewersData[daysAgo] + sessionData.AverageViewerCount) / 2;
+                    }
+                    if (!graphPeakViewersData.ContainsKey(daysAgo))
+                    {
+                        graphPeakViewersData.Add(daysAgo, sessionData.PeakViewerCount);
+                    }
+                    else if (graphPeakViewersData[daysAgo] < sessionData.PeakViewerCount)
+                    {
+                        graphPeakViewersData[daysAgo] = sessionData.PeakViewerCount;
+                    }
+                }
+                chartArea.AxisX.Maximum = graphPeakViewersData.Keys.Max();
+                foreach (var kvp in graphPeakViewersData)
+                {
+                    int index = series1.Points.AddXY(kvp.Key, kvp.Value);
+                    series1.Points[index].ToolTip = $"Days ago: {kvp.Key}, Peak viewers: {kvp.Value}";
+                }
+                foreach (var kvp in graphAverageViewersData)
+                {
+                    int index = series2.Points.AddXY(kvp.Key, kvp.Value);
+                    series2.Points[index].ToolTip = $"Days ago: {kvp.Key}, Average viewers: {kvp.Value}";
+                }
+            }
+
             flowLayoutPanel1.Controls.Clear();
 
-            Chart chart1 = new Chart();
-            chart1.Width = flowLayoutPanel1.Width - 8;
-            chart1.Height = flowLayoutPanel1.Height - 8;
-            chart1.Anchor = AnchorStyles.Left | AnchorStyles.Top;
-            chart1.BackColor = Globals.DarkColour;
-            chart1.ForeColor = Color.Red;
-            flowLayoutPanel1.Controls.Add(chart1);
-
-
-            // chartArea
-            ChartArea chartArea = new ChartArea("Average Viewers");
-            chart1.ChartAreas.Add(chartArea);
-            chartArea.BackColor = Globals.DarkColour;
-
-            chartArea.CursorX.IsUserEnabled = true;
-            chartArea.CursorX.AxisType = AxisType.Primary;//act on primary x axis
-            chartArea.CursorX.Interval = 1;
-            chartArea.CursorX.LineDashStyle = ChartDashStyle.Dash;
-            chartArea.CursorX.IsUserSelectionEnabled = true;
-            chartArea.CursorX.SelectionColor = Color.Blue;
-            chartArea.CursorX.AutoScroll = true;
-
-            // Y
-            chartArea.AxisY.Title = "Viewers";
-            chartArea.AxisX.LabelStyle.Enabled = false;
-            chartArea.AxisY.MajorGrid.Enabled = true;
-            chartArea.AxisY.TitleForeColor = SystemColors.ControlLightLight;
-            chartArea.AxisY.LabelStyle.ForeColor = SystemColors.ControlLightLight;
-            chartArea.AxisY.MajorGrid.LineColor = SystemColors.ControlLightLight;
-            chartArea.AxisY.LineColor = SystemColors.ControlLightLight;
-            chartArea.AxisX.MajorTickMark.LineColor = SystemColors.ControlLightLight;
-            // X
-            chartArea.AxisX.Title = "Days ago";
-            chartArea.AxisX.LabelStyle.IsEndLabelVisible = true;
-            chartArea.AxisX.MajorGrid.Enabled = false;
-            chartArea.AxisX.MinorGrid.Enabled = false;
-            chartArea.AxisX.LabelStyle.Enabled = true;
-            chartArea.AxisX.IsReversed = true;
-            chartArea.AxisX.ScrollBar = new AxisScrollBar();
-            chartArea.AxisX.TitleForeColor = SystemColors.ControlLightLight;
-            chartArea.AxisX.LabelStyle.ForeColor = SystemColors.ControlLightLight;
-            chartArea.AxisX.LineColor = SystemColors.ControlLightLight;
-            chartArea.AxisX.MajorTickMark.LineColor = SystemColors.ControlLightLight;
-
-            // 1
-            Series series1 = new Series("Peak Viewers");
-            chart1.Series.Add(series1);
-            series1.ChartType = SeriesChartType.SplineArea;
-            series1.Color = Color.FromArgb(169, 255, 255, 0);
-            series1.XValueType = ChartValueType.Int32;
-            series1.YValueType = ChartValueType.Double;
-            // 2
-            Series series2 = new Series("Average Viewers");
-            chart1.Series.Add(series2);
-            series2.ChartType = SeriesChartType.SplineArea;
-            series2.Color = Color.FromArgb(169, 255, 0, 0);
-            series2.XValueType = ChartValueType.Int32;
-            series2.YValueType = ChartValueType.Double;
-
-            // Legend
-            Legend legend1 = new Legend("Legend");
-            legend1.BackColor = Globals.DarkColour;
-            legend1.ForeColor = SystemColors.ControlLightLight;
-            legend1.Docking = Docking.Bottom;
-            chart1.Legends.Add(legend1);
-            series1.Legend = "Legend";
-            series1.IsVisibleInLegend = true;
-            series2.Legend = "Legend";
-            series2.IsVisibleInLegend = true;
-
-            Dictionary<int, double> graphAverageViewersData = new Dictionary<int, double>();
-            Dictionary<int, double> graphPeakViewersData = new Dictionary<int, double>();
-            foreach (var sessionData in Sessions)
-            {
-                int daysAgo = (int)(DateTime.UtcNow - sessionData.DateTimeStarted).TotalDays;
-
-                if (!graphAverageViewersData.ContainsKey(daysAgo))
-                {
-                    graphAverageViewersData.Add(daysAgo, sessionData.AverageViewerCount);
-                }
-                else
-                {
-                    graphAverageViewersData[daysAgo] = graphAverageViewersData[daysAgo] + sessionData.AverageViewerCount / 2;
-                }
-                if (!graphPeakViewersData.ContainsKey(daysAgo))
-                {
-                    graphPeakViewersData.Add(daysAgo, sessionData.PeakViewerCount);
-                }
-                else
-                {
-                    graphPeakViewersData[daysAgo] = graphPeakViewersData[daysAgo] + sessionData.PeakViewerCount / 2;
-                }
-            }
-            foreach (var kvp in graphPeakViewersData)
-            {
-                int index = series1.Points.AddXY(kvp.Key, kvp.Value);
-                series1.Points[index].ToolTip = $"Days ago: {kvp.Key}, Peak viewers: {kvp.Value}";
-            }
-            foreach (var kvp in graphAverageViewersData)
-            {
-                int index = series2.Points.AddXY(kvp.Key, kvp.Value);
-                series2.Points[index].ToolTip = $"Days ago: {kvp.Key}, Average viewers: {kvp.Value}";
-            }
+            generateViewerCountChart();
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -663,6 +734,53 @@ namespace TwitchHelperBot
                 button2.Text = "Sort WT";
             }
             UpdateText();
+        }
+
+        private void flowLayoutPanel1_SizeChanged(object sender, EventArgs e)
+        {
+            flowLayoutPanel1.SizeChanged += delegate
+            {
+                foreach (Control ctrl in flowLayoutPanel1.Controls)
+                {
+                    if (ctrl is Chart)
+                    {
+                        ctrl.Width = flowLayoutPanel1.Width - 7;
+                        ctrl.Height = flowLayoutPanel1.Height - 7;
+                    }
+                    else if (ctrl is SessionHistoryItem)
+                    {
+                        ctrl.Width = flowLayoutPanel1.Width - 24;
+                    }
+                }
+            };
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            TextDisplaying = button3.Text;
+            flowLayoutPanel1.Hide();
+            UpdateText();
+            richTextBox1.SelectionStart = 0;
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            RefreshGraphUI();
+            flowLayoutPanel1.Show();
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            RefreshSessionHistoryUI();
+            flowLayoutPanel1.Show();
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            TextDisplaying = button6.Text;
+            flowLayoutPanel1.Hide();
+            UpdateText();
+            richTextBox1.SelectionStart = 0;
         }
     }
 }
