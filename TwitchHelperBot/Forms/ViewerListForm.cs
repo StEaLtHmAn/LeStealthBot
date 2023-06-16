@@ -48,7 +48,12 @@ namespace TwitchHelperBot
                     string[] botNamesList = (JObject.Parse(GetBotList())["bots"] as JArray).Select(x => (x as JArray)[0].ToString()).ToArray();
                     JArray Viewers = GetChattersList();
                     Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString())).ToList());
-                    ViewerNames = Viewers.Select(x => (x as JObject)["user_name"].ToString()).ToArray();
+
+                    //We use the name if the login is the same otherwise we use the login
+                    ViewerNames = Viewers.Select(x =>
+                    (x as JObject)["user_name"].ToString().ToLower() == (x as JObject)["user_login"].ToString().ToLower() ?
+                    (x as JObject)["user_name"].ToString() :
+                    (x as JObject)["user_login"].ToString()).ToArray();
 
                     TimeSpan lastViewerCountSpan = DateTime.UtcNow - lastViewerCountCheck;
                     if (lastViewerCountSpan.TotalMinutes >= 1 || ViewerCountPerMinute.Count == 0)
@@ -88,10 +93,11 @@ namespace TwitchHelperBot
             richTextBox1.SuspendPainting();
             richTextBox1.Clear();
 
-            if (TextDisplaying == button1.Text)
+            if (TextDisplaying == button1.Text)//list
             {
                 Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
-                var SessionsListClone = Sessions;
+                List<SessionData> SessionsListClone = new List<SessionData>();
+                SessionsListClone.AddRange(Sessions);
                 SessionsListClone.Add(new SessionData()
                 {
                     DateTimeStarted = sessionStart,
@@ -131,16 +137,16 @@ namespace TwitchHelperBot
 
                         if (ViewerNames.Contains(kvp.Key))
                         {
-                            if (Sessions.Count(x => x.WatchTimeData.ContainsKey(kvp.Key)) < 1)
+                            if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
                                 richTextBox1.SelectionColor = Color.LightGreen;
 
-                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
+                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
                             richTextBox1.AppendText(kvp.Key);
                         }
                         else
                         {
                             richTextBox1.SelectionColor = Color.Red;
-                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
+                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
                             richTextBox1.AppendText(kvp.Key);
                         }
                         richTextBox1.SelectionFont = richTextBox1.Font;
@@ -150,7 +156,7 @@ namespace TwitchHelperBot
                     }
                 }
             }
-            else if (TextDisplaying == button3.Text)
+            else if (TextDisplaying == button3.Text)//stats
             {
                 TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
                 TimeSpan totalDuration = SessionDuration;
@@ -159,6 +165,14 @@ namespace TwitchHelperBot
                 double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
                 double totalAverage = currentAverage;
                 int peakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
+
+                int last30DaysSessionCount = 1;
+                TimeSpan last30DaysTotalDuration = SessionDuration;
+                double last30DaysTotalAverage = currentAverage;
+                int last30DaysPeakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
+                int last30DaysUniqueViewerCount = 0;
+                double last30DaysTotalHours = SessionHoursWatched;
+
                 foreach (SessionData session in Sessions)
                 {
                     totalDuration += session.DateTimeEnded - session.DateTimeStarted;
@@ -166,23 +180,49 @@ namespace TwitchHelperBot
                     totalHours += session.WatchTimeData.Sum(x => x.Value.TotalHours);
                     if (session.PeakViewerCount > peakViewers)
                         peakViewers = session.PeakViewerCount;
+                    if ((DateTime.UtcNow - session.DateTimeStarted).TotalDays <= 7)
+                    {
+                        last30DaysSessionCount++;
+                        last30DaysTotalDuration += session.DateTimeEnded - session.DateTimeStarted;
+                        last30DaysTotalAverage += session.AverageViewerCount;
+                        if (session.PeakViewerCount > last30DaysPeakViewers)
+                            last30DaysPeakViewers = session.PeakViewerCount;
+                        if (session.UniqueViewerCount > last30DaysUniqueViewerCount)
+                            last30DaysUniqueViewerCount = session.UniqueViewerCount;
+                        last30DaysTotalHours += session.WatchTimeData.Sum(x => x.Value.TotalHours);
+                    }
                 }
                 richTextBox1.SelectionColor = Color.Gold;
                 richTextBox1.AppendText(
                     $"Overall Stats:{Environment.NewLine}" +
-                    $"- Session Count: {Sessions.Count}{Environment.NewLine}" +
-                    $"- Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
-                    $"- Average/Peak Viewers: {totalAverage / (Sessions.Count + 1):0.##} / {peakViewers}{Environment.NewLine}" +
-                    $"- Hours Watched: {totalHours + WatchTimeDictionary.Sum(x => x.Value.TotalHours):0.##}{Environment.NewLine}"
+                    $"- Session Count: {(Sessions.Count + 1)}{Environment.NewLine}" +
+                    $"- Total Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
+                    $"- Average Viewers: {totalAverage / (Sessions.Count + 1):0.##}{Environment.NewLine}" +
+                    $"- Peak Viewers: {peakViewers}{Environment.NewLine}" +
+                    $"- Peak Unique Viewers: {Sessions.Max(x=> x.UniqueViewerCount)}{Environment.NewLine}" +
+                    $"- Combined Hours Watched: {totalHours:0.##}{Environment.NewLine}{Environment.NewLine}"
+                    );
+                richTextBox1.SelectionColor = Color.Red;
+                richTextBox1.AppendText(
+                    $"Last 30 Days Stats:{Environment.NewLine}" +
+                    $"- Session Count: {last30DaysSessionCount}{Environment.NewLine}" +
+                    $"- Total Duration: {Globals.getRelativeTimeSpan(last30DaysTotalDuration)}{Environment.NewLine}" +
+                    $"- Average Viewers: {last30DaysTotalAverage / last30DaysSessionCount:0.##}{Environment.NewLine}" +
+                    $"- Peak Viewers: {last30DaysPeakViewers}{Environment.NewLine}" +
+                    $"- Peak Unique Viewers: {last30DaysUniqueViewerCount}{Environment.NewLine}" +
+                    $"- Combined Hours Watched: {last30DaysTotalHours:0.##}{Environment.NewLine}{Environment.NewLine}"
                     );
                 richTextBox1.SelectionColor = Color.Green;
                 richTextBox1.AppendText(
                     $"Session Stats:{Environment.NewLine}" +
                     $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
-                    $"- Current/Average/Peak Viewers: {ViewerNames.Length} / {currentAverage:0.##} / {WatchTimeDictionary.Count}{Environment.NewLine}" +
-                    $"- Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}");
+                    $"- Current Viewers: {ViewerNames.Length}{Environment.NewLine}" +
+                    $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
+                    $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
+                    $"- Unique Viewers: {WatchTimeDictionary.Count}{Environment.NewLine}" +
+                    $"- Combined Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}");
             }
-            else
+            else//session
             {
                 TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
                 double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
@@ -192,7 +232,7 @@ namespace TwitchHelperBot
                 richTextBox1.AppendText(
                     $"Session Stats:{Environment.NewLine}" +
                     $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
-                    $"- Current/Average/Peak Viewers: {ViewerNames.Length} / {currentAverage:0.##} / {WatchTimeDictionary.Count}{Environment.NewLine}" +
+                    $"- Current/Average/Peak Viewers: {ViewerNames.Length} / {currentAverage:0.##} / {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
                     $"- Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}{Environment.NewLine}");
 
                 int count = 1;
@@ -210,10 +250,10 @@ namespace TwitchHelperBot
                             richTextBox1.SelectionColor = richTextBox1.ForeColor;
                             richTextBox1.AppendText($"{count}. ");
 
-                            if (Sessions.Count(x => x.WatchTimeData.ContainsKey(kvp.Key)) < 1)
+                            if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
                                 richTextBox1.SelectionColor = Color.LightGreen;
 
-                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
+                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
                             richTextBox1.AppendText(kvp.Key);
                             richTextBox1.SelectionFont = richTextBox1.Font;
                             richTextBox1.SelectionColor = richTextBox1.ForeColor;
@@ -223,7 +263,7 @@ namespace TwitchHelperBot
                         else
                         {
                             richTextBox1.SelectionColor = Color.Red;
-                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Underline);
+                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
                             richTextBox1.AppendText(kvp.Key);
                             richTextBox1.SelectionFont = richTextBox1.Font;
                             richTextBox1.SelectionColor = richTextBox1.ForeColor;
@@ -235,7 +275,7 @@ namespace TwitchHelperBot
 
             richTextBox1.ResumePainting();
         }
-
+        
         public JArray GetChattersList()
         {
             JArray Viewers = new JArray();
@@ -382,8 +422,9 @@ namespace TwitchHelperBot
                     JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
                     JObject followdata = GetFollowedDataByUser(userDetails["data"][0]["id"].ToString());
                     JObject subscribedata = GetSubscribedDataByUser(userDetails["data"][0]["id"].ToString());
-                    var watchTimeData = Sessions;
-                    watchTimeData.Add(new SessionData()
+                    List<SessionData> SessionsListClone = new List<SessionData>();
+                    SessionsListClone.AddRange(Sessions);
+                    SessionsListClone.Add(new SessionData()
                     {
                         DateTimeStarted = sessionStart,
                         DateTimeEnded = DateTime.UtcNow,
@@ -392,7 +433,7 @@ namespace TwitchHelperBot
                         CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
                         WatchTimeData = WatchTimeDictionary
                     });
-                    watchTimeData = watchTimeData.Where(x => x.WatchTimeData.ContainsKey(RightClickedWord)).ToList();
+                    SessionsListClone = SessionsListClone.Where(x => x.WatchTimeData.ContainsKey(RightClickedWord)).ToList();
 
                     Label lblDisplayName = new Label();
                     Label lblDescription = new Label();
@@ -437,9 +478,9 @@ namespace TwitchHelperBot
                     pbxProfileImage.Image = GetImageFromURL(userDetails["data"][0]["profile_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString());
 
                     // Display the watched sessions.
-                    lblLastSession.Text = "Watching since " + Globals.getRelativeTimeSpan(DateTime.UtcNow - watchTimeData.First().DateTimeEnded) + " ago";
+                    lblLastSession.Text = "Watching since " + Globals.getRelativeTimeSpan(DateTime.UtcNow - SessionsListClone.First().DateTimeEnded) + " ago";
                     TimeSpan total = WatchTimeDictionary.ContainsKey(RightClickedWord) ? WatchTimeDictionary[RightClickedWord] : TimeSpan.Zero;
-                    foreach (var x in watchTimeData)
+                    foreach (var x in SessionsListClone)
                     {
                         total += x.WatchTimeData[userDetails["data"][0]["display_name"].ToString()];
                     }
@@ -553,11 +594,11 @@ namespace TwitchHelperBot
             SaveSession();
         }
 
-        string TextDisplaying = string.Empty;
+        private string TextDisplaying = string.Empty;
         private void button1_Click(object sender, EventArgs e)
         {
-            TextDisplaying = button1.Text;
             flowLayoutPanel1.Hide();
+            TextDisplaying = button1.Text;
             UpdateText();
         }
 
@@ -757,10 +798,12 @@ namespace TwitchHelperBot
 
         private void button3_Click(object sender, EventArgs e)
         {
-            TextDisplaying = button3.Text;
             flowLayoutPanel1.Hide();
+            TextDisplaying = button3.Text;
             UpdateText();
             richTextBox1.SelectionStart = 0;
+            richTextBox1.SelectionLength = 0;
+            richTextBox1.ScrollToCaret();
         }
 
         private void button4_Click(object sender, EventArgs e)
@@ -777,10 +820,12 @@ namespace TwitchHelperBot
 
         private void button6_Click(object sender, EventArgs e)
         {
-            TextDisplaying = button6.Text;
             flowLayoutPanel1.Hide();
+            TextDisplaying = button6.Text;
             UpdateText();
             richTextBox1.SelectionStart = 0;
+            richTextBox1.SelectionLength = 0;
+            richTextBox1.ScrollToCaret();
         }
     }
 }
