@@ -7,6 +7,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
@@ -22,6 +23,7 @@ namespace TwitchHelperBot
         private DateTime lastViewerCountCheck = DateTime.UtcNow;
         private DateTime lastCheck = DateTime.UtcNow;
         private DateTime sessionStart = DateTime.UtcNow;
+        private string[] botNamesList = new string[0];
         public ViewerListForm()
         {
             InitializeComponent();
@@ -45,7 +47,12 @@ namespace TwitchHelperBot
             {
                 try
                 {
-                    string[] botNamesList = (JObject.Parse(GetBotList())["bots"] as JArray).Select(x => (x as JArray)[0].ToString()).ToArray();
+                    JArray botData = GetBotList();
+                    if (botData.Count > 0 && botData[0] is JArray)
+                        botNamesList = botData.Select(x => (x as JArray)[0].ToString()).ToArray();
+                    else if (botData.Count > 0 && botData[0] is JObject)
+                        botNamesList = botData.Select(x => x["username"].ToString()).ToArray();
+
                     JArray Viewers = GetChattersList();
                     Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString())).ToList());
 
@@ -180,7 +187,7 @@ namespace TwitchHelperBot
                     totalHours += session.WatchTimeData.Sum(x => x.Value.TotalHours);
                     if (session.PeakViewerCount > peakViewers)
                         peakViewers = session.PeakViewerCount;
-                    if ((DateTime.UtcNow - session.DateTimeStarted).TotalDays <= 7)
+                    if ((DateTime.UtcNow - session.DateTimeStarted).TotalDays <= 30)
                     {
                         last30DaysSessionCount++;
                         last30DaysTotalDuration += session.DateTimeEnded - session.DateTimeStarted;
@@ -195,7 +202,7 @@ namespace TwitchHelperBot
                 richTextBox1.SelectionColor = Color.Gold;
                 richTextBox1.AppendText(
                     $"Overall Stats:{Environment.NewLine}" +
-                    $"- Session Count: {(Sessions.Count + 1)}{Environment.NewLine}" +
+                    $"- Session Count: {Sessions.Count + 1}{Environment.NewLine}" +
                     $"- Total Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
                     $"- Average Viewers: {totalAverage / (Sessions.Count + 1):0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {peakViewers}{Environment.NewLine}" +
@@ -311,14 +318,18 @@ namespace TwitchHelperBot
             return Viewers;
         }
 
-        public string GetBotList()
+        public JArray GetBotList()
         {
+            JArray bots = new JArray();
+
             //try get data from file
             if (File.Exists("botList.data"))
             {
                 string[] lines = File.ReadAllLines("botList.data");
-                if (DateTime.UtcNow - DateTime.Parse(lines[0]) <= TimeSpan.FromDays(1))
-                    return string.Join("\n", lines.Skip(1));
+                if (DateTime.UtcNow - DateTime.Parse(lines[0]) <= TimeSpan.FromDays(5))
+                    return JArray.Parse(string.Join("\n", lines.Skip(1)));
+                else
+                    bots = JArray.Parse(string.Join("\n", lines.Skip(1)));
             }
 
             //if we cant find the file or if the file is old then we download a new file
@@ -326,10 +337,50 @@ namespace TwitchHelperBot
             RestClient client = new RestClient();
             RestRequest request = new RestRequest("https://api.twitchinsights.net/v1/bots/all", Method.Get);
             RestResponse response = client.Execute(request);
+            if (response.Content.StartsWith("{"))
+            {
+                bots = JObject.Parse(response.Content)["bots"] as JArray;
+                File.WriteAllText("botList.data", DateTime.UtcNow.ToString() + "\n" + bots.ToString(Formatting.None));
+            }
+            else
+            {
+                Thread.Sleep(500);
+                response = client.Execute(request);
+                if (response.Content.StartsWith("{"))
+                {
+                    bots = JObject.Parse(response.Content)["bots"] as JArray;
+                    File.WriteAllText("botList.data", DateTime.UtcNow.ToString() + "\n" + bots.ToString(Formatting.None));
+                }
+                //else
+                //{
+                //    client = new RestClient();
+                //    request = new RestRequest("https://api.twitchbots.info/v2/bot", Method.Get);
+                //    response = client.Execute(request);
 
-            File.WriteAllText("botList.data", DateTime.UtcNow.ToString() + "\n" + response.Content);
+                //    if (response.Content.StartsWith("{"))
+                //    {
+                //        JObject data = JObject.Parse(response.Content);
+                //        bots = data["bots"] as JArray;
+                //        try
+                //        {
+                //            while (data?["_links"]?["next"] != null && data["_links"]["next"].ToString().StartsWith("http"))
+                //            {
+                //                client = new RestClient();
+                //                request = new RestRequest(data["_links"]["next"].ToString(), Method.Get);
+                //                response = client.Execute(request);
+                //                data = JObject.Parse(response.Content);
+                //                bots.Merge(data["bots"]);
+                //            }
+                //        }
+                //        catch
+                //        {
+                //        }
+                //        File.WriteAllText("botList.data", DateTime.UtcNow.ToString() + "\n" + bots.ToString(Formatting.None));
+                //    }
+                //}
+            }
 
-            return response.Content;
+            return bots;
         }
 
         public new void Dispose()
@@ -417,7 +468,7 @@ namespace TwitchHelperBot
                 RightClickedWordPos = System.Windows.Forms.Cursor.Position;
                 int wordIndex = richTextBox1.Text.Substring(0, richTextBox1.GetCharIndexFromPosition(e.Location)).LastIndexOfAny(new char[] { ' ', '\r', '\n' }) + 1;
                 RightClickedWord = richTextBox1.Text.Substring(wordIndex, richTextBox1.Text.IndexOfAny(new char[] { ' ', '\r', '\n' }, wordIndex) - wordIndex);
-                if (Sessions.Any(x => x.WatchTimeData.ContainsKey(RightClickedWord)))
+                if (Sessions.Any(x => x.WatchTimeData.ContainsKey(RightClickedWord)) || WatchTimeDictionary.ContainsKey(RightClickedWord))
                 {
                     JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
                     JObject followdata = GetFollowedDataByUser(userDetails["data"][0]["id"].ToString());
