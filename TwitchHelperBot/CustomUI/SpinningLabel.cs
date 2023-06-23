@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Text;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Windows.Threading;
 
@@ -13,29 +15,24 @@ namespace TwitchHelperBot
 
         public SpinningLabel()
         {
-            spinningTimer.Interval = TimeSpan.FromMilliseconds(400);
+            spinningTimer.Interval = TimeSpan.FromMilliseconds(420);
             spinningTimer.Tick += delegate
             {
                 try
                 {
-                    int charFitted;
                     string TextWithSpace = Text + "     ";
-                    using (var g = Graphics.FromHwnd(Handle))
-                        g.MeasureString(Text, Font, Size, null, out charFitted, out _);
-
                     if (spinningTextIndex >= TextWithSpace.Length)
                     {
                         spinningTextIndex = 0;
                     }
 
-                    charFitted++;
+                    Size size = TextRenderer.MeasureText(TextWithSpace, Font, Size.Empty, TextFormatFlags.Left);
+                    int charFitted = (int)(Width / (double)size.Width * TextWithSpace.Length);
 
-                    if(charFitted-1 == Text.Length)
+                    if (charFitted >= Text.Length)
                         spinningText = Text;
-                    else if (charFitted < TextWithSpace.Length - spinningTextIndex)
-                        spinningText = TextWithSpace.Substring(spinningTextIndex, charFitted);
                     else
-                        spinningText = TextWithSpace.Substring(spinningTextIndex, TextWithSpace.Length - spinningTextIndex) + TextWithSpace.Substring(0, charFitted - (TextWithSpace.Length - spinningTextIndex));
+                        spinningText = TextWithSpace.Substring(spinningTextIndex) + TextWithSpace.Substring(0, spinningTextIndex + 1);
 
                     Invalidate();
                     spinningTextIndex++;
@@ -56,10 +53,8 @@ namespace TwitchHelperBot
 
         protected override void OnPaint(PaintEventArgs e)
         {
-            // Call the OnPaint method of the base class.  
-            //base.OnPaint(e);
-            // Call methods of the System.Drawing.Graphics object.  
-            e.Graphics.DrawString(spinningText, Font, new SolidBrush(ForeColor), ClientRectangle);
+            e.Graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+            TextRenderer.DrawText(e.Graphics, spinningText, Font, ClientRectangle, ForeColor, TextFormatFlags.Left);
         }
     }
 }
