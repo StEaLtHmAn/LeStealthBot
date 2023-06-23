@@ -71,7 +71,7 @@
             // 
             // panel2
             // 
-            this.panel2.BackColor = System.Drawing.SystemColors.Control;
+            this.panel2.BackColor = System.Drawing.Color.LimeGreen;
             this.panel2.Location = new System.Drawing.Point(0, 0);
             this.panel2.Margin = new System.Windows.Forms.Padding(0);
             this.panel2.Name = "panel2";
@@ -103,7 +103,7 @@
             this.label2.Location = new System.Drawing.Point(82, 27);
             this.label2.Margin = new System.Windows.Forms.Padding(0);
             this.label2.Name = "label2";
-            this.label2.Size = new System.Drawing.Size(172, 15);
+            this.label2.Size = new System.Drawing.Size(172, 19);
             this.label2.TabIndex = 2;
             this.label2.Text = "...";
             this.label2.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Form1_MouseDown);
@@ -114,7 +114,7 @@
             this.label1.Location = new System.Drawing.Point(82, 5);
             this.label1.Margin = new System.Windows.Forms.Padding(0);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(172, 19);
+            this.label1.Size = new System.Drawing.Size(172, 20);
             this.label1.TabIndex = 1;
             this.label1.Text = "Loading...";
             this.label1.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Form1_MouseDown);
