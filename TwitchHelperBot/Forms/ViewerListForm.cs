@@ -162,14 +162,20 @@ namespace TwitchHelperBot
                         richTextBox1.SelectionColor = richTextBox1.ForeColor;
                         richTextBox1.AppendText($"{count}. ");
 
+                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
+
+                        richTextBox1.SelectionColor = ViewerNames.Contains(kvp.Key) ? Color.Green : Color.Red;
+                        richTextBox1.AppendText("⚫ ");
+
                         if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
                             richTextBox1.SelectionColor = Color.Gold;
-                        else if (!ViewerNames.Contains(kvp.Key))
-                            richTextBox1.SelectionColor = Color.Red;
+                        else if (Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                            richTextBox1.SelectionColor = Color.Cyan;
                         else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
                             richTextBox1.SelectionColor = Color.LightGreen;
+                        else
+                            richTextBox1.SelectionColor = richTextBox1.ForeColor;
 
-                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
                         richTextBox1.AppendText(kvp.Key);
 
                         richTextBox1.SelectionFont = richTextBox1.Font;
@@ -224,7 +230,8 @@ namespace TwitchHelperBot
                     $"- Peak Viewers: {peakViewers}{Environment.NewLine}" +
                     $"- Peak Unique Viewers: {Sessions.Max(x=> x.UniqueViewerCount)}{Environment.NewLine}" +
                     $"- Combined Hours Watched: {totalHours:0.##}{Environment.NewLine}" +
-                    $"- Current Subscriber Count: {Subscribers.Count}{Environment.NewLine}{Environment.NewLine}"
+                    $"- Subscriber Count: {Subscribers.Count}{Environment.NewLine}" +
+                    $"- Follower Count: {Followers.Count}{Environment.NewLine}{Environment.NewLine}"
                     );
                 richTextBox1.SelectionColor = Color.Red;
                 richTextBox1.AppendText(
@@ -269,32 +276,30 @@ namespace TwitchHelperBot
                 {
                     if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
                     {
+                        richTextBox1.SelectionColor = richTextBox1.ForeColor;
                         if (ViewerNames.Contains(kvp.Key))
-                        {
-                            richTextBox1.SelectionColor = richTextBox1.ForeColor;
                             richTextBox1.AppendText($"{count}. ");
 
-                            if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                                richTextBox1.SelectionColor = Color.Gold;
-                            else if(!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
-                                richTextBox1.SelectionColor = Color.LightGreen;
+                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
 
-                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
-                            richTextBox1.AppendText(kvp.Key);
-                            richTextBox1.SelectionFont = richTextBox1.Font;
-                            richTextBox1.SelectionColor = richTextBox1.ForeColor;
-                            richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
-                            count++;
-                        }
+                        richTextBox1.SelectionColor = ViewerNames.Contains(kvp.Key) ? Color.Green : Color.Red;
+                        richTextBox1.AppendText("⚫ ");
+
+                        if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                            richTextBox1.SelectionColor = Color.Gold;
+                        else if (Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                            richTextBox1.SelectionColor = Color.Cyan;
+                        else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
+                            richTextBox1.SelectionColor = Color.LightGreen;
                         else
-                        {
-                            richTextBox1.SelectionColor = Color.Red;
-                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
-                            richTextBox1.AppendText(kvp.Key);
-                            richTextBox1.SelectionFont = richTextBox1.Font;
                             richTextBox1.SelectionColor = richTextBox1.ForeColor;
-                            richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
-                        }
+
+                        richTextBox1.AppendText(kvp.Key);
+
+                        richTextBox1.SelectionFont = richTextBox1.Font;
+                        richTextBox1.SelectionColor = richTextBox1.ForeColor;
+                        richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
+                        count++;
                     }
                 }
             }
