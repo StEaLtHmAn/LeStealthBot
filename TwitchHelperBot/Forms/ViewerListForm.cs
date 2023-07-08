@@ -21,6 +21,7 @@ namespace TwitchHelperBot
         private Dictionary<string, TimeSpan> WatchTimeDictionary = new Dictionary<string, TimeSpan>();
         private List<int> ViewerCountPerMinute = new List<int>();
         private DateTime lastViewerCountCheck = DateTime.UtcNow;
+        private DateTime lastSubscriberCheck = DateTime.UtcNow;
         private DateTime lastCheck = DateTime.UtcNow;
         private DateTime sessionStart = DateTime.UtcNow;
         private string[] botNamesList = new string[0];
@@ -29,8 +30,20 @@ namespace TwitchHelperBot
             InitializeComponent();
 
             Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
-            if(File.Exists("WatchTimeSessions.json"))
-                Sessions = JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json"));
+
+
+            //read x amount of archive data
+            if (string.IsNullOrEmpty(Globals.iniHelper.Read("SessionsArchiveReadCount")))
+                Globals.iniHelper.Write("SessionsArchiveReadCount", "5");
+            int SessionsArchiveReadCount = int.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
+            for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
+            {
+                if (File.Exists($"SessionsArchive{i}.json"))
+                    Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
+            }
+            //get session data from file
+            if (File.Exists("WatchTimeSessions.json"))
+                Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
 
             timer1_Tick(null,null);
         }
@@ -55,6 +68,13 @@ namespace TwitchHelperBot
 
                     JArray Viewers = GetChattersList();
                     Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString())).ToList());
+
+                    if((DateTime.UtcNow - lastSubscriberCheck).TotalMinutes >= 5 || Subscribers.Count == 0)
+                        Subscribers = GetSubscribedData();
+                    //Subscribers.Add(new JObject()
+                    //{
+                    //    { "user_login", "notahbotah" }
+                    //});
 
                     //We use the name if the login is the same otherwise we use the login
                     ViewerNames = Viewers.Select(x =>
@@ -142,20 +162,16 @@ namespace TwitchHelperBot
                         richTextBox1.SelectionColor = richTextBox1.ForeColor;
                         richTextBox1.AppendText($"{count}. ");
 
-                        if (ViewerNames.Contains(kvp.Key))
-                        {
-                            if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
-                                richTextBox1.SelectionColor = Color.LightGreen;
-
-                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
-                            richTextBox1.AppendText(kvp.Key);
-                        }
-                        else
-                        {
+                        if (Subscribers.Any(x => x["user_login"].ToString() == kvp.Key))
+                            richTextBox1.SelectionColor = Color.Gold;
+                        else if (!ViewerNames.Contains(kvp.Key))
                             richTextBox1.SelectionColor = Color.Red;
-                            richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
-                            richTextBox1.AppendText(kvp.Key);
-                        }
+                        else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
+                            richTextBox1.SelectionColor = Color.LightGreen;
+
+                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
+                        richTextBox1.AppendText(kvp.Key);
+
                         richTextBox1.SelectionFont = richTextBox1.Font;
                         richTextBox1.SelectionColor = richTextBox1.ForeColor;
                         richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
@@ -207,7 +223,8 @@ namespace TwitchHelperBot
                     $"- Average Viewers: {totalAverage / (Sessions.Count + 1):0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {peakViewers}{Environment.NewLine}" +
                     $"- Peak Unique Viewers: {Sessions.Max(x=> x.UniqueViewerCount)}{Environment.NewLine}" +
-                    $"- Combined Hours Watched: {totalHours:0.##}{Environment.NewLine}{Environment.NewLine}"
+                    $"- Combined Hours Watched: {totalHours:0.##}{Environment.NewLine}" +
+                    $"- Current Subscriber Count: {Subscribers.Count}{Environment.NewLine}{Environment.NewLine}"
                     );
                 richTextBox1.SelectionColor = Color.Red;
                 richTextBox1.AppendText(
@@ -257,7 +274,9 @@ namespace TwitchHelperBot
                             richTextBox1.SelectionColor = richTextBox1.ForeColor;
                             richTextBox1.AppendText($"{count}. ");
 
-                            if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
+                            if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                                richTextBox1.SelectionColor = Color.Gold;
+                            else if(!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
                                 richTextBox1.SelectionColor = Color.LightGreen;
 
                             richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
@@ -389,6 +408,9 @@ namespace TwitchHelperBot
             base.Dispose();
         }
 
+        bool added = false;
+        bool archived = false;
+        bool saved = false;
         private void SaveSession()
         {
             //if its less than 5 minutes - dont save
@@ -396,10 +418,10 @@ namespace TwitchHelperBot
                 return;
 
             int attemptsNo = 0;
-            bool added = false;
         retry:
             try
             {
+                //merge latest data
                 if (!added)
                 {
                     Sessions.Add(new SessionData()
@@ -415,7 +437,19 @@ namespace TwitchHelperBot
                     added = true;
                 }
 
-                File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
+                //archive yearly data to split into chuncks
+                if (!archived)
+                {
+                    DateTime SessionsDateTimeStarted = Sessions.First().DateTimeStarted;
+                    if (DateTime.UtcNow - SessionsDateTimeStarted > TimeSpan.FromDays(365))
+                    {
+                        File.WriteAllText($"SessionsArchive{SessionsDateTimeStarted.Year}.json", JsonConvert.SerializeObject(Sessions));
+                        Sessions.Clear();
+                    }
+                }
+
+                if (!saved)
+                    File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
             }
             catch
             {
@@ -472,8 +506,9 @@ namespace TwitchHelperBot
                 {
                     JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
                     JObject followdata = GetFollowedDataByUser(userDetails["data"][0]["id"].ToString());
-                    JObject subscribedata = GetSubscribedDataByUser(userDetails["data"][0]["id"].ToString());
-                    List<SessionData> SessionsListClone = new List<SessionData>();
+                    var checkSubList = Subscribers.Where(x => x["user_id"].ToString() == userDetails["data"][0]["id"].ToString());
+                    JObject subscribedata = checkSubList.Count() > 0 ? checkSubList.First() as JObject : null;
+                    List <SessionData> SessionsListClone = new List<SessionData>();
                     SessionsListClone.AddRange(Sessions);
                     SessionsListClone.Add(new SessionData()
                     {
@@ -538,16 +573,16 @@ namespace TwitchHelperBot
                     lblTotalHoursWatched.Text = $"Watched for {Globals.getRelativeTimeSpan(total)}";
 
                     //gifter_name, is_gift, tier, plan_name
-                    if ((subscribedata["data"] as JArray).Count > 0)
+                    if (subscribedata != null)
                     {
                         lblSubscribed.Text = "Subscribed";
-                        if (subscribedata?["data"]?[0]?["tier"] != null)
+                        if (subscribedata?["tier"] != null)
                         {
-                            lblSubscribed.Text += $" (tier {subscribedata["data"][0]["tier"]})";
+                            lblSubscribed.Text += $" (tier {subscribedata["tier"]})";
                         }
-                        if (subscribedata?["data"]?[0]?["gifter_name"] != null)
+                        if (subscribedata?["gifter_name"] != null)
                         {
-                            lblSubscribed.Text += $" (gift from {subscribedata["data"][0]["gifter_name"]})";
+                            lblSubscribed.Text += $" (gift from {subscribedata["gifter_name"]})";
                         }
                     }
                     else
@@ -614,6 +649,38 @@ namespace TwitchHelperBot
             return JObject.Parse(response.Content);
         }
 
+        JArray Subscribers = new JArray();
+        public JArray GetSubscribedData()
+        {
+            Subscribers = new JArray();
+
+            RestClient client = new RestClient();
+            client.AddDefaultHeader("Client-ID", Globals.clientId);
+            client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+            RestRequest request = new RestRequest("https://api.twitch.tv/helix/subscriptions", Method.Get);
+            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("first", 100);
+            RestResponse response = client.Execute(request);
+            JObject data = JObject.Parse(response.Content);
+
+            while (data?["pagination"]?["cursor"] != null)
+            {
+                client = new RestClient();
+                client.AddDefaultHeader("Client-ID", Globals.clientId);
+                client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+                request = new RestRequest("https://api.twitch.tv/helix/subscriptions", Method.Get);
+                request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+                request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+                request.AddQueryParameter("first", 100);
+                request.AddQueryParameter("after", data["pagination"]["cursor"].ToString());
+                response = client.Execute(request);
+                data = JObject.Parse(response.Content);
+                Subscribers.Merge(data["data"]);
+            }
+
+            return Subscribers;
+        }
+
         private void ViewerListForm_Move(object sender, EventArgs e)
         {
             if (Globals.windowLocations[Name]["Location"].ToString() != $"{Location.X}x{Location.Y}")
@@ -666,14 +733,22 @@ namespace TwitchHelperBot
                 sessionHistoryItem.label3.Text = $"Average/Peak Viewers: {sessionData.AverageViewerCount:0.##} / {sessionData.PeakViewerCount}";
                 sessionHistoryItem.label4.Text = $"CombinedHoursWatched: {sessionData.CombinedHoursWatched:0.##}";
                 sessionHistoryItem.label5.Text = $"#{count}";
-                sessionHistoryItem.button1.Click += delegate
+                if (DateTime.UtcNow - sessionData.DateTimeStarted <= TimeSpan.FromDays(365))
                 {
-                    if (Sessions.Remove(sessionData))
+                    sessionHistoryItem.button1.Click += delegate
                     {
-                        File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
-                        RefreshSessionHistoryUI();
-                    }
-                };
+                        if (Sessions.Remove(sessionData))
+                        {
+                            File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
+                            RefreshSessionHistoryUI();
+                        }
+                    };
+                }
+                else
+                {
+                    sessionHistoryItem.button1.Text = "Archived";
+                    sessionHistoryItem.button1.Enabled = false;
+                }
                 sessionHistoryItem.button2.Click += delegate
                 {
                     Label lblDescription = new Label();
