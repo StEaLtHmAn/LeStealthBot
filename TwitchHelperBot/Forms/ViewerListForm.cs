@@ -31,7 +31,6 @@ namespace TwitchHelperBot
 
             Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
 
-
             //read x amount of archive data
             if (string.IsNullOrEmpty(Globals.iniHelper.Read("SessionsArchiveReadCount")))
                 Globals.iniHelper.Write("SessionsArchiveReadCount", "5");
@@ -45,6 +44,8 @@ namespace TwitchHelperBot
             if (File.Exists("WatchTimeSessions.json"))
                 Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
 
+            Subscribers = GetSubscribedData();
+            Followers = GetFollowedData();
             timer1_Tick(null,null);
         }
 
@@ -66,15 +67,14 @@ namespace TwitchHelperBot
                     else if (botData.Count > 0 && botData[0] is JObject)
                         botNamesList = botData.Select(x => x["username"].ToString()).ToArray();
 
+                    if ((DateTime.UtcNow - lastSubscriberCheck).TotalMinutes >= 5)
+                    {
+                        Subscribers = GetSubscribedData();
+                        Followers = GetFollowedData();
+                    }
+
                     JArray Viewers = GetChattersList();
                     Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString())).ToList());
-
-                    if((DateTime.UtcNow - lastSubscriberCheck).TotalMinutes >= 5 || Subscribers.Count == 0)
-                        Subscribers = GetSubscribedData();
-                    //Subscribers.Add(new JObject()
-                    //{
-                    //    { "user_login", "notahbotah" }
-                    //});
 
                     //We use the name if the login is the same otherwise we use the login
                     ViewerNames = Viewers.Select(x =>
@@ -162,7 +162,7 @@ namespace TwitchHelperBot
                         richTextBox1.SelectionColor = richTextBox1.ForeColor;
                         richTextBox1.AppendText($"{count}. ");
 
-                        if (Subscribers.Any(x => x["user_login"].ToString() == kvp.Key))
+                        if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
                             richTextBox1.SelectionColor = Color.Gold;
                         else if (!ViewerNames.Contains(kvp.Key))
                             richTextBox1.SelectionColor = Color.Red;
@@ -505,7 +505,8 @@ namespace TwitchHelperBot
                 if (Sessions.Any(x => x.WatchTimeData.ContainsKey(RightClickedWord)) || WatchTimeDictionary.ContainsKey(RightClickedWord))
                 {
                     JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
-                    JObject followdata = GetFollowedDataByUser(userDetails["data"][0]["id"].ToString());
+                    var checkFollowList = Followers.Where(x => x["user_id"].ToString() == userDetails["data"][0]["id"].ToString());
+                    JObject followdata = checkFollowList.Count() > 0 ? checkFollowList.First() as JObject : null;
                     var checkSubList = Subscribers.Where(x => x["user_id"].ToString() == userDetails["data"][0]["id"].ToString());
                     JObject subscribedata = checkSubList.Count() > 0 ? checkSubList.First() as JObject : null;
                     List <SessionData> SessionsListClone = new List<SessionData>();
@@ -589,7 +590,7 @@ namespace TwitchHelperBot
                     {
                         lblSubscribed.Text = "Not Subscribed";
                     }
-                    lblFollowed.Text = (followdata["data"] as JArray).Count > 0 ? "Following for " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(followdata["data"][0]["followed_at"].ToString())) : "Not Following";
+                    lblFollowed.Text = followdata != null ? "Following for " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(followdata["followed_at"].ToString())) : "Not Following";
 
                     Panel panel = new Panel()
                     {
@@ -623,31 +624,50 @@ namespace TwitchHelperBot
             }
         }
 
-        public JObject GetFollowedDataByUser(string user_id)
+        JArray Followers = new JArray();
+        public JArray GetFollowedData()
         {
+            Followers = new JArray();
+
             RestClient client = new RestClient();
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/channels/followers", Method.Get);
             request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
-            request.AddQueryParameter("user_id", user_id);
+            request.AddQueryParameter("first", 100);
             RestResponse response = client.Execute(request);
+            JObject data = JObject.Parse(response.Content);
+            Followers = data["data"] as JArray;
 
-            return JObject.Parse(response.Content);
+            while (data?["pagination"]?["cursor"] != null)
+            {
+                client = new RestClient();
+                client.AddDefaultHeader("Client-ID", Globals.clientId);
+                client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+                request = new RestRequest("https://api.twitch.tv/helix/channels/followers", Method.Get);
+                request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+                request.AddQueryParameter("first", 100);
+                request.AddQueryParameter("after", data["pagination"]["cursor"].ToString());
+                response = client.Execute(request);
+                data = JObject.Parse(response.Content);
+                Followers.Merge(data["data"]);
+            }
+
+            return Followers;
         }
 
-        public JObject GetSubscribedDataByUser(string user_id)
-        {
-            RestClient client = new RestClient();
-            client.AddDefaultHeader("Client-ID", Globals.clientId);
-            client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
-            RestRequest request = new RestRequest("https://api.twitch.tv/helix/subscriptions", Method.Get);
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
-            request.AddQueryParameter("user_id", user_id);
-            RestResponse response = client.Execute(request);
+        //public JObject GetSubscribedDataByUser(string user_id)
+        //{
+        //    RestClient client = new RestClient();
+        //    client.AddDefaultHeader("Client-ID", Globals.clientId);
+        //    client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+        //    RestRequest request = new RestRequest("https://api.twitch.tv/helix/subscriptions", Method.Get);
+        //    request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+        //    request.AddQueryParameter("user_id", user_id);
+        //    RestResponse response = client.Execute(request);
 
-            return JObject.Parse(response.Content);
-        }
+        //    return JObject.Parse(response.Content);
+        //}
 
         JArray Subscribers = new JArray();
         public JArray GetSubscribedData()
@@ -662,6 +682,7 @@ namespace TwitchHelperBot
             request.AddQueryParameter("first", 100);
             RestResponse response = client.Execute(request);
             JObject data = JObject.Parse(response.Content);
+            Subscribers = data["data"] as JArray;
 
             while (data?["pagination"]?["cursor"] != null)
             {
@@ -670,7 +691,6 @@ namespace TwitchHelperBot
                 client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
                 request = new RestRequest("https://api.twitch.tv/helix/subscriptions", Method.Get);
                 request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
-                request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
                 request.AddQueryParameter("first", 100);
                 request.AddQueryParameter("after", data["pagination"]["cursor"].ToString());
                 response = client.Execute(request);

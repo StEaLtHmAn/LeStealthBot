@@ -17,6 +17,7 @@ namespace TwitchHelperBot
             numericUpDown1.Value = decimal.Parse(Globals.iniHelper.Read("ModifyChannelCooldown"));
             numericUpDown2.Value = decimal.Parse(Globals.iniHelper.Read("NotificationDuration"));
             numericUpDown3.Value = decimal.Parse(Globals.iniHelper.Read("VolumeNotificationDuration"));
+            numericUpDown4.Value = decimal.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
             checkBox1.Checked = DarkModeEnabled;
         }
 
@@ -34,6 +35,7 @@ namespace TwitchHelperBot
             Globals.iniHelper.Write("NotificationDuration", ((int)numericUpDown2.Value).ToString());
             Globals.iniHelper.Write("VolumeNotificationDuration", ((int)numericUpDown3.Value).ToString());
             Globals.iniHelper.Write("DarkModeEnabled", checkBox1.Checked.ToString());
+            Globals.iniHelper.Write("SessionsArchiveReadCount", ((int)numericUpDown4.Value).ToString());
 
             Dispose();
         }
