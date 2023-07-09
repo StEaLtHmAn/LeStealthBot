@@ -11,7 +11,7 @@ namespace TwitchHelperBot
     {
         protected override bool ShowWithoutActivation
         {
-            get { return false; }
+            get { return true; }
         }
 
         private const int WS_EX_TOPMOST = 0x00000008;
@@ -39,7 +39,6 @@ namespace TwitchHelperBot
             {
                 this.onClick = onClick;
                 notificationText.Click += notification_Click;
-                notificationIcon.Click += notification_Click;
             }
 
             //close after 5 seconds

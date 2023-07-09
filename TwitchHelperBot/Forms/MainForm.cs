@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
@@ -15,6 +16,10 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using TwitchLib.Client;
+using TwitchLib.Client.Models;
+using TwitchLib.Communication.Clients;
+using static TwitchHelperBot.ViewerListForm;
 using WebView2 = Microsoft.Web.WebView2.WinForms.WebView2;
 
 namespace TwitchHelperBot
@@ -205,7 +210,8 @@ namespace TwitchHelperBot
             Globals.access_token = Globals.iniHelper.Read("access_token");
             if (string.IsNullOrWhiteSpace(Globals.access_token) || !ValidateToken())
             {
-                BrowserForm form = new BrowserForm($"https://id.twitch.tv/oauth2/authorize?client_id={Globals.clientId}&redirect_uri={RedirectURI}&response_type=token&scope=channel:manage:broadcast+moderator:read:chatters+moderator:read:followers+channel:read:subscriptions");
+                string scopes = "channel:manage:broadcast+moderator:read:chatters+moderator:read:followers+channel:read:subscriptions+chat:edit+chat:read";
+                BrowserForm form = new BrowserForm($"https://id.twitch.tv/oauth2/authorize?client_id={Globals.clientId}&redirect_uri={RedirectURI}&response_type=token&scope={scopes}");
                 form.webView2.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_TwitchAuthNavigationCompleted);
                 form.ShowDialog();
 
@@ -219,6 +225,81 @@ namespace TwitchHelperBot
 
             //get user details
             Globals.userDetailsResponse = JObject.Parse(Globals.GetUserDetails(Globals.loginName));
+
+
+            ConnectionCredentials credentials = new ConnectionCredentials(Globals.loginName, Globals.access_token);
+            WebSocketClient customClient = new WebSocketClient();
+            Globals.twitchChatClient = new TwitchClient(customClient);
+            Globals.twitchChatClient.Initialize(credentials, Globals.loginName);
+            Globals.twitchChatClient.Connect();
+            Globals.twitchChatClient.OnChatCommandReceived += (sender, e) =>
+            {
+                switch (e.Command.CommandText)
+                {
+                    case "time":
+                        {
+                            Globals.twitchChatClient.SendMessage(e.Command.ChatMessage.Channel, $"MrDestructoid The local time is: {DateTime.Now.ToShortTimeString()}");
+                            break;
+                        }
+                    case "topviewers":
+                        {
+                            List<SessionData> Sessions = new List<SessionData>();
+                            //read x amount of archive data
+                            if (string.IsNullOrEmpty(Globals.iniHelper.Read("SessionsArchiveReadCount")))
+                                Globals.iniHelper.Write("SessionsArchiveReadCount", "5");
+                            int SessionsArchiveReadCount = int.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
+                            for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
+                            {
+                                if (File.Exists($"SessionsArchive{i}.json"))
+                                    Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
+                            }
+                            //get session data from file
+                            if (File.Exists("WatchTimeSessions.json"))
+                                Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
+
+
+                            Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
+                            foreach (var sessionData in Sessions)
+                            {
+                                foreach (var viewerData in sessionData.WatchTimeData)
+                                {
+                                    if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
+                                    {
+                                        tmpWatchTimeList.Add(viewerData.Key, viewerData.Value);
+                                    }
+                                    else
+                                    {
+                                        tmpWatchTimeList[viewerData.Key] += viewerData.Value;
+                                    }
+                                }
+                            }
+
+                            int count = 1;
+                            IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
+                            string messageToSend = "MrDestructoid ";
+                            foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
+                            {
+                                string newPart = $"{count}. {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value)} |";
+                                if (messageToSend.Length + newPart.Length <= 500)
+                                    messageToSend += newPart;
+                                else
+                                    break;
+                                count++;
+                            }
+                            Globals.twitchChatClient.SendMessage(e.Command.ChatMessage.Channel, messageToSend);
+
+
+                            break;
+                        }
+                }
+            };
+            Globals.twitchChatClient.OnError += (sender, e) =>
+            {
+            };
+            Globals.twitchChatClient.OnLog += (sender, e) =>
+            {
+            };
+
 
             //show welcome message
             OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {Globals.userDetailsResponse["data"][0]["display_name"]}", Globals.userDetailsResponse["data"][0]["profile_image_url"].ToString(), Globals.userDetailsResponse["data"][0]["id"].ToString());
@@ -611,6 +692,8 @@ namespace TwitchHelperBot
                 Application.OpenForms.OfType<SpotifyPreviewForm>().First().Dispose();
             if (Application.OpenForms.OfType<ViewerListForm>().Count() > 0)
                 Application.OpenForms.OfType<ViewerListForm>().First().Dispose();
+            if(Globals.twitchChatClient != null && Globals.twitchChatClient.IsConnected)
+                Globals.twitchChatClient.Disconnect();
             base.Dispose();
         }
     }

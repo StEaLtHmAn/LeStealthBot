@@ -12,7 +12,7 @@ namespace TwitchHelperBot
     {
         protected override bool ShowWithoutActivation
         {
-            get { return false; }
+            get { return true; }
         }
 
         private const int WS_EX_TOPMOST = 0x00000008;

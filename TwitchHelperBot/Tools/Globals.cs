@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Windows.Threading;
+using TwitchLib.Client;
 
 namespace TwitchHelperBot
 {
@@ -21,6 +22,7 @@ namespace TwitchHelperBot
         public static JObject userDetailsResponse;
         public static JObject windowLocations;
         public static string loginName = null;
+        public static TwitchClient twitchChatClient = null;
 
         public static void LogMessage(string message)
         {
