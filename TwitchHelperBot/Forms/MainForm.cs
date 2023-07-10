@@ -20,7 +20,6 @@ using System.Xml;
 using TwitchLib.Client;
 using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
-using static System.Collections.Specialized.BitVector32;
 using WebView2 = Microsoft.Web.WebView2.WinForms.WebView2;
 
 namespace TwitchHelperBot
