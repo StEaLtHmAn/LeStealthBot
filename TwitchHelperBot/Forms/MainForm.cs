@@ -16,10 +16,11 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Xml;
 using TwitchLib.Client;
 using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
-using static TwitchHelperBot.ViewerListForm;
+using static System.Collections.Specialized.BitVector32;
 using WebView2 = Microsoft.Web.WebView2.WinForms.WebView2;
 
 namespace TwitchHelperBot
@@ -232,31 +233,103 @@ namespace TwitchHelperBot
             Globals.twitchChatClient = new TwitchClient(customClient);
             Globals.twitchChatClient.Initialize(credentials, Globals.loginName);
             Globals.twitchChatClient.Connect();
+            Globals.twitchChatClient.OnUserBanned += (sender, e) =>
+            {
+                if (string.IsNullOrEmpty(e.UserBan.BanReason))
+                    Globals.twitchChatClient.SendMessage(e.UserBan.Channel, $"{e.UserBan.Username} BANNED");
+                else
+                    Globals.twitchChatClient.SendMessage(e.UserBan.Channel, $"{e.UserBan.Username} BANNED Reason: {e.UserBan.BanReason}");
+            };
+            Globals.twitchChatClient.OnUserTimedout += (sender, e) =>
+            {
+                if (string.IsNullOrEmpty(e.UserTimeout.TimeoutReason))
+                    Globals.twitchChatClient.SendMessage(e.UserTimeout.Channel, $"{e.UserTimeout.Username} BANNED Duration: {Globals.getRelativeTimeSpan(TimeSpan.FromSeconds(e.UserTimeout.TimeoutDuration))}");
+                else
+                    Globals.twitchChatClient.SendMessage(e.UserTimeout.Channel, $"{e.UserTimeout.Username} BANNED Reason: {e.UserTimeout.TimeoutReason} Duration: {Globals.getRelativeTimeSpan(TimeSpan.FromSeconds(e.UserTimeout.TimeoutDuration))}");
+            };
+            Globals.twitchChatClient.OnMessageReceived += (sender, e) =>
+            {
+                if (e.ChatMessage.Bits > 0)
+                {
+                    Globals.twitchChatClient.SendMessage(e.ChatMessage.Channel, $"MrDestructoid Thanks @{e.ChatMessage.DisplayName}, for the {e.ChatMessage.Bits} bits (${e.ChatMessage.BitsInDollars:0:##})");
+                }
+            };
+            Globals.twitchChatClient.OnNewSubscriber += (sender, e) =>
+            {
+                Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.Subscriber.DisplayName}, for the {e.Subscriber.SubscriptionPlan} subscription.");
+            };
+            Globals.twitchChatClient.OnReSubscriber += (sender, e) =>
+            {
+                Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.ReSubscriber.DisplayName}, for the {e.ReSubscriber.Months} Months {e.ReSubscriber.SubscriptionPlan} subscription.");
+            };
+            Globals.twitchChatClient.OnPrimePaidSubscriber += (sender, e) =>
+            {
+                Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.PrimePaidSubscriber.DisplayName}, for the {e.PrimePaidSubscriber.SubscriptionPlan} subscription.");
+            };
+            Globals.twitchChatClient.OnGiftedSubscription += (sender, e) =>
+            {
+                Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.GiftedSubscription.DisplayName}, for the gifted {e.GiftedSubscription.MsgParamSubPlan} subscription.");
+            };
+            Globals.twitchChatClient.OnContinuedGiftedSubscription += (sender, e) =>
+            {
+                Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.ContinuedGiftedSubscription.MsgParamSenderName}, for the gifting {e.ContinuedGiftedSubscription.DisplayName} a subscription.");
+            };
+            Globals.twitchChatClient.OnCommunitySubscription += (sender, e) =>
+            {
+                Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.GiftedSubscription.DisplayName}, for the gifting {e.GiftedSubscription.MsgParamMassGiftCount} {e.GiftedSubscription.MsgParamSubPlan} subscriptions.");
+            };
             Globals.twitchChatClient.OnChatCommandReceived += (sender, e) =>
             {
-                switch (e.Command.CommandText)
+                switch (e.Command.CommandText.ToLower())
                 {
-                    case "time":
+                    case "eskont":
                         {
-                            Globals.twitchChatClient.SendMessage(e.Command.ChatMessage.Channel, $"MrDestructoid The local time is: {DateTime.Now.ToShortTimeString()}");
+                            using (WebClient webClient = new WebClient())
+                            {
+                                string htmlSchedule = webClient.DownloadString("https://www.ourpower.co.za/areas/nelson-mandela-bay/lorraine?block=13");
+                                int i1 = htmlSchedule.IndexOf("time dateTime=");
+                                int i2 = htmlSchedule.IndexOf("social");
+                                htmlSchedule = "<xml><section><h3><" + htmlSchedule.Substring(i1, i2 - i1);
+                                int i3 = htmlSchedule.LastIndexOf("</li></span></ul></section>");
+                                htmlSchedule = htmlSchedule.Substring(0, i3+ "</li></span></ul></section>".Length) + "</xml>";
+
+                                XmlDocument document = new XmlDocument();
+                                document.LoadXml(htmlSchedule);
+
+                                string message = $"MrDestructoid {Globals.userDetailsResponse["data"][0]["display_name"]}'s Loadshedding schedule for today: ";
+
+                                XmlNode section = document.SelectSingleNode("/xml/section");
+                                XmlNodeList times = section.SelectNodes("ul/span/li");
+
+                                for (int i = 0; i < times.Count; i++)
+                                {
+                                    message += times[i].InnerText;
+                                    if(i != times.Count-1)
+                                        message += " & ";
+                                }
+
+                                Globals.twitchChatClient.SendReply(e.Command.ChatMessage.Channel, e.Command.ChatMessage.Id, message);
+                            }
                             break;
                         }
-                    case "topviewers":
+                    case "time":
                         {
-                            List<SessionData> Sessions = new List<SessionData>();
+                            Globals.twitchChatClient.SendReply(e.Command.ChatMessage.Channel, e.Command.ChatMessage.Id, $"MrDestructoid {Globals.userDetailsResponse["data"][0]["display_name"]}'s local time is: {DateTime.Now.ToShortTimeString()} {TimeZone.CurrentTimeZone.StandardName}");
+                            break;
+                        }
+                    case "topviewers":// todo: optimize data collection
+                        {
+                            List<ViewerListForm.SessionData> Sessions = new List<ViewerListForm.SessionData>();
                             //read x amount of archive data
-                            if (string.IsNullOrEmpty(Globals.iniHelper.Read("SessionsArchiveReadCount")))
-                                Globals.iniHelper.Write("SessionsArchiveReadCount", "5");
                             int SessionsArchiveReadCount = int.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
                             for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
                             {
                                 if (File.Exists($"SessionsArchive{i}.json"))
-                                    Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
+                                    Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
                             }
                             //get session data from file
                             if (File.Exists("WatchTimeSessions.json"))
-                                Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
-
+                                Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
 
                             Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
                             foreach (var sessionData in Sessions)
@@ -279,15 +352,14 @@ namespace TwitchHelperBot
                             string messageToSend = "MrDestructoid ";
                             foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
                             {
-                                string newPart = $"{count}. {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value)} |";
+                                string newPart = $"{count}. {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value)} | ";
                                 if (messageToSend.Length + newPart.Length <= 500)
                                     messageToSend += newPart;
                                 else
                                     break;
                                 count++;
                             }
-                            Globals.twitchChatClient.SendMessage(e.Command.ChatMessage.Channel, messageToSend);
-
+                            Globals.twitchChatClient.SendReply(e.Command.ChatMessage.Channel, e.Command.ChatMessage.Id, messageToSend);
 
                             break;
                         }
@@ -299,7 +371,6 @@ namespace TwitchHelperBot
             Globals.twitchChatClient.OnLog += (sender, e) =>
             {
             };
-
 
             //show welcome message
             OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {Globals.userDetailsResponse["data"][0]["display_name"]}", Globals.userDetailsResponse["data"][0]["profile_image_url"].ToString(), Globals.userDetailsResponse["data"][0]["id"].ToString());
@@ -629,12 +700,12 @@ namespace TwitchHelperBot
                         { "Location", $"{sForm.Location.X}x{sForm.Location.Y}"},
                         { "IsOpen", "true"}
                     });
-                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Newtonsoft.Json.Formatting.None));
                 }
                 else if (Globals.windowLocations[sForm.Name]?["IsOpen"].ToString() != "true")
                 {
                     Globals.windowLocations[sForm.Name]["IsOpen"] = "true";
-                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Newtonsoft.Json.Formatting.None));
                 }
             }
             else
@@ -642,7 +713,7 @@ namespace TwitchHelperBot
                 var form = Application.OpenForms.OfType<ViewerListForm>().First();
 
                 Globals.windowLocations[form.Name]["IsOpen"] = "false";
-                File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+                File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Newtonsoft.Json.Formatting.None));
 
                 form.Dispose();
             }
@@ -667,12 +738,12 @@ namespace TwitchHelperBot
                         { "Location", $"{sForm.Location.X}x{sForm.Location.Y}"},
                         { "IsOpen", "true"}
                     });
-                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Newtonsoft.Json.Formatting.None));
                 }
                 else if (Globals.windowLocations[sForm.Name]?["IsOpen"].ToString() != "true")
                 {
                     Globals.windowLocations[sForm.Name]["IsOpen"] = "true";
-                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+                    File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Newtonsoft.Json.Formatting.None));
                 }
             }
             else
@@ -680,7 +751,7 @@ namespace TwitchHelperBot
                 var form = Application.OpenForms.OfType<SpotifyPreviewForm>().First();
 
                 Globals.windowLocations[form.Name]["IsOpen"] = "false";
-                File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));
+                File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Newtonsoft.Json.Formatting.None));
 
                 form.Dispose();
             }

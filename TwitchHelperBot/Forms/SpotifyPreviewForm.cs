@@ -137,7 +137,7 @@ namespace TwitchHelperBot
         {
             if (Application.OpenForms.OfType<BrowserForm>().Count() == 0)
             {
-                BrowserForm form = new BrowserForm($"https://accounts.spotify.com/authorize?client_id={secrets.clientId}&redirect_uri=" + "http://localhost/" + "&response_type=code&scope=user-read-currently-playing");
+                BrowserForm form = new BrowserForm($"https://accounts.spotify.com/authorize?client_id={secrets.SpotifyClientId}&redirect_uri=" + "http://localhost/" + "&response_type=code&scope=user-read-currently-playing");
                 form.webView2.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_SpotifyAuthNavigationCompleted);
                 form.ShowDialog();
             }
@@ -176,7 +176,7 @@ namespace TwitchHelperBot
 
                 RestClient client = new RestClient();
                 RestRequest request = new RestRequest("https://accounts.spotify.com/api/token", Method.Post);
-                request.AddHeader("Authorization", "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(secrets.clientId + ":" + secrets.clientSecret)));
+                request.AddHeader("Authorization", "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(secrets.SpotifyClientId + ":" + secrets.SpotifyClientSecret)));
                 request.AddParameter("grant_type", "authorization_code");
                 request.AddParameter("code", SpotifyCode);
                 request.AddParameter("redirect_uri", "http://localhost/");
