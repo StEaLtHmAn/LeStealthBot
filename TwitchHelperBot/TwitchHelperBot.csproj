@@ -172,6 +172,9 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CustomUI\CustomTabControl.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="CustomUI\SessionHistoryItem.cs">
       <SubType>UserControl</SubType>
     </Compile>

@@ -139,6 +139,23 @@ namespace TwitchHelperBot
         public static Color DarkColour2 = Color.FromArgb(56, 56, 56);
         public static void ToggleDarkMode(Form form, bool enabled)
         {
+            void SetColours(Control component)
+            {
+                if (component.BackColor == SystemColors.Control)
+                    component.BackColor = DarkColour;
+                else if (component.BackColor == SystemColors.Window)
+                    component.BackColor = DarkColour2;
+                if (!(component is Button))
+                    component.ForeColor = SystemColors.ControlLightLight;
+                
+                
+                if(component.Controls.Count > 0)
+                    foreach (Control innerComponent in component.Controls)
+                    {
+                        SetColours(innerComponent);
+                    }
+            }
+
             UseImmersiveDarkMode(form.Handle, enabled);
             if (enabled)
             {
@@ -149,12 +166,7 @@ namespace TwitchHelperBot
                 }
                 foreach (Control component in form.Controls)
                 {
-                    if (component.BackColor == SystemColors.Control)
-                        component.BackColor = DarkColour;
-                    else if (component.BackColor == SystemColors.Window)
-                        component.BackColor = DarkColour2;
-                    if (!(component is Button))
-                        component.ForeColor = SystemColors.ControlLightLight;
+                    SetColours(component);
                 }
             }
         }
@@ -162,12 +174,44 @@ namespace TwitchHelperBot
         public static string GetUserDetails(string loginName)
         {
             RestClient client = new RestClient();
-            client.AddDefaultHeader("Client-ID", Globals.clientId);
-            client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+            client.AddDefaultHeader("Client-ID", clientId);
+            client.AddDefaultHeader("Authorization", "Bearer " + access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/users", Method.Get);
             request.AddQueryParameter("login", loginName);
             RestResponse response = client.Execute(request);
             return response.Content;
+        }
+
+        public static JArray Followers = new JArray();
+        public static void GetFollowedData()
+        {
+            JArray tmpFollowers = new JArray();
+
+            RestClient client = new RestClient();
+            client.AddDefaultHeader("Client-ID", clientId);
+            client.AddDefaultHeader("Authorization", "Bearer " + access_token);
+            RestRequest request = new RestRequest("https://api.twitch.tv/helix/channels/followers", Method.Get);
+            request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("first", 100);
+            RestResponse response = client.Execute(request);
+            JObject data = JObject.Parse(response.Content);
+            tmpFollowers = data["data"] as JArray;
+
+            while (data?["pagination"]?["cursor"] != null)
+            {
+                client = new RestClient();
+                client.AddDefaultHeader("Client-ID", clientId);
+                client.AddDefaultHeader("Authorization", "Bearer " + access_token);
+                request = new RestRequest("https://api.twitch.tv/helix/channels/followers", Method.Get);
+                request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
+                request.AddQueryParameter("first", 100);
+                request.AddQueryParameter("after", data["pagination"]["cursor"].ToString());
+                response = client.Execute(request);
+                data = JObject.Parse(response.Content);
+                tmpFollowers.Merge(data["data"]);
+            }
+
+            Followers = tmpFollowers;
         }
     }
 }

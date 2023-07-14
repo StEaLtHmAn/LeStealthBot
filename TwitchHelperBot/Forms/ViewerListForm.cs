@@ -45,7 +45,6 @@ namespace TwitchHelperBot
                 Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
 
             Subscribers = GetSubscribedData();
-            Followers = GetFollowedData();
             timer1_Tick(null,null);
         }
 
@@ -70,7 +69,7 @@ namespace TwitchHelperBot
                     if ((DateTime.UtcNow - lastSubscriberCheck).TotalMinutes >= 5)
                     {
                         Subscribers = GetSubscribedData();
-                        Followers = GetFollowedData();
+                        Globals.GetFollowedData();
                     }
 
                     JArray Viewers = GetChattersList();
@@ -169,7 +168,7 @@ namespace TwitchHelperBot
 
                         if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
                             richTextBox1.SelectionColor = Color.Gold;
-                        else if (Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                        else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
                             richTextBox1.SelectionColor = Color.Cyan;
                         else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
                             richTextBox1.SelectionColor = Color.LightGreen;
@@ -231,7 +230,7 @@ namespace TwitchHelperBot
                     $"- Peak Unique Viewers: {Sessions.Max(x=> x.UniqueViewerCount)}{Environment.NewLine}" +
                     $"- Combined Hours Watched: {totalHours:0.##}{Environment.NewLine}" +
                     $"- Subscriber Count: {Subscribers.Count}{Environment.NewLine}" +
-                    $"- Follower Count: {Followers.Count}{Environment.NewLine}{Environment.NewLine}"
+                    $"- Follower Count: {Globals.Followers.Count}{Environment.NewLine}{Environment.NewLine}"
                     );
                 richTextBox1.SelectionColor = Color.Red;
                 richTextBox1.AppendText(
@@ -287,7 +286,7 @@ namespace TwitchHelperBot
 
                         if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
                             richTextBox1.SelectionColor = Color.Gold;
-                        else if (Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                        else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
                             richTextBox1.SelectionColor = Color.Cyan;
                         else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
                             richTextBox1.SelectionColor = Color.LightGreen;
@@ -510,7 +509,7 @@ namespace TwitchHelperBot
                 if (Sessions.Any(x => x.WatchTimeData.ContainsKey(RightClickedWord)) || WatchTimeDictionary.ContainsKey(RightClickedWord))
                 {
                     JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
-                    var checkFollowList = Followers.Where(x => x["user_id"].ToString() == userDetails["data"][0]["id"].ToString());
+                    var checkFollowList = Globals.Followers.Where(x => x["user_id"].ToString() == userDetails["data"][0]["id"].ToString());
                     JObject followdata = checkFollowList.Count() > 0 ? checkFollowList.First() as JObject : null;
                     var checkSubList = Subscribers.Where(x => x["user_id"].ToString() == userDetails["data"][0]["id"].ToString());
                     JObject subscribedata = checkSubList.Count() > 0 ? checkSubList.First() as JObject : null;
@@ -627,38 +626,6 @@ namespace TwitchHelperBot
                     };
                 }
             }
-        }
-
-        JArray Followers = new JArray();
-        public JArray GetFollowedData()
-        {
-            Followers = new JArray();
-
-            RestClient client = new RestClient();
-            client.AddDefaultHeader("Client-ID", Globals.clientId);
-            client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
-            RestRequest request = new RestRequest("https://api.twitch.tv/helix/channels/followers", Method.Get);
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
-            request.AddQueryParameter("first", 100);
-            RestResponse response = client.Execute(request);
-            JObject data = JObject.Parse(response.Content);
-            Followers = data["data"] as JArray;
-
-            while (data?["pagination"]?["cursor"] != null)
-            {
-                client = new RestClient();
-                client.AddDefaultHeader("Client-ID", Globals.clientId);
-                client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
-                request = new RestRequest("https://api.twitch.tv/helix/channels/followers", Method.Get);
-                request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
-                request.AddQueryParameter("first", 100);
-                request.AddQueryParameter("after", data["pagination"]["cursor"].ToString());
-                response = client.Execute(request);
-                data = JObject.Parse(response.Content);
-                Followers.Merge(data["data"]);
-            }
-
-            return Followers;
         }
 
         //public JObject GetSubscribedDataByUser(string user_id)
