@@ -43,19 +43,23 @@
             this.textBox3 = new System.Windows.Forms.TextBox();
             this.label5 = new System.Windows.Forms.Label();
             this.tabPage2 = new System.Windows.Forms.TabPage();
-            this.checkedListBox1 = new System.Windows.Forms.CheckedListBox();
+            this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.numericUpDown5 = new System.Windows.Forms.NumericUpDown();
+            this.label8 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
             this.numericUpDown4 = new System.Windows.Forms.NumericUpDown();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.numericUpDown3 = new System.Windows.Forms.NumericUpDown();
             this.label7 = new System.Windows.Forms.Label();
+            this.panel1 = new System.Windows.Forms.Panel();
             this.tabControl1.SuspendLayout();
             this.tabPage4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).BeginInit();
             this.tabPage2.SuspendLayout();
             this.tabPage1.SuspendLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown5)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown4)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).BeginInit();
             this.SuspendLayout();
@@ -65,7 +69,7 @@
             this.button3.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button3.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button3.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(40)))), ((int)(((byte)(40)))), ((int)(((byte)(255)))));
-            this.button3.Location = new System.Drawing.Point(319, 222);
+            this.button3.Location = new System.Drawing.Point(676, 479);
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(75, 36);
             this.button3.TabIndex = 102;
@@ -78,7 +82,7 @@
             this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button1.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.button1.ForeColor = System.Drawing.Color.Green;
-            this.button1.Location = new System.Drawing.Point(238, 222);
+            this.button1.Location = new System.Drawing.Point(595, 479);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 36);
             this.button1.TabIndex = 101;
@@ -99,7 +103,7 @@
             this.tabControl1.Multiline = true;
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(406, 216);
+            this.tabControl1.Size = new System.Drawing.Size(763, 473);
             this.tabControl1.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
             this.tabControl1.TabIndex = 108;
             // 
@@ -118,7 +122,7 @@
             this.tabPage4.Controls.Add(this.label5);
             this.tabPage4.Location = new System.Drawing.Point(104, 4);
             this.tabPage4.Name = "tabPage4";
-            this.tabPage4.Size = new System.Drawing.Size(298, 208);
+            this.tabPage4.Size = new System.Drawing.Size(655, 465);
             this.tabPage4.TabIndex = 3;
             this.tabPage4.Text = "Channel Update";
             // 
@@ -225,41 +229,34 @@
             // tabPage2
             // 
             this.tabPage2.BackColor = System.Drawing.Color.Transparent;
-            this.tabPage2.Controls.Add(this.checkedListBox1);
+            this.tabPage2.Controls.Add(this.panel1);
+            this.tabPage2.Controls.Add(this.flowLayoutPanel1);
             this.tabPage2.Location = new System.Drawing.Point(104, 4);
             this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Size = new System.Drawing.Size(298, 208);
+            this.tabPage2.Size = new System.Drawing.Size(655, 465);
             this.tabPage2.TabIndex = 4;
             this.tabPage2.Text = "Chat Bot";
             // 
-            // checkedListBox1
+            // flowLayoutPanel1
             // 
-            this.checkedListBox1.BackColor = System.Drawing.SystemColors.Window;
-            this.checkedListBox1.CheckOnClick = true;
-            this.checkedListBox1.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.checkedListBox1.FormattingEnabled = true;
-            this.checkedListBox1.Items.AddRange(new object[] {
-            "OnNewFollow",
-            "OnNewSubscriber",
-            "OnReSubscriber",
-            "OnPrimePaidSubscriber",
-            "OnGiftedSubscription",
-            "OnContinuedGiftedSubscription",
-            "OnCommunitySubscription",
-            "OnMessageReceived - Bits > 0",
-            "OnUserBanned",
-            "OnUserTimedout",
-            "OnChatCommandReceived - eskont",
-            "OnChatCommandReceived - time",
-            "OnChatCommandReceived - topviewers"});
-            this.checkedListBox1.Location = new System.Drawing.Point(0, 0);
-            this.checkedListBox1.Name = "checkedListBox1";
-            this.checkedListBox1.Size = new System.Drawing.Size(298, 208);
-            this.checkedListBox1.TabIndex = 0;
+            this.flowLayoutPanel1.AutoScroll = true;
+            this.flowLayoutPanel1.AutoSize = true;
+            this.flowLayoutPanel1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Left;
+            this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+            this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            this.flowLayoutPanel1.Margin = new System.Windows.Forms.Padding(0);
+            this.flowLayoutPanel1.Name = "flowLayoutPanel1";
+            this.flowLayoutPanel1.Padding = new System.Windows.Forms.Padding(0, 0, 18, 0);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(18, 465);
+            this.flowLayoutPanel1.TabIndex = 0;
+            this.flowLayoutPanel1.WrapContents = false;
             // 
             // tabPage1
             // 
             this.tabPage1.BackColor = System.Drawing.Color.Transparent;
+            this.tabPage1.Controls.Add(this.numericUpDown5);
+            this.tabPage1.Controls.Add(this.label8);
             this.tabPage1.Controls.Add(this.label6);
             this.tabPage1.Controls.Add(this.numericUpDown4);
             this.tabPage1.Controls.Add(this.checkBox1);
@@ -268,14 +265,40 @@
             this.tabPage1.Location = new System.Drawing.Point(104, 4);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(298, 208);
+            this.tabPage1.Size = new System.Drawing.Size(655, 465);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Other";
+            // 
+            // numericUpDown5
+            // 
+            this.numericUpDown5.Location = new System.Drawing.Point(211, 84);
+            this.numericUpDown5.Maximum = new decimal(new int[] {
+            696969,
+            0,
+            0,
+            0});
+            this.numericUpDown5.Name = "numericUpDown5";
+            this.numericUpDown5.Size = new System.Drawing.Size(140, 20);
+            this.numericUpDown5.TabIndex = 108;
+            this.numericUpDown5.Value = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
+            // 
+            // label8
+            // 
+            this.label8.AutoSize = true;
+            this.label8.Location = new System.Drawing.Point(4, 86);
+            this.label8.Name = "label8";
+            this.label8.Size = new System.Drawing.Size(201, 13);
+            this.label8.TabIndex = 109;
+            this.label8.Text = "ViewerList Subscriber Refresh Cooldown:";
             // 
             // label6
             // 
             this.label6.AutoSize = true;
-            this.label6.Location = new System.Drawing.Point(4, 6);
+            this.label6.Location = new System.Drawing.Point(61, 11);
             this.label6.Name = "label6";
             this.label6.Size = new System.Drawing.Size(144, 13);
             this.label6.TabIndex = 104;
@@ -283,7 +306,7 @@
             // 
             // numericUpDown4
             // 
-            this.numericUpDown4.Location = new System.Drawing.Point(154, 53);
+            this.numericUpDown4.Location = new System.Drawing.Point(211, 58);
             this.numericUpDown4.Name = "numericUpDown4";
             this.numericUpDown4.Size = new System.Drawing.Size(140, 20);
             this.numericUpDown4.TabIndex = 107;
@@ -296,7 +319,7 @@
             // checkBox1
             // 
             this.checkBox1.AutoSize = true;
-            this.checkBox1.Location = new System.Drawing.Point(84, 30);
+            this.checkBox1.Location = new System.Drawing.Point(141, 35);
             this.checkBox1.Name = "checkBox1";
             this.checkBox1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.checkBox1.Size = new System.Drawing.Size(82, 17);
@@ -306,7 +329,7 @@
             // 
             // numericUpDown3
             // 
-            this.numericUpDown3.Location = new System.Drawing.Point(154, 4);
+            this.numericUpDown3.Location = new System.Drawing.Point(211, 9);
             this.numericUpDown3.Maximum = new decimal(new int[] {
             696969,
             0,
@@ -324,17 +347,25 @@
             // label7
             // 
             this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(14, 55);
+            this.label7.Location = new System.Drawing.Point(9, 60);
             this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(134, 26);
+            this.label7.Size = new System.Drawing.Size(196, 13);
             this.label7.TabIndex = 106;
-            this.label7.Text = "Number of years of Viewer:\r\nData to read";
+            this.label7.Text = "Number of years of Viewer Data to read:";
+            // 
+            // panel1
+            // 
+            this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.panel1.Location = new System.Drawing.Point(18, 0);
+            this.panel1.Name = "panel1";
+            this.panel1.Size = new System.Drawing.Size(637, 465);
+            this.panel1.TabIndex = 1;
             // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(406, 270);
+            this.ClientSize = new System.Drawing.Size(763, 522);
             this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.button1);
@@ -351,8 +382,10 @@
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown2)).EndInit();
             this.tabPage2.ResumeLayout(false);
+            this.tabPage2.PerformLayout();
             this.tabPage1.ResumeLayout(false);
             this.tabPage1.PerformLayout();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown5)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown4)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).EndInit();
             this.ResumeLayout(false);
@@ -382,6 +415,9 @@
         private System.Windows.Forms.TabPage tabPage4;
         private System.Windows.Forms.TabPage tabPage1;
         private System.Windows.Forms.TabPage tabPage2;
-        private System.Windows.Forms.CheckedListBox checkedListBox1;
+        private System.Windows.Forms.NumericUpDown numericUpDown5;
+        private System.Windows.Forms.Label label8;
+        private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
+        private System.Windows.Forms.Panel panel1;
     }
 }

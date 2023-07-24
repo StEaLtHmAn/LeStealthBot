@@ -25,6 +25,7 @@ namespace TwitchHelperBot
         private DateTime lastCheck = DateTime.UtcNow;
         private DateTime sessionStart = DateTime.UtcNow;
         private string[] botNamesList = new string[0];
+        private int SubscriberCheckCooldown;
         public ViewerListForm()
         {
             InitializeComponent();
@@ -39,10 +40,16 @@ namespace TwitchHelperBot
             {
                 if (File.Exists($"SessionsArchive{i}.json"))
                     Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
+                else
+                    break;
             }
             //get session data from file
             if (File.Exists("WatchTimeSessions.json"))
                 Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
+
+            if (string.IsNullOrEmpty(Globals.iniHelper.Read("SubscriberCheckCooldown")))
+                Globals.iniHelper.Write("SubscriberCheckCooldown", "5");
+            SubscriberCheckCooldown = int.Parse(Globals.iniHelper.Read("SubscriberCheckCooldown"));
 
             Subscribers = GetSubscribedData();
             timer1_Tick(null,null);
@@ -66,7 +73,7 @@ namespace TwitchHelperBot
                     else if (botData.Count > 0 && botData[0] is JObject)
                         botNamesList = botData.Select(x => x["username"].ToString()).ToArray();
 
-                    if ((DateTime.UtcNow - lastSubscriberCheck).TotalMinutes >= 5)
+                    if ((DateTime.UtcNow - lastSubscriberCheck).TotalMinutes >= SubscriberCheckCooldown)
                     {
                         Subscribers = GetSubscribedData();
                         Globals.GetFollowedData();
@@ -314,8 +321,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            //request.AddQueryParameter("broadcaster_id", "526375465");
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -720,7 +727,7 @@ namespace TwitchHelperBot
             {
                 SessionHistoryItem sessionHistoryItem = new SessionHistoryItem();
                 sessionHistoryItem.Width = flowLayoutPanel1.Width - 24;
-                sessionHistoryItem.label1.Text = $"DateTime: {Globals.getRelativeDateTime(sessionData.DateTimeStarted)} ago";
+                sessionHistoryItem.label1.Text = $"DateTime: {Globals.getRelativeTimeSpan(DateTime.Now - sessionData.DateTimeStarted)} ago";
                 sessionHistoryItem.label2.Text = $"Duration: {sessionData.DateTimeEnded - sessionData.DateTimeStarted:hh':'mm':'ss}";
                 sessionHistoryItem.label3.Text = $"Average/Peak Viewers: {sessionData.AverageViewerCount:0.##} / {sessionData.PeakViewerCount}";
                 sessionHistoryItem.label4.Text = $"CombinedHoursWatched: {sessionData.CombinedHoursWatched:0.##}";

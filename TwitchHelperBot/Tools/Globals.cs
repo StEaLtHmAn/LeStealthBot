@@ -21,6 +21,7 @@ namespace TwitchHelperBot
         public static string clientId = null;
         public static JObject userDetailsResponse;
         public static JObject windowLocations;
+        public static JObject ChatBotSettings;
         public static string loginName = null;
         public static TwitchClient twitchChatClient = null;
 
@@ -57,25 +58,6 @@ namespace TwitchHelperBot
                 return ts.Hours == 1 ? "1 Hour" : ts.Hours + " Hours";
             if (ts.TotalDays < 7)//days ago
                 return ts.Days == 1 ? "1 Day" : ts.Days + " Days";
-            if (ts.TotalDays < 30.4368)//weeks ago
-                return (int)(ts.TotalDays / 7) == 1 ? "1 Week" : (int)(ts.TotalDays / 7) + " Weeks";
-            if (ts.TotalDays < 365.242)//months ago
-                return (int)(ts.TotalDays / 30.4368) == 1 ? "1 Month" : (int)(ts.TotalDays / 30.4368) + " Months";
-            //years ago
-            return (int)(ts.TotalDays / 365.242) == 1 ? "1 Year" : (int)(ts.TotalDays / 365.242) + " Years";
-        }
-
-        public static string getRelativeDateTime(DateTime date)
-        {
-            TimeSpan ts = DateTime.Now - date;
-            if (ts.TotalMinutes < 1)//seconds ago
-                return "just now";
-            if (ts.TotalHours < 1)//min ago
-                return (int)ts.TotalMinutes == 1 ? "1 Minute" : (int)ts.TotalMinutes + " Minutes";
-            if (ts.TotalDays < 1)//hours ago
-                return (int)ts.TotalHours == 1 ? "1 Hour" : (int)ts.TotalHours + " Hours";
-            if (ts.TotalDays < 7)//days ago
-                return (int)ts.TotalDays == 1 ? "1 Day" : (int)ts.TotalDays + " Days";
             if (ts.TotalDays < 30.4368)//weeks ago
                 return (int)(ts.TotalDays / 7) == 1 ? "1 Week" : (int)(ts.TotalDays / 7) + " Weeks";
             if (ts.TotalDays < 365.242)//months ago

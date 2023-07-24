@@ -21,7 +21,6 @@ using System.Xml;
 using TwitchLib.Client;
 using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 using WebView2 = Microsoft.Web.WebView2.WinForms.WebView2;
 
 namespace TwitchHelperBot
@@ -84,7 +83,7 @@ namespace TwitchHelperBot
                         if (asset["content_type"].ToString() == "application/x-zip-compressed")
                         {
                             MessageBox.Show(githubLatestReleaseJson["name"].ToString() + "\r\n\r\n" + githubLatestReleaseJson["body"].ToString(),
-                            "New Updates - Released " + Globals.getRelativeDateTime(DateTime.Parse(githubLatestReleaseJson["published_at"].ToString()).Add(DateTimeOffset.Now.Offset)) +" ago", MessageBoxButtons.OK);
+                            "New Updates - Released " + Globals.getRelativeTimeSpan(DateTime.Now - DateTime.Parse(githubLatestReleaseJson["published_at"].ToString()).Add(DateTimeOffset.Now.Offset)) +" ago", MessageBoxButtons.OK);
 
                             //download latest zip
                             client.DownloadFile(asset["browser_download_url"].ToString(), asset["name"].ToString());
@@ -228,213 +227,8 @@ namespace TwitchHelperBot
             //get user details
             Globals.userDetailsResponse = JObject.Parse(Globals.GetUserDetails(Globals.loginName));
 
-            string ChatBotSettingsString = Globals.iniHelper.Read("ChatBotSettings");
-            JObject ChatBotSettings;
-            if (ChatBotSettingsString != null && ChatBotSettingsString.StartsWith("{"))
-            {
-                ChatBotSettings = JObject.Parse(ChatBotSettingsString);
-            }
-            else
-            {
-                ChatBotSettings = new JObject
-                {
-                    { "OnNewFollow", "true" },
-                    { "OnNewSubscriber", "true" },
-                    { "OnReSubscriber", "true" },
-                    { "OnPrimePaidSubscriber", "true" },
-                    { "OnGiftedSubscription", "true" },
-                    { "OnContinuedGiftedSubscription", "true" },
-                    { "OnCommunitySubscription", "true" },
-                    { "OnMessageReceived - Bits > 0", "true" },
-                    { "OnUserBanned", "true" },
-                    { "OnUserTimedout", "true" },
-                    { "OnChatCommandReceived - eskont", "true" },
-                    { "OnChatCommandReceived - time", "true" },
-                    { "OnChatCommandReceived - topviewers", "true" },
-                };
-                Globals.iniHelper.Write("ChatBotSettings", ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None));
-            }
-
-            ConnectionCredentials credentials = new ConnectionCredentials(Globals.loginName, Globals.access_token);
-            WebSocketClient customClient = new WebSocketClient();
-            Globals.twitchChatClient = new TwitchClient(customClient);
-            Globals.twitchChatClient.Initialize(credentials, Globals.loginName);
-            Globals.twitchChatClient.Connect();
-            Globals.twitchChatClient.OnUserBanned += (sender, e) =>
-            {
-                if (bool.Parse(ChatBotSettings["OnUserBanned"].ToString()))
-                {
-                    if (string.IsNullOrEmpty(e.UserBan.BanReason))
-                        Globals.twitchChatClient.SendMessage(e.UserBan.Channel, $"{e.UserBan.Username} BANNED");
-                    else
-                        Globals.twitchChatClient.SendMessage(e.UserBan.Channel, $"{e.UserBan.Username} BANNED Reason: {e.UserBan.BanReason}");
-                }
-            };
-            Globals.twitchChatClient.OnUserTimedout += (sender, e) =>
-            {
-                if (bool.Parse(ChatBotSettings["OnUserTimedout"].ToString()))
-                {
-                    if (string.IsNullOrEmpty(e.UserTimeout.TimeoutReason))
-                        Globals.twitchChatClient.SendMessage(e.UserTimeout.Channel, $"{e.UserTimeout.Username} BANNED Duration: {Globals.getRelativeTimeSpan(TimeSpan.FromSeconds(e.UserTimeout.TimeoutDuration))}");
-                    else
-                        Globals.twitchChatClient.SendMessage(e.UserTimeout.Channel, $"{e.UserTimeout.Username} BANNED Reason: {e.UserTimeout.TimeoutReason} Duration: {Globals.getRelativeTimeSpan(TimeSpan.FromSeconds(e.UserTimeout.TimeoutDuration))}");
-                }
-            };
-            Globals.twitchChatClient.OnMessageReceived += (sender, e) =>
-            {
-                if (bool.Parse(ChatBotSettings["OnMessageReceived - Bits > 0"].ToString()) && e.ChatMessage.Bits > 0)
-                {
-                    Globals.twitchChatClient.SendMessage(e.ChatMessage.Channel, $"MrDestructoid Thanks @{e.ChatMessage.DisplayName}, for the {e.ChatMessage.Bits} bits (${e.ChatMessage.BitsInDollars:0:##})");
-                }
-            };
-            Globals.twitchChatClient.OnNewSubscriber += (sender, e) =>
-            {
-                if (bool.Parse(ChatBotSettings["OnNewSubscriber"].ToString()))
-                    Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.Subscriber.DisplayName}, for the {e.Subscriber.SubscriptionPlan} subscription.");
-            };
-            Globals.twitchChatClient.OnReSubscriber += (sender, e) =>
-            {
-                if (bool.Parse(ChatBotSettings["OnReSubscriber"].ToString()))
-                    Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.ReSubscriber.DisplayName}, for the {e.ReSubscriber.Months} Months {e.ReSubscriber.SubscriptionPlan} subscription.");
-            };
-            Globals.twitchChatClient.OnPrimePaidSubscriber += (sender, e) =>
-            {
-                if (bool.Parse(ChatBotSettings["OnPrimePaidSubscriber"].ToString()))
-                    Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.PrimePaidSubscriber.DisplayName}, for the {e.PrimePaidSubscriber.SubscriptionPlan} subscription.");
-            };
-            Globals.twitchChatClient.OnGiftedSubscription += (sender, e) =>
-            {
-                if (bool.Parse(ChatBotSettings["OnGiftedSubscription"].ToString()))
-                    Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.GiftedSubscription.DisplayName}, for the gifted {e.GiftedSubscription.MsgParamSubPlan} subscription.");
-            };
-            Globals.twitchChatClient.OnContinuedGiftedSubscription += (sender, e) =>
-            {
-                if (bool.Parse(ChatBotSettings["OnContinuedGiftedSubscription"].ToString()))
-                    Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.ContinuedGiftedSubscription.MsgParamSenderName}, for the gifting {e.ContinuedGiftedSubscription.DisplayName} a subscription.");
-            };
-            Globals.twitchChatClient.OnCommunitySubscription += (sender, e) =>
-            {
-                if (bool.Parse(ChatBotSettings["OnCommunitySubscription"].ToString()))
-                    Globals.twitchChatClient.SendMessage(e.Channel, $"MrDestructoid Thanks @{e.GiftedSubscription.DisplayName}, for the gifting {e.GiftedSubscription.MsgParamMassGiftCount} {e.GiftedSubscription.MsgParamSubPlan} subscriptions.");
-            };
-            Globals.twitchChatClient.OnChatCommandReceived += (sender, e) =>
-            {
-                try
-                {
-                    if (bool.Parse(ChatBotSettings[$"OnChatCommandReceived - {e.Command.CommandText.ToLower()}"].ToString()))
-                        switch (e.Command.CommandText.ToLower())
-                        {
-                            case "eskont":
-                                {
-                                    using (WebClient webClient = new WebClient())
-                                    {
-                                        string htmlSchedule = webClient.DownloadString("https://www.ourpower.co.za/areas/nelson-mandela-bay/lorraine?block=13");
-                                        int i1 = htmlSchedule.IndexOf("time dateTime=");
-                                        int i2 = htmlSchedule.IndexOf("</section>");
-                                        htmlSchedule = "<xml><section><h3><" + htmlSchedule.Substring(i1, htmlSchedule.IndexOf("</section>", i2+1) - i1) + "</section></xml>";
-
-                                        XmlDocument document = new XmlDocument();
-                                        document.LoadXml(htmlSchedule);
-
-                                        string message = $"MrDestructoid {Globals.userDetailsResponse["data"][0]["display_name"]}'s next loadshedding is scheduled for: ";
-
-                                        XmlNode nextScheduledTime = document.SelectSingleNode("//span[@style='color:red']");
-                                        XmlNode nextScheduledDate = nextScheduledTime.SelectSingleNode("../../h3/time");
-                                        message += nextScheduledDate.InnerText +" @ "+ nextScheduledTime.InnerText;
-
-                                        Globals.twitchChatClient.SendReply(e.Command.ChatMessage.Channel, e.Command.ChatMessage.Id, message);
-                                    }
-                                    break;
-                                }
-                            case "time":
-                                {
-                                    Globals.twitchChatClient.SendReply(e.Command.ChatMessage.Channel, e.Command.ChatMessage.Id, $"MrDestructoid {Globals.userDetailsResponse["data"][0]["display_name"]}'s local time is: {DateTime.Now.ToShortTimeString()} {TimeZone.CurrentTimeZone.StandardName}");
-                                    break;
-                                }
-                            case "topviewers":// todo: optimize data collection
-                                {
-                                    List<ViewerListForm.SessionData> Sessions = new List<ViewerListForm.SessionData>();
-                                    //read x amount of archive data
-                                    int SessionsArchiveReadCount = int.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
-                                    for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
-                                    {
-                                        if (File.Exists($"SessionsArchive{i}.json"))
-                                            Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
-                                    }
-                                    //get session data from file
-                                    if (File.Exists("WatchTimeSessions.json"))
-                                        Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
-
-                                    Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
-                                    foreach (var sessionData in Sessions)
-                                    {
-                                        foreach (var viewerData in sessionData.WatchTimeData)
-                                        {
-                                            if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
-                                            {
-                                                tmpWatchTimeList.Add(viewerData.Key, viewerData.Value);
-                                            }
-                                            else
-                                            {
-                                                tmpWatchTimeList[viewerData.Key] += viewerData.Value;
-                                            }
-                                        }
-                                    }
-
-                                    int count = 1;
-                                    IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
-                                    string messageToSend = "MrDestructoid ";
-                                    foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
-                                    {
-                                        string newPart = $"{count}. {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value)} | ";
-                                        if (messageToSend.Length + newPart.Length <= 500)
-                                            messageToSend += newPart;
-                                        else
-                                            break;
-                                        count++;
-                                    }
-                                    Globals.twitchChatClient.SendReply(e.Command.ChatMessage.Channel, e.Command.ChatMessage.Id, messageToSend);
-
-                                    break;
-                                }
-                        }
-                }
-                catch{ }
-            };
-            Globals.twitchChatClient.OnError += (sender, e) =>
-            {
-            };
-            Globals.twitchChatClient.OnLog += (sender, e) =>
-            {
-            };
-            //follower tracker timer
-            Globals.GetFollowedData();
-            DispatcherTimer timer = new DispatcherTimer();
-            timer.Interval = TimeSpan.FromMilliseconds(60000);
-            timer.Tick += delegate
-            {
-                if (!Globals.twitchChatClient.IsInitialized && !Globals.twitchChatClient.IsConnected)
-                {
-                    Globals.twitchChatClient.Reconnect();
-                }
-
-                List<string> followerNamesBefore = new List<string>();
-                if (bool.Parse(ChatBotSettings["OnNewFollow"].ToString()))
-                {
-                    followerNamesBefore = Globals.Followers.Select(x => x["user_name"].ToString()).ToList();
-                }
-                Globals.GetFollowedData();
-                if (bool.Parse(ChatBotSettings["OnNewFollow"].ToString()))
-                {
-                    List<string> followerNamesAfter = Globals.Followers.Select(x => x["user_name"].ToString()).ToList();
-                    var newFollowers = followerNamesAfter.Where(x => !followerNamesBefore.Contains(x));
-                    foreach (var followerName in newFollowers)
-                    {
-                        Globals.twitchChatClient.SendMessage(Globals.loginName, $"MrDestructoid Thanks @{followerName} for the follow.");
-                    }
-                }
-            };
-            timer.Start();
+            //setup chatbot
+            setupChatBot();
 
             //show welcome message
             OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {Globals.userDetailsResponse["data"][0]["display_name"]}", Globals.userDetailsResponse["data"][0]["profile_image_url"].ToString(), Globals.userDetailsResponse["data"][0]["id"].ToString());
@@ -451,6 +245,465 @@ namespace TwitchHelperBot
                 ViewerListForm sForm = new ViewerListForm();
                 sForm.Show();
             }
+        }
+
+        private void setupChatBot()
+        {
+            void sendMessage(string channel, string message, string replyID = "")
+            {
+                if (message.Length > 500)
+                {
+                    message = message.Substring(0, 500);
+                }
+
+                if (string.IsNullOrEmpty(replyID))
+                {
+                    Globals.twitchChatClient.SendMessage(channel, message);
+                }
+                else
+                {
+                    Globals.twitchChatClient.SendReply(channel, replyID, message);
+                }
+            }
+
+            string ChatBotSettingsString = Globals.iniHelper.Read("ChatBotSettings");
+            Globals.ChatBotSettings = new JObject
+            {
+                { "OnNewFollow", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid Thanks @##FollowerName## for the follow." }
+                } },
+                { "OnNewSubscriber", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid Thanks @##SubscriberName##, for the ##SubscriptionPlan## subscription." }
+                } },
+                { "OnReSubscriber", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid Thanks @##SubscriberName##, for the ##CumulativeMonths## Months ##SubscriptionPlan## subscription." }
+                } },
+                { "OnPrimePaidSubscriber", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid Thanks @##SubscriberName##, for the ##SubscriptionPlan## subscription." }
+                } },
+                { "OnGiftedSubscription", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid Thanks @##GifterName##, for gifting @##RecipientName## a ##SubscriptionPlan## subscription." }
+                } },
+                { "OnContinuedGiftedSubscription", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid Thanks @##GifterName##, for gifting @##RecipientName## a subscription." }
+                } },
+                { "OnCommunitySubscription", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid Thanks @##SubscriberName##, for the gifting ##MassGiftCount## ##SubscriptionPlan## subscriptions." }
+                } },
+                { "OnMessageReceived - Bits > 0", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid Thanks @##SenderName##, for the ##Bits## bits (##BitsInDollars##)" }
+                } },
+                { "OnUserBanned", new JObject{
+                    { "enabled", "true" },
+                    { "messageNoReason", "##BannedUsername## BANNED" },
+                    { "messageWithReason", "##BannedUsername## BANNED Reason: ##BanReason##" }
+                } },
+                { "OnUserTimedout", new JObject{
+                    { "enabled", "true" },
+                    { "messageNoReason", "##TimedoutUsername## BANNED Duration: ##TimeoutDuration##" },
+                    { "messageWithReason", "##TimedoutUsername## BANNED Reason: ##TimeoutReason## Duration: ##TimeoutDuration##" }
+                } },
+                { "OnChatCommandReceived - eskont", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid @##YourName##'s next loadshedding is scheduled for: ##ScheduledMonth## @ ##ScheduledTime##. @##YourName##'s current local time is ##Time##" }
+                } },
+                { "OnChatCommandReceived - time", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid @##YourName##'s current local time is: ##Time## ##TimeZone##" }
+                } },
+                { "OnChatCommandReceived - topviewers", new JObject{
+                    { "enabled", "true" },
+                    { "messagePart", "##Count##. @##Name## - ##Watchtime## | " }
+                } },
+                { "OnChatCommandReceived - watchtime", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid You have watched @##YourName## for ##Watchtime##." },
+                    { "messageWithUser", "MrDestructoid @##Name## has watched @##YourName## for ##Watchtime##." }
+                } },
+                { "OnChatCommandReceived - commands", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid Available commands: ##EnabledCommandList##." }
+                } },
+                { "OnChatCommandReceived - discord", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid Join our community Discord server using this link :) https://discord.gg/DbC55YXeh4" }
+                } },
+                { "OnChatCommandReceived - tip", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid You can Tip to @##YourName## using this link https://StreamElements.com/##YourName##/tip" }
+                } },
+                { "Timer - 85 - Prime Reminder", new JObject{
+                    { "enabled", "true" },
+                    { "message", "MrDestructoid Hey! Just a friendly reminder that if you have Amazon Prime, you also have Twitch Prime! This means you can use your free monthly subscription to support your favourite streamers. <3" }
+                } },
+            };
+
+            //read settings, if missing or not valid then use defaults
+            if (ChatBotSettingsString != null && ChatBotSettingsString.StartsWith("{"))
+            {
+                JObject tmpSettings = JObject.Parse(ChatBotSettingsString);
+                bool settingsBroken = false;
+                foreach (var setting in tmpSettings)
+                {
+                    if (!(setting.Value is JObject) || !(setting.Value as JObject).ContainsKey("enabled"))
+                    {
+                        settingsBroken = true;
+                        break;
+                    }
+                    else
+                    {
+                        foreach (var attributes in (Globals.ChatBotSettings[setting.Key] as JObject))
+                        {
+                            if (!(setting.Value as JObject).ContainsKey(attributes.Key))
+                            {
+                                (tmpSettings[setting.Key] as JObject).Add(attributes.Key, attributes.Value);
+                            }
+                        }
+                    }
+                }
+                if (!settingsBroken)
+                    Globals.ChatBotSettings = tmpSettings;
+                else
+                    Globals.iniHelper.Write("ChatBotSettings", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None));
+            }
+            else
+            {
+                Globals.iniHelper.Write("ChatBotSettings", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None));
+            }
+
+            ConnectionCredentials credentials = new ConnectionCredentials(Globals.loginName, Globals.access_token);
+            WebSocketClient customClient = new WebSocketClient();
+            Globals.twitchChatClient = new TwitchClient(customClient);
+            Globals.twitchChatClient.Initialize(credentials, Globals.loginName);
+            Globals.twitchChatClient.Connect();
+            Globals.twitchChatClient.OnUserBanned += (sender, e) =>
+            {
+                if (bool.Parse(Globals.ChatBotSettings["OnUserBanned"]["enabled"].ToString()))
+                {
+                    if (string.IsNullOrEmpty(e.UserBan.BanReason))
+                        sendMessage(e.UserBan.Channel,
+                            Globals.ChatBotSettings["OnUserBanned"]["messageNoReason"].ToString()
+                            .Replace("##BannedUsername##", e.UserBan.Username));
+                    else
+                        sendMessage(e.UserBan.Channel,
+                            Globals.ChatBotSettings["OnUserBanned"]["messageWithReason"].ToString()
+                            .Replace("##BannedUsername##", e.UserBan.Username)
+                            .Replace("##BanReason##", e.UserBan.Username));
+                }
+            };
+            Globals.twitchChatClient.OnUserTimedout += (sender, e) =>
+            {
+                if (bool.Parse(Globals.ChatBotSettings["OnUserTimedout"]["enabled"].ToString()))
+                {
+                    if (string.IsNullOrEmpty(e.UserTimeout.TimeoutReason))
+                        sendMessage(e.UserTimeout.Channel,
+                            Globals.ChatBotSettings["OnUserTimedout"]["messageNoReason"].ToString()
+                            .Replace("##TimedoutUsername##", e.UserTimeout.Username)
+                            .Replace("##TimeoutDuration##", Globals.getRelativeTimeSpan(TimeSpan.FromSeconds(e.UserTimeout.TimeoutDuration))));
+                    else
+                        sendMessage(e.UserTimeout.Channel,
+                            Globals.ChatBotSettings["OnUserTimedout"]["messageWithReason"].ToString()
+                            .Replace("##TimedoutUsername##", e.UserTimeout.Username)
+                            .Replace("##TimeoutReason##", e.UserTimeout.TimeoutReason)
+                            .Replace("##TimeoutDuration##", Globals.getRelativeTimeSpan(TimeSpan.FromSeconds(e.UserTimeout.TimeoutDuration))));
+                }
+            };
+            Globals.twitchChatClient.OnMessageReceived += (sender, e) =>
+            {
+                if (bool.Parse(Globals.ChatBotSettings["OnMessageReceived - Bits > 0"]["enabled"].ToString()) && e.ChatMessage.Bits > 0)
+                {
+                    sendMessage(e.ChatMessage.Channel,
+                        Globals.ChatBotSettings["OnMessageReceived - Bits > 0"]["enabled"].ToString()
+                        .Replace("##SenderName##", e.ChatMessage.DisplayName)
+                        .Replace("##Bits##", e.ChatMessage.Bits.ToString())
+                        .Replace("##BitsInDollars##", e.ChatMessage.BitsInDollars.ToString("0:##")));
+                }
+            };
+            Globals.twitchChatClient.OnNewSubscriber += (sender, e) =>
+            {
+                if (bool.Parse(Globals.ChatBotSettings["OnNewSubscriber"]["enabled"].ToString()))
+                    sendMessage(e.Channel,
+                        Globals.ChatBotSettings["OnNewSubscriber"]["message"].ToString()
+                        .Replace("##SubscriberName##", e.Subscriber.DisplayName)
+                        .Replace("##SubscriptionPlan##", e.Subscriber.SubscriptionPlan.ToString()));
+            };
+            Globals.twitchChatClient.OnReSubscriber += (sender, e) =>
+            {
+                if (bool.Parse(Globals.ChatBotSettings["OnReSubscriber"]["enabled"].ToString()))
+                    sendMessage(e.Channel,
+                        Globals.ChatBotSettings["OnReSubscriber"]["message"].ToString()
+                        .Replace("##SubscriberName##", e.ReSubscriber.DisplayName)
+                        .Replace("##CumulativeMonths##", e.ReSubscriber.MsgParamCumulativeMonths)
+                        .Replace("##SubscriptionPlan##", e.ReSubscriber.SubscriptionPlan.ToString()));
+            };
+            Globals.twitchChatClient.OnPrimePaidSubscriber += (sender, e) =>
+            {
+                if (bool.Parse(Globals.ChatBotSettings["OnPrimePaidSubscriber"]["enabled"].ToString()))
+                    sendMessage(e.Channel,
+                        Globals.ChatBotSettings["OnPrimePaidSubscriber"]["message"].ToString()
+                        .Replace("##SubscriberName##", e.PrimePaidSubscriber.DisplayName)
+                        .Replace("##SubscriptionPlan##", e.PrimePaidSubscriber.SubscriptionPlanName));
+            };
+            Globals.twitchChatClient.OnGiftedSubscription += (sender, e) =>
+            {
+                if (bool.Parse(Globals.ChatBotSettings["OnGiftedSubscription"]["enabled"].ToString()))
+                    sendMessage(e.Channel,
+                        Globals.ChatBotSettings["OnGiftedSubscription"]["message"].ToString()
+                        .Replace("##GifterName##", e.GiftedSubscription.DisplayName)
+                        .Replace("##RecipientName##", e.GiftedSubscription.MsgParamRecipientDisplayName)
+                        .Replace("##SubscriptionPlan##", e.GiftedSubscription.MsgParamSubPlan.ToString()));
+            };
+            Globals.twitchChatClient.OnContinuedGiftedSubscription += (sender, e) =>
+            {
+                if (bool.Parse(Globals.ChatBotSettings["OnContinuedGiftedSubscription"]["enabled"].ToString()))
+                    sendMessage(e.Channel, Globals.ChatBotSettings["OnContinuedGiftedSubscription"]["message"].ToString()
+                        .Replace("##GifterName##", e.ContinuedGiftedSubscription.MsgParamSenderName)
+                        .Replace("##RecipientName##", e.ContinuedGiftedSubscription.DisplayName));
+            };
+            Globals.twitchChatClient.OnCommunitySubscription += (sender, e) =>
+            {
+                if (bool.Parse(Globals.ChatBotSettings["OnCommunitySubscription"]["enabled"].ToString()))
+                    sendMessage(e.Channel, Globals.ChatBotSettings["OnCommunitySubscription"]["message"].ToString()
+                        .Replace("##SubscriberName##", e.GiftedSubscription.DisplayName)
+                        .Replace("##MassGiftCount##", e.GiftedSubscription.MsgParamMassGiftCount.ToString())
+                        .Replace("##SubscriptionPlan##", e.GiftedSubscription.MsgParamSubPlan.ToString()));
+            };
+            Globals.twitchChatClient.OnChatCommandReceived += (sender, e) =>
+            {
+                try
+                {
+                    if (Globals.ChatBotSettings.ContainsKey($"OnChatCommandReceived - {e.Command.CommandText.ToLower()}")
+                    && (Globals.ChatBotSettings[$"OnChatCommandReceived - {e.Command.CommandText.ToLower()}"] as JObject).ContainsKey("enabled")
+                    && bool.Parse(Globals.ChatBotSettings[$"OnChatCommandReceived - {e.Command.CommandText.ToLower()}"]["enabled"].ToString()))
+                        switch (e.Command.CommandText.ToLower())
+                        {
+                            case "eskont":
+                                {
+                                    using (WebClient webClient = new WebClient())
+                                    {
+                                        string htmlSchedule = webClient.DownloadString("https://www.ourpower.co.za/areas/nelson-mandela-bay/lorraine?block=13");
+                                        int i1 = htmlSchedule.IndexOf("time dateTime=");
+                                        int i2 = htmlSchedule.IndexOf("</section>");
+                                        htmlSchedule = "<xml><section><h3><" + htmlSchedule.Substring(i1, htmlSchedule.IndexOf("</section>", i2 + 1) - i1) + "</section></xml>";
+
+                                        XmlDocument document = new XmlDocument();
+                                        document.LoadXml(htmlSchedule);
+                                        XmlNode nextScheduledTime = document.SelectSingleNode("//span[@style='color:red']");
+                                        XmlNode nextScheduledDate = nextScheduledTime.SelectSingleNode("../../h3/time");
+
+                                        sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - eskont"]["message"].ToString()
+                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
+                                        .Replace("##ScheduledMonth##", nextScheduledDate.InnerText)
+                                        .Replace("##ScheduledTime##", nextScheduledTime.InnerText)
+                                        .Replace("##Time##", DateTime.Now.ToShortTimeString()),
+                                        e.Command.ChatMessage.Id);
+                                    }
+                                    break;
+                                }
+                            case "time":
+                                {
+                                    sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - time"]["message"].ToString()
+                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
+                                        .Replace("##Time##", DateTime.Now.ToShortTimeString())
+                                        .Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName),
+                                        e.Command.ChatMessage.Id);
+                                    break;
+                                }
+                            case "topviewers":
+                                {
+                                    List<ViewerListForm.SessionData> Sessions = new List<ViewerListForm.SessionData>();
+                                    //read x amount of archive data
+                                    int SessionsArchiveReadCount = int.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
+                                    for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
+                                    {
+                                        if (File.Exists($"SessionsArchive{i}.json"))
+                                            Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
+                                        else
+                                            break;
+                                    }
+                                    //get session data from file
+                                    if (File.Exists("WatchTimeSessions.json"))
+                                        Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
+
+                                    Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
+                                    foreach (var sessionData in Sessions)
+                                    {
+                                        foreach (var viewerData in sessionData.WatchTimeData)
+                                        {
+                                            if (viewerData.Key.ToLower() == Globals.loginName)
+                                                break;
+                                            if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
+                                            {
+                                                tmpWatchTimeList.Add(viewerData.Key, viewerData.Value);
+                                            }
+                                            else
+                                            {
+                                                tmpWatchTimeList[viewerData.Key] += viewerData.Value;
+                                            }
+                                        }
+                                    }
+
+                                    int count = 1;
+                                    IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
+                                    string messageToSend = "MrDestructoid ";
+                                    foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
+                                    {
+                                        string newPart = Globals.ChatBotSettings["OnChatCommandReceived - topviewers"]["messagePart"].ToString()
+                                        .Replace("##Count##", count.ToString())
+                                        .Replace("##Name##", kvp.Key)
+                                        .Replace("##Watchtime##", Globals.getRelativeTimeSpan(kvp.Value));
+                                        if (messageToSend.Length + newPart.Length <= 500)
+                                            messageToSend += newPart;
+                                        else
+                                            break;
+                                        count++;
+                                    }
+
+                                    Globals.twitchChatClient.SendReply(e.Command.ChatMessage.Channel, e.Command.ChatMessage.Id, messageToSend);
+
+                                    break;
+                                }
+                            case "commands":
+                                {
+                                    string messageToSend = string.Empty;
+                                    foreach (string setting in Globals.ChatBotSettings.Properties().Select(p => p.Name))
+                                    {
+                                        if (setting.StartsWith("OnChatCommandReceived - ") && bool.Parse(Globals.ChatBotSettings[setting]["enabled"].ToString()))
+                                        {
+                                            messageToSend += setting.Replace("OnChatCommandReceived - ", string.Empty) + ", ";
+                                        }
+                                    }
+                                    messageToSend = messageToSend.Substring(0, messageToSend.Length - 2);
+
+                                    sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - commands"]["message"].ToString()
+                                        .Replace("##EnabledCommandList##", messageToSend),
+                                        e.Command.ChatMessage.Id);
+                                    break;
+                                }
+                            case "watchtime":
+                                {
+                                    var userToSearch = string.IsNullOrEmpty(e.Command.ArgumentsAsString) ? e.Command.ChatMessage.DisplayName : e.Command.ArgumentsAsString.Replace("@", string.Empty);
+                                    List<ViewerListForm.SessionData> Sessions = new List<ViewerListForm.SessionData>();
+                                    //read x amount of archive data
+                                    int SessionsArchiveReadCount = int.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
+                                    for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
+                                    {
+                                        if (File.Exists($"SessionsArchive{i}.json"))
+                                            Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
+                                        else
+                                            break;
+                                    }
+                                    //get session data from file
+                                    if (File.Exists("WatchTimeSessions.json"))
+                                        Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
+
+                                    TimeSpan tmpWatchTime = new TimeSpan();
+                                    foreach (var sessionData in Sessions)
+                                    {
+                                        if (sessionData.WatchTimeData.ContainsKey(userToSearch))
+                                            tmpWatchTime += sessionData.WatchTimeData[userToSearch];
+                                    }
+
+                                    if(userToSearch == e.Command.ChatMessage.DisplayName)
+                                        sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["message"].ToString()
+                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
+                                        .Replace("##Name##", userToSearch)
+                                        .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
+                                        e.Command.ChatMessage.Id);
+                                    else
+                                        sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["messageWithUser"].ToString()
+                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
+                                        .Replace("##Name##", userToSearch)
+                                        .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
+                                        e.Command.ChatMessage.Id);
+                                    break;
+                                }
+                            case "discord":
+                                {
+                                    sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - discord"]["message"].ToString()
+                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()),
+                                        e.Command.ChatMessage.Id);
+                                    break;
+                                }
+                            case "tip":
+                                {
+                                    sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - tip"]["message"].ToString()
+                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()),
+                                        e.Command.ChatMessage.Id);
+                                    break;
+                                }
+                        }
+                }
+                catch { }
+            };
+            //Globals.twitchChatClient.OnConnected += (sender, e) =>
+            //{
+            //    if (bool.Parse(Globals.ChatBotSettings["OnConnected"].ToString()))
+            //        Globals.twitchChatClient.SendMessage(Globals.loginName, $"MrDestructoid ");
+            //};
+            //Globals.twitchChatClient.OnError += (sender, e) =>
+            //{
+            //};
+            //Globals.twitchChatClient.OnLog += (sender, e) =>
+            //{
+            //};
+
+            foreach (var setting in Globals.ChatBotSettings.Properties())
+            {
+                if (setting.Name.StartsWith("Timer - "))
+                {
+                    string[] splitDetails = setting.Name.Split(new string[] { " - " }, StringSplitOptions.None);
+                    DispatcherTimer timer = new DispatcherTimer();
+                    timer.Interval = TimeSpan.FromMinutes(int.Parse(splitDetails[1]));
+                    //timer.Tag = setting;
+                    timer.Tick += delegate
+                    {
+                        if (!Globals.ChatBotSettings.ContainsKey(setting.Name))
+                            timer.Stop();
+                        Globals.twitchChatClient.SendMessage(Globals.loginName, $"MrDestructoid Hey! Just a friendly reminder that if you have Amazon Prime, you also have Twitch Prime! This means you can use your free monthly subscription to support your favourite streamers. <3");
+                    };
+                    timer.Start();
+                }
+            }
+
+            //follower tracker timer
+            Globals.GetFollowedData();
+            DispatcherTimer followerTimer = new DispatcherTimer();
+            followerTimer.Interval = TimeSpan.FromMilliseconds(60000);
+            followerTimer.Tick += delegate
+            {
+                if (!Globals.twitchChatClient.IsInitialized && !Globals.twitchChatClient.IsConnected)
+                {
+                    Globals.twitchChatClient.Reconnect();
+                }
+
+                List<string> followerNamesBefore = new List<string>();
+                if (bool.Parse(Globals.ChatBotSettings["OnNewFollow"]["enabled"].ToString()))
+                {
+                    followerNamesBefore = Globals.Followers.Select(x => x["user_name"].ToString()).ToList();
+                }
+                Globals.GetFollowedData();
+                if (bool.Parse(Globals.ChatBotSettings["OnNewFollow"]["enabled"].ToString()))
+                {
+                    List<string> followerNamesAfter = Globals.Followers.Select(x => x["user_name"].ToString()).ToList();
+                    var newFollowers = followerNamesAfter.Where(x => !followerNamesBefore.Contains(x));
+                    foreach (var followerName in newFollowers)
+                    {
+                        sendMessage(Globals.loginName,
+                            Globals.ChatBotSettings["OnNewFollow"]["message"].ToString()
+                            .Replace("##FollowerName##", followerName));
+                    }
+                }
+            };
+            followerTimer.Start();
         }
 
         private void KeyboardHook_KeyPressed(object sender, KeyPressedEventArgs e)
