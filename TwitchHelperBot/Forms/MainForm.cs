@@ -247,6 +247,8 @@ namespace TwitchHelperBot
             }
         }
 
+        DispatcherTimer followerTimer;
+        Dictionary<string, DispatcherTimer> ChatbotTimers;
         private void setupChatBot()
         {
             void sendMessage(string channel, string message, string replyID = "")
@@ -266,101 +268,104 @@ namespace TwitchHelperBot
                 }
             }
 
+            //read chatbot settings string
             string ChatBotSettingsString = Globals.iniHelper.Read("ChatBotSettings");
+            //create defaults chatbot settings
             Globals.ChatBotSettings = new JObject
             {
                 { "OnNewFollow", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid Thanks @##FollowerName## for the follow." }
                 } },
                 { "OnNewSubscriber", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid Thanks @##SubscriberName##, for the ##SubscriptionPlan## subscription." }
                 } },
                 { "OnReSubscriber", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid Thanks @##SubscriberName##, for the ##CumulativeMonths## Months ##SubscriptionPlan## subscription." }
                 } },
                 { "OnPrimePaidSubscriber", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid Thanks @##SubscriberName##, for the ##SubscriptionPlan## subscription." }
                 } },
                 { "OnGiftedSubscription", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid Thanks @##GifterName##, for gifting @##RecipientName## a ##SubscriptionPlan## subscription." }
                 } },
                 { "OnContinuedGiftedSubscription", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid Thanks @##GifterName##, for gifting @##RecipientName## a subscription." }
                 } },
                 { "OnCommunitySubscription", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid Thanks @##SubscriberName##, for the gifting ##MassGiftCount## ##SubscriptionPlan## subscriptions." }
                 } },
                 { "OnMessageReceived - Bits > 0", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid Thanks @##SenderName##, for the ##Bits## bits (##BitsInDollars##)" }
                 } },
                 { "OnUserBanned", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "messageNoReason", "##BannedUsername## BANNED" },
                     { "messageWithReason", "##BannedUsername## BANNED Reason: ##BanReason##" }
                 } },
                 { "OnUserTimedout", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "messageNoReason", "##TimedoutUsername## BANNED Duration: ##TimeoutDuration##" },
                     { "messageWithReason", "##TimedoutUsername## BANNED Reason: ##TimeoutReason## Duration: ##TimeoutDuration##" }
                 } },
                 { "OnChatCommandReceived - eskont", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid @##YourName##'s next loadshedding is scheduled for: ##ScheduledMonth## @ ##ScheduledTime##. @##YourName##'s current local time is ##Time##" }
                 } },
                 { "OnChatCommandReceived - time", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid @##YourName##'s current local time is: ##Time## ##TimeZone##" }
                 } },
                 { "OnChatCommandReceived - topviewers", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "messagePart", "##Count##. @##Name## - ##Watchtime## | " }
                 } },
                 { "OnChatCommandReceived - watchtime", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid You have watched @##YourName## for ##Watchtime##." },
                     { "messageWithUser", "MrDestructoid @##Name## has watched @##YourName## for ##Watchtime##." }
                 } },
                 { "OnChatCommandReceived - commands", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid Available commands: ##EnabledCommandList##." }
                 } },
                 { "OnChatCommandReceived - discord", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid Join our community Discord server using this link :) https://discord.gg/DbC55YXeh4" }
                 } },
                 { "OnChatCommandReceived - tip", new JObject{
-                    { "enabled", "true" },
+                    { "enabled", "false" },
                     { "message", "MrDestructoid You can Tip to @##YourName## using this link https://StreamElements.com/##YourName##/tip" }
                 } },
-                { "Timer - 85 - Prime Reminder", new JObject{
-                    { "enabled", "true" },
-                    { "message", "MrDestructoid Hey! Just a friendly reminder that if you have Amazon Prime, you also have Twitch Prime! This means you can use your free monthly subscription to support your favourite streamers. <3" }
+                { "Timer - Prime Reminder", new JObject{
+                    { "enabled", "false" },
+                    { "interval", "90" },
+                    { "message", "MrDestructoid Hey! Just a friendly reminder that if you have Amazon Prime, you also have Twitch Prime! This means you can use your free monthly subscription to support your favourite streamers. <3" },
                 } },
             };
-
-            //read settings, if missing or not valid then use defaults
+            //chatbot settings validation/correction
             if (ChatBotSettingsString != null && ChatBotSettingsString.StartsWith("{"))
             {
+                //Parse json
                 JObject tmpSettings = JObject.Parse(ChatBotSettingsString);
-                bool settingsBroken = false;
-                foreach (var setting in tmpSettings)
+                //loop through defaults
+                foreach (var setting in Globals.ChatBotSettings)
                 {
-                    if (!(setting.Value is JObject) || !(setting.Value as JObject).ContainsKey("enabled"))
+                    //add missing default chatbot settings
+                    if (!tmpSettings.ContainsKey(setting.Key))
                     {
-                        settingsBroken = true;
-                        break;
+                        tmpSettings.Add(setting.Key, setting.Value);
                     }
-                    else
+                    else//add missing default chatbot setting attributes
                     {
-                        foreach (var attributes in (Globals.ChatBotSettings[setting.Key] as JObject))
+                        foreach (var attributes in setting.Value as JObject)
                         {
                             if (!(setting.Value as JObject).ContainsKey(attributes.Key))
                             {
@@ -369,10 +374,20 @@ namespace TwitchHelperBot
                         }
                     }
                 }
-                if (!settingsBroken)
-                    Globals.ChatBotSettings = tmpSettings;
-                else
-                    Globals.iniHelper.Write("ChatBotSettings", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None));
+                //loop through tmpSettings
+                foreach (var setting in tmpSettings)
+                {
+                    if (!(setting.Value as JObject).ContainsKey("enabled") || !bool.TryParse(setting.Value["enabled"].ToString(), out _))
+                    {
+                        (setting.Value as JObject).Add("enabled", "false");
+                    }
+
+                    if (setting.Key.StartsWith("Timer - ") && (!(setting.Value as JObject).ContainsKey("interval") || !double.TryParse(setting.Value["interval"].ToString(), out _)))
+                    {
+                        (setting.Value as JObject).Add("interval", "90");
+                    }
+                }
+                Globals.ChatBotSettings = tmpSettings;
             }
             else
             {
@@ -644,63 +659,64 @@ namespace TwitchHelperBot
                 }
                 catch { }
             };
-            //Globals.twitchChatClient.OnConnected += (sender, e) =>
-            //{
-            //    if (bool.Parse(Globals.ChatBotSettings["OnConnected"].ToString()))
-            //        Globals.twitchChatClient.SendMessage(Globals.loginName, $"MrDestructoid ");
-            //};
-            //Globals.twitchChatClient.OnError += (sender, e) =>
-            //{
-            //};
-            //Globals.twitchChatClient.OnLog += (sender, e) =>
-            //{
-            //};
 
+            Dictionary<string, DispatcherTimer> timers = new Dictionary<string, DispatcherTimer>();
             foreach (var setting in Globals.ChatBotSettings.Properties())
             {
                 if (setting.Name.StartsWith("Timer - "))
                 {
                     string[] splitDetails = setting.Name.Split(new string[] { " - " }, StringSplitOptions.None);
                     DispatcherTimer timer = new DispatcherTimer();
-                    timer.Interval = TimeSpan.FromMinutes(int.Parse(splitDetails[1]));
-                    //timer.Tag = setting;
+                    timer.Interval = TimeSpan.FromMinutes(double.Parse(Globals.ChatBotSettings[setting.Name]["interval"].ToString()));
                     timer.Tick += delegate
                     {
-                        if (!Globals.ChatBotSettings.ContainsKey(setting.Name))
+                        if (!Globals.ChatBotSettings.ContainsKey(setting.Name) || !bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
                             timer.Stop();
-                        Globals.twitchChatClient.SendMessage(Globals.loginName, $"MrDestructoid Hey! Just a friendly reminder that if you have Amazon Prime, you also have Twitch Prime! This means you can use your free monthly subscription to support your favourite streamers. <3");
+
+                        sendMessage(Globals.loginName, Globals.ChatBotSettings[setting.Name]["message"].ToString()
+                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()));
                     };
                     timer.Start();
+                    timers.Add(setting.Name, timer);
                 }
             }
 
             //follower tracker timer
             Globals.GetFollowedData();
-            DispatcherTimer followerTimer = new DispatcherTimer();
+            followerTimer = new DispatcherTimer();
             followerTimer.Interval = TimeSpan.FromMilliseconds(60000);
             followerTimer.Tick += delegate
             {
-                if (!Globals.twitchChatClient.IsInitialized && !Globals.twitchChatClient.IsConnected)
+                try
                 {
-                    Globals.twitchChatClient.Reconnect();
-                }
-
-                List<string> followerNamesBefore = new List<string>();
-                if (bool.Parse(Globals.ChatBotSettings["OnNewFollow"]["enabled"].ToString()))
-                {
-                    followerNamesBefore = Globals.Followers.Select(x => x["user_name"].ToString()).ToList();
-                }
-                Globals.GetFollowedData();
-                if (bool.Parse(Globals.ChatBotSettings["OnNewFollow"]["enabled"].ToString()))
-                {
-                    List<string> followerNamesAfter = Globals.Followers.Select(x => x["user_name"].ToString()).ToList();
-                    var newFollowers = followerNamesAfter.Where(x => !followerNamesBefore.Contains(x));
-                    foreach (var followerName in newFollowers)
+                    if (!Globals.twitchChatClient.IsInitialized && !Globals.twitchChatClient.IsConnected)
                     {
-                        sendMessage(Globals.loginName,
-                            Globals.ChatBotSettings["OnNewFollow"]["message"].ToString()
-                            .Replace("##FollowerName##", followerName));
+                        Globals.twitchChatClient.Reconnect();
                     }
+
+                    List<string> followerNamesBefore = new List<string>();
+                    if (bool.Parse(Globals.ChatBotSettings["OnNewFollow"]["enabled"].ToString()))
+                    {
+                        followerNamesBefore = Globals.Followers.Select(x => x["user_name"].ToString()).ToList();
+                    }
+
+                    //get new follow data
+                    Globals.GetFollowedData();
+
+                    if (bool.Parse(Globals.ChatBotSettings["OnNewFollow"]["enabled"].ToString()))
+                    {
+                        //loop through new followers
+                        foreach (var followerName in Globals.Followers.Select(x => x["user_name"].ToString()).Where(x => !followerNamesBefore.Contains(x)))
+                        {
+                            sendMessage(Globals.loginName,
+                                Globals.ChatBotSettings["OnNewFollow"]["message"].ToString()
+                                .Replace("##FollowerName##", followerName));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Globals.LogMessage(ex.ToString());
                 }
             };
             followerTimer.Start();

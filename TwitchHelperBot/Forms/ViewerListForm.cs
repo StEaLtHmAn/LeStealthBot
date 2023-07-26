@@ -847,9 +847,21 @@ namespace TwitchHelperBot
                 series2.Legend = "Legend";
                 series2.IsVisibleInLegend = true;
 
+                List<SessionData> SessionsListClone = new List<SessionData>();
+                SessionsListClone.AddRange(Sessions);
+                SessionsListClone.Add(new SessionData()
+                {
+                    DateTimeStarted = sessionStart,
+                    DateTimeEnded = DateTime.UtcNow,
+                    AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
+                    PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
+                    CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
+                    WatchTimeData = WatchTimeDictionary
+                });
+
                 Dictionary<int, double> graphAverageViewersData = new Dictionary<int, double>();
                 Dictionary<int, double> graphPeakViewersData = new Dictionary<int, double>();
-                foreach (var sessionData in Sessions)
+                foreach (var sessionData in SessionsListClone)
                 {
                     int daysAgo = (int)(DateTime.UtcNow - sessionData.DateTimeStarted).TotalDays;
 

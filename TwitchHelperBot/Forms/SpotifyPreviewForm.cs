@@ -17,7 +17,7 @@ namespace TwitchHelperBot
     public partial class SpotifyPreviewForm : Form
     {
         private string SpotifyToken = string.Empty;
-
+        private string SpotifyRefreshToken = string.Empty;
         //[DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
         //private static extern IntPtr CreateRoundRectRgn
         //(
@@ -48,8 +48,7 @@ namespace TwitchHelperBot
             }
 
             SpotifyToken = Globals.iniHelper.Read("SpotifyToken");
-            if(!string.IsNullOrEmpty(SpotifyToken))
-                timer1.Enabled = true;
+            SpotifyRefreshToken = Globals.iniHelper.Read("SpotifyRefreshToken");
             GetSpotifyCurrentTrack();
         }
 
@@ -59,21 +58,31 @@ namespace TwitchHelperBot
         private bool is_playing = false;
         private void GetSpotifyCurrentTrack()
         {
-            if (string.IsNullOrEmpty(SpotifyToken))
-                SpotifyAuth();
-
-            RestClient client = new RestClient();
-            RestRequest request = new RestRequest("https://api.spotify.com/v1/me/player/currently-playing", Method.Get);
-            request.AddHeader("Authorization", "Bearer " + SpotifyToken);
-            RestResponse response = client.Execute(request);
-
-            if (string.IsNullOrEmpty(response.Content) || !response.Content.StartsWith("{"))
-                return;
-            if(response.Content.Contains("The access token expired"))
-                SpotifyToken = string.Empty;
+            timer1.Enabled = false;
 
             try
             {
+                if (string.IsNullOrEmpty(SpotifyToken))
+                {
+                    SpotifyAuth();
+                    return;
+                }
+
+                RestClient client = new RestClient();
+                RestRequest request = new RestRequest("https://api.spotify.com/v1/me/player/currently-playing", Method.Get);
+                request.AddHeader("Authorization", "Bearer " + SpotifyToken);
+                RestResponse response = client.Execute(request);
+
+                if (string.IsNullOrEmpty(response.Content) || response.Content.Contains("The access token expired") || !response.Content.StartsWith("{"))
+                {
+                    if (!string.IsNullOrEmpty(SpotifyRefreshToken))
+                        SpotifyReLog();
+                    else
+                        SpotifyToken = string.Empty;
+                    return;
+                }
+
+            
                 JObject trackData = JObject.Parse(response.Content);
                 stamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 if (trackData.ContainsKey("progress_ms"))
@@ -131,6 +140,32 @@ namespace TwitchHelperBot
             {
                 SpotifyToken = string.Empty;
             }
+            timer1.Enabled = true;
+        }
+
+        private void SpotifyReLog()
+        {
+            RestClient client = new RestClient();
+            RestRequest request = new RestRequest("https://accounts.spotify.com/api/token", Method.Post);
+            request.AddHeader("Authorization", "Basic " + Convert.ToBase64String(Encoding.UTF8.GetBytes(secrets.SpotifyClientId + ":" + secrets.SpotifyClientSecret)));
+            request.AddParameter("grant_type", "refresh_token");
+            request.AddParameter("refresh_token", SpotifyRefreshToken);
+            request.AddParameter("access_token", SpotifyToken);
+            RestResponse response = client.Execute(request);
+
+            if (string.IsNullOrEmpty(response.Content) || !response.Content.StartsWith("{") || !response.Content.Contains("access_token"))
+                return;
+
+            JObject jsonResponse = JObject.Parse(response.Content);
+            //new token
+            SpotifyToken = jsonResponse["access_token"].ToString();
+            Globals.iniHelper.Write("SpotifyToken", SpotifyToken);
+            //sometimes new refresh token
+            if (jsonResponse.ContainsKey("refresh_token"))
+            {
+                SpotifyRefreshToken = jsonResponse["refresh_token"].ToString();
+                Globals.iniHelper.Write("SpotifyRefreshToken", SpotifyRefreshToken);
+            }
         }
 
         private void SpotifyAuth()
@@ -186,7 +221,9 @@ namespace TwitchHelperBot
                     return;
 
                 SpotifyToken = JObject.Parse(response.Content)["access_token"].ToString();
+                SpotifyRefreshToken = JObject.Parse(response.Content)["refresh_token"].ToString();
                 Globals.iniHelper.Write("SpotifyToken", SpotifyToken);
+                Globals.iniHelper.Write("SpotifyRefreshToken", SpotifyRefreshToken);
                 timer1.Enabled = true;
             }
         }
