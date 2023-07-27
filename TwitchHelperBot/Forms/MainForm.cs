@@ -325,6 +325,7 @@ namespace TwitchHelperBot
                 } },
                 { "OnChatCommandReceived - topviewers", new JObject{
                     { "enabled", "false" },
+                    { "message", "MrDestructoid " },
                     { "messagePart", "##Count##. @##Name## - ##Watchtime## | " }
                 } },
                 { "OnChatCommandReceived - watchtime", new JObject{
@@ -377,14 +378,28 @@ namespace TwitchHelperBot
                 //loop through tmpSettings
                 foreach (var setting in tmpSettings)
                 {
-                    if (!(setting.Value as JObject).ContainsKey("enabled") || !bool.TryParse(setting.Value["enabled"].ToString(), out _))
+                    if (!(setting.Value is JObject))
                     {
-                        (setting.Value as JObject).Add("enabled", "false");
+                        tmpSettings[setting.Key] = new JObject
+                        {
+                            { "enabled", "false" }
+                        };
+                        if (setting.Key.StartsWith("Timer - "))
+                        {
+                            (tmpSettings[setting.Key] as JObject).Add("interval", "90");
+                        }
                     }
-
-                    if (setting.Key.StartsWith("Timer - ") && (!(setting.Value as JObject).ContainsKey("interval") || !double.TryParse(setting.Value["interval"].ToString(), out _)))
+                    else
                     {
-                        (setting.Value as JObject).Add("interval", "90");
+                        if (!(setting.Value as JObject).ContainsKey("enabled") || !bool.TryParse(setting.Value["enabled"].ToString(), out _))
+                        {
+                            (setting.Value as JObject).Add("enabled", "false");
+                        }
+
+                        if (setting.Key.StartsWith("Timer - ") && (!(setting.Value as JObject).ContainsKey("interval") || !double.TryParse(setting.Value["interval"].ToString(), out _)))
+                        {
+                            (setting.Value as JObject).Add("interval", "90");
+                        }
                     }
                 }
                 Globals.ChatBotSettings = tmpSettings;
@@ -568,7 +583,7 @@ namespace TwitchHelperBot
 
                                     int count = 1;
                                     IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
-                                    string messageToSend = "MrDestructoid ";
+                                    string messageToSend = Globals.ChatBotSettings["OnChatCommandReceived - topviewers"]["message"].ToString();
                                     foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
                                     {
                                         string newPart = Globals.ChatBotSettings["OnChatCommandReceived - topviewers"]["messagePart"].ToString()
@@ -582,7 +597,7 @@ namespace TwitchHelperBot
                                         count++;
                                     }
 
-                                    Globals.twitchChatClient.SendReply(e.Command.ChatMessage.Channel, e.Command.ChatMessage.Id, messageToSend);
+                                    sendMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
 
                                     break;
                                 }

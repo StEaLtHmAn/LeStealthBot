@@ -81,6 +81,8 @@ namespace TwitchHelperBot
             presetsListView.Items.Clear();
             presetsListView.SmallImageList?.Dispose();
             presetsListView.SmallImageList = new ImageList();
+            presetsListView.SmallImageList.ImageSize = new Size(26, 36);
+            presetsListView.SmallImageList.ColorDepth = ColorDepth.Depth32Bit;
             string[] sections = Globals.iniHelper.SectionNames();
             for (int i = 0; i < sections.Length; i++)
             {
@@ -95,12 +97,13 @@ namespace TwitchHelperBot
                             presetsListView.SmallImageList.Images.Add(Image.FromStream(fs));
                         }
                     });
-                    presetsListView.Items.Add(new ListViewItem(new string[]
+                    var item = new ListViewItem(new string[]
                     {
-                        sections[i],
+                        category["name"].ToString(),
                         Globals.iniHelper.Read("PresetTitle", sections[i]),
-                        category["name"].ToString()
-                    }, presetsListView.SmallImageList.Images.Count - 1));
+                        sections[i],
+                    }, presetsListView.SmallImageList.Images.Count - 1);
+                    presetsListView.Items.Add(item);
                 }
             }
             if(presetsListView.Items.Count > 0)
@@ -168,7 +171,7 @@ namespace TwitchHelperBot
             {
                 if (presetsListView.SelectedItems.Count > 0)
                 {
-                    Globals.iniHelper.DeleteSection(presetsListView.SelectedItems[0].SubItems[0].Text);
+                    Globals.iniHelper.DeleteSection(presetsListView.SelectedItems[0].SubItems[2].Text);
 
                     loadPresets();
                 }
@@ -204,6 +207,8 @@ namespace TwitchHelperBot
         {
             try
             {
+                if (!txtPresetCategory.Focused)
+                    return;
                 string currentText = txtPresetCategory.Text;
                 JObject categoryList = JObject.Parse(await SearchCategories(currentText.Trim()));
                 if (categoryList["data"] != null && categoryList["data"].Count() > 0)
@@ -223,11 +228,11 @@ namespace TwitchHelperBot
             {
                 if (presetsListView.SelectedItems.Count > 0)
                 {
-                    txtPresetTitle.Text = Globals.iniHelper.Read("PresetTitle", presetsListView.SelectedItems[0].SubItems[0].Text);
-                    if (!cbxPresetExePath.Items.Contains(presetsListView.SelectedItems[0].SubItems[0].Text))
-                        cbxPresetExePath.Items.Add(presetsListView.SelectedItems[0].SubItems[0].Text);
-                    cbxPresetExePath.SelectedItem = presetsListView.SelectedItems[0].SubItems[0].Text;
-                    JObject selectedData = JObject.Parse(Globals.iniHelper.Read("PresetCategory", presetsListView.SelectedItems[0].SubItems[0].Text));
+                    txtPresetTitle.Text = Globals.iniHelper.Read("PresetTitle", presetsListView.SelectedItems[0].SubItems[2].Text);
+                    if (!cbxPresetExePath.Items.Contains(presetsListView.SelectedItems[0].SubItems[2].Text))
+                        cbxPresetExePath.Items.Add(presetsListView.SelectedItems[0].SubItems[2].Text);
+                    cbxPresetExePath.SelectedItem = presetsListView.SelectedItems[0].SubItems[2].Text;
+                    JObject selectedData = JObject.Parse(Globals.iniHelper.Read("PresetCategory", presetsListView.SelectedItems[0].SubItems[2].Text));
                     txtPresetCategory.Text = selectedData["name"].ToString();
                     GetImageFromURL(selectedData["box_art_url"].ToString(), "ImageCache\\" + selectedData["id"].ToString() + ".jpg", () =>
                     {
@@ -321,8 +326,8 @@ namespace TwitchHelperBot
             {
                 if (presetsListView.SelectedItems.Count > 0)
                 {
-                    string PresetTitle = Globals.iniHelper.Read("PresetTitle", presetsListView.SelectedItems[0].SubItems[0].Text);
-                    JObject category = JObject.Parse(Globals.iniHelper.Read("PresetCategory", presetsListView.SelectedItems[0].SubItems[0].Text));
+                    string PresetTitle = Globals.iniHelper.Read("PresetTitle", presetsListView.SelectedItems[0].SubItems[2].Text);
+                    JObject category = JObject.Parse(Globals.iniHelper.Read("PresetCategory", presetsListView.SelectedItems[0].SubItems[2].Text));
 
                     if (Application.OpenForms.OfType<MainForm>().First().UpdateChannelInfo(category["id"].ToString(), PresetTitle))
                     {
@@ -365,6 +370,31 @@ namespace TwitchHelperBot
                 cbxPresetExePath.Items.Add(dialog.FileName);
                 cbxPresetExePath.SelectedItem = dialog.FileName;
             }
+        }
+
+        System.Windows.Forms.ToolTip mTooltip = null;
+        Point mLastPos = new Point(-1, -1);
+
+        private void presetsListView_MouseMove(object sender, MouseEventArgs e)
+        {
+            ListViewHitTestInfo info = presetsListView.HitTest(e.X, e.Y);
+
+            if (mTooltip == null)
+                mTooltip = new System.Windows.Forms.ToolTip();
+
+            if (mLastPos != e.Location)
+            {
+                if (info.Item != null && info.SubItem != null && info.SubItem == info.Item.SubItems[2])
+                {
+                    mTooltip.Show(Path.GetFileName(info.SubItem.Text), info.Item.ListView, e.X, e.Y-18);
+                }
+                else
+                {
+                    mTooltip.SetToolTip(presetsListView, string.Empty);
+                }
+            }
+
+            mLastPos = e.Location;
         }
     }
 }

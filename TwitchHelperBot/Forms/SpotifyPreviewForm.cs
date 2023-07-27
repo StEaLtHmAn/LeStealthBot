@@ -18,16 +18,6 @@ namespace TwitchHelperBot
     {
         private string SpotifyToken = string.Empty;
         private string SpotifyRefreshToken = string.Empty;
-        //[DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
-        //private static extern IntPtr CreateRoundRectRgn
-        //(
-        //    int nLeftRect,     // x-coordinate of upper-left corner
-        //    int nTopRect,      // y-coordinate of upper-left corner
-        //    int nRightRect,    // x-coordinate of lower-right corner
-        //    int nBottomRect,   // y-coordinate of lower-right corner
-        //    int nWidthEllipse, // width of ellipse
-        //    int nHeightEllipse // height of ellipse
-        //);
         public const int WM_NCLBUTTONDOWN = 0xA1;
         public const int HT_CAPTION = 0x2;
 

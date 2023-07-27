@@ -57,7 +57,7 @@ namespace TwitchHelperBot
                     lblHeading.Size = new Size(250, 30);
                     lblHeading.TextChanged += delegate
                     {
-                        var tmp = tmpChatBotSettings[settingName];
+                        var tmp = tmpChatBotSettings[settingName].DeepClone();
                         tmpChatBotSettings.Remove(settingName);
                         tmpChatBotSettings.Add(lblHeading.Text, tmp);
                     };
