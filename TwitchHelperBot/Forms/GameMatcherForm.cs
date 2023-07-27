@@ -157,10 +157,11 @@ namespace TwitchHelperBot
         {
             try
             {
-                e.Value = Path.GetFileName(e.ListItem.ToString());
+                e.Value = Path.GetFileName(e.ListItem.ToString()) +"  |  "+ e.ListItem.ToString();
             }
             catch (Exception ex)
             {
+                e.Value = e.ListItem.ToString();
                 Globals.LogMessage("cbxPresetExePath_Format exception: " + ex);
             }
         }

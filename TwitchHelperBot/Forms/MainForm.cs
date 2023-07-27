@@ -368,7 +368,7 @@ namespace TwitchHelperBot
                     {
                         foreach (var attributes in setting.Value as JObject)
                         {
-                            if (!(setting.Value as JObject).ContainsKey(attributes.Key))
+                            if (!(tmpSettings[setting.Key] as JObject).ContainsKey(attributes.Key))
                             {
                                 (tmpSettings[setting.Key] as JObject).Add(attributes.Key, attributes.Value);
                             }
@@ -549,56 +549,62 @@ namespace TwitchHelperBot
                                 }
                             case "topviewers":
                                 {
-                                    List<ViewerListForm.SessionData> Sessions = new List<ViewerListForm.SessionData>();
-                                    //read x amount of archive data
-                                    int SessionsArchiveReadCount = int.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
-                                    for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
+                                    try
                                     {
-                                        if (File.Exists($"SessionsArchive{i}.json"))
-                                            Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
-                                        else
-                                            break;
-                                    }
-                                    //get session data from file
-                                    if (File.Exists("WatchTimeSessions.json"))
-                                        Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
-
-                                    Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
-                                    foreach (var sessionData in Sessions)
-                                    {
-                                        foreach (var viewerData in sessionData.WatchTimeData)
+                                        List<ViewerListForm.SessionData> Sessions = new List<ViewerListForm.SessionData>();
+                                        //read x amount of archive data
+                                        int SessionsArchiveReadCount = int.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
+                                        for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
                                         {
-                                            if (viewerData.Key.ToLower() == Globals.loginName)
-                                                break;
-                                            if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
-                                            {
-                                                tmpWatchTimeList.Add(viewerData.Key, viewerData.Value);
-                                            }
+                                            if (File.Exists($"SessionsArchive{i}.json"))
+                                                Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
                                             else
+                                                break;
+                                        }
+                                        //get session data from file
+                                        if (File.Exists("WatchTimeSessions.json"))
+                                            Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
+
+                                        Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
+                                        foreach (var sessionData in Sessions)
+                                        {
+                                            foreach (var viewerData in sessionData.WatchTimeData)
                                             {
-                                                tmpWatchTimeList[viewerData.Key] += viewerData.Value;
+                                                if (viewerData.Key.ToLower() == Globals.loginName)
+                                                    break;
+                                                if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
+                                                {
+                                                    tmpWatchTimeList.Add(viewerData.Key, viewerData.Value);
+                                                }
+                                                else
+                                                {
+                                                    tmpWatchTimeList[viewerData.Key] += viewerData.Value;
+                                                }
                                             }
                                         }
-                                    }
 
-                                    int count = 1;
-                                    IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
-                                    string messageToSend = Globals.ChatBotSettings["OnChatCommandReceived - topviewers"]["message"].ToString();
-                                    foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
+                                        int count = 1;
+                                        IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
+                                        string messageToSend = Globals.ChatBotSettings["OnChatCommandReceived - topviewers"]["message"].ToString();
+                                        foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
+                                        {
+                                            string newPart = Globals.ChatBotSettings["OnChatCommandReceived - topviewers"]["messagePart"].ToString()
+                                            .Replace("##Count##", count.ToString())
+                                            .Replace("##Name##", kvp.Key)
+                                            .Replace("##Watchtime##", Globals.getRelativeTimeSpan(kvp.Value));
+                                            if (messageToSend.Length + newPart.Length <= 500)
+                                                messageToSend += newPart;
+                                            else
+                                                break;
+                                            count++;
+                                        }
+
+                                        sendMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
+                                    }
+                                    catch (Exception ex)
                                     {
-                                        string newPart = Globals.ChatBotSettings["OnChatCommandReceived - topviewers"]["messagePart"].ToString()
-                                        .Replace("##Count##", count.ToString())
-                                        .Replace("##Name##", kvp.Key)
-                                        .Replace("##Watchtime##", Globals.getRelativeTimeSpan(kvp.Value));
-                                        if (messageToSend.Length + newPart.Length <= 500)
-                                            messageToSend += newPart;
-                                        else
-                                            break;
-                                        count++;
+                                        Globals.LogMessage(e.Command.CommandText+": "+ex.ToString());
                                     }
-
-                                    sendMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
-
                                     break;
                                 }
                             case "commands":
