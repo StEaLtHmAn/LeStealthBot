@@ -4,7 +4,6 @@ using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 using System.Windows.Threading;
-using System.Xml.Linq;
 
 namespace TwitchHelperBot
 {
