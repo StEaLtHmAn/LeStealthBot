@@ -248,26 +248,8 @@ namespace TwitchHelperBot
         }
 
         DispatcherTimer followerTimer;
-        Dictionary<string, DispatcherTimer> ChatbotTimers;
         private void setupChatBot()
         {
-            void sendMessage(string channel, string message, string replyID = "")
-            {
-                if (message.Length > 500)
-                {
-                    message = message.Substring(0, 500);
-                }
-
-                if (string.IsNullOrEmpty(replyID))
-                {
-                    Globals.twitchChatClient.SendMessage(channel, message);
-                }
-                else
-                {
-                    Globals.twitchChatClient.SendReply(channel, replyID, message);
-                }
-            }
-
             //read chatbot settings string
             string ChatBotSettingsString = Globals.iniHelper.Read("ChatBotSettings");
             //create defaults chatbot settings
@@ -414,16 +396,18 @@ namespace TwitchHelperBot
             Globals.twitchChatClient = new TwitchClient(customClient);
             Globals.twitchChatClient.Initialize(credentials, Globals.loginName);
             Globals.twitchChatClient.Connect();
+
+            //setup events
             Globals.twitchChatClient.OnUserBanned += (sender, e) =>
             {
                 if (bool.Parse(Globals.ChatBotSettings["OnUserBanned"]["enabled"].ToString()))
                 {
                     if (string.IsNullOrEmpty(e.UserBan.BanReason))
-                        sendMessage(e.UserBan.Channel,
+                        Globals.sendChatBotMessage(e.UserBan.Channel,
                             Globals.ChatBotSettings["OnUserBanned"]["messageNoReason"].ToString()
                             .Replace("##BannedUsername##", e.UserBan.Username));
                     else
-                        sendMessage(e.UserBan.Channel,
+                        Globals.sendChatBotMessage(e.UserBan.Channel,
                             Globals.ChatBotSettings["OnUserBanned"]["messageWithReason"].ToString()
                             .Replace("##BannedUsername##", e.UserBan.Username)
                             .Replace("##BanReason##", e.UserBan.Username));
@@ -434,12 +418,12 @@ namespace TwitchHelperBot
                 if (bool.Parse(Globals.ChatBotSettings["OnUserTimedout"]["enabled"].ToString()))
                 {
                     if (string.IsNullOrEmpty(e.UserTimeout.TimeoutReason))
-                        sendMessage(e.UserTimeout.Channel,
+                        Globals.sendChatBotMessage(e.UserTimeout.Channel,
                             Globals.ChatBotSettings["OnUserTimedout"]["messageNoReason"].ToString()
                             .Replace("##TimedoutUsername##", e.UserTimeout.Username)
                             .Replace("##TimeoutDuration##", Globals.getRelativeTimeSpan(TimeSpan.FromSeconds(e.UserTimeout.TimeoutDuration))));
                     else
-                        sendMessage(e.UserTimeout.Channel,
+                        Globals.sendChatBotMessage(e.UserTimeout.Channel,
                             Globals.ChatBotSettings["OnUserTimedout"]["messageWithReason"].ToString()
                             .Replace("##TimedoutUsername##", e.UserTimeout.Username)
                             .Replace("##TimeoutReason##", e.UserTimeout.TimeoutReason)
@@ -450,7 +434,7 @@ namespace TwitchHelperBot
             {
                 if (bool.Parse(Globals.ChatBotSettings["OnMessageReceived - Bits > 0"]["enabled"].ToString()) && e.ChatMessage.Bits > 0)
                 {
-                    sendMessage(e.ChatMessage.Channel,
+                    Globals.sendChatBotMessage(e.ChatMessage.Channel,
                         Globals.ChatBotSettings["OnMessageReceived - Bits > 0"]["enabled"].ToString()
                         .Replace("##SenderName##", e.ChatMessage.DisplayName)
                         .Replace("##Bits##", e.ChatMessage.Bits.ToString())
@@ -460,7 +444,7 @@ namespace TwitchHelperBot
             Globals.twitchChatClient.OnNewSubscriber += (sender, e) =>
             {
                 if (bool.Parse(Globals.ChatBotSettings["OnNewSubscriber"]["enabled"].ToString()))
-                    sendMessage(e.Channel,
+                    Globals.sendChatBotMessage(e.Channel,
                         Globals.ChatBotSettings["OnNewSubscriber"]["message"].ToString()
                         .Replace("##SubscriberName##", e.Subscriber.DisplayName)
                         .Replace("##SubscriptionPlan##", e.Subscriber.SubscriptionPlan.ToString()));
@@ -468,7 +452,7 @@ namespace TwitchHelperBot
             Globals.twitchChatClient.OnReSubscriber += (sender, e) =>
             {
                 if (bool.Parse(Globals.ChatBotSettings["OnReSubscriber"]["enabled"].ToString()))
-                    sendMessage(e.Channel,
+                    Globals.sendChatBotMessage(e.Channel,
                         Globals.ChatBotSettings["OnReSubscriber"]["message"].ToString()
                         .Replace("##SubscriberName##", e.ReSubscriber.DisplayName)
                         .Replace("##CumulativeMonths##", e.ReSubscriber.MsgParamCumulativeMonths)
@@ -477,7 +461,7 @@ namespace TwitchHelperBot
             Globals.twitchChatClient.OnPrimePaidSubscriber += (sender, e) =>
             {
                 if (bool.Parse(Globals.ChatBotSettings["OnPrimePaidSubscriber"]["enabled"].ToString()))
-                    sendMessage(e.Channel,
+                    Globals.sendChatBotMessage(e.Channel,
                         Globals.ChatBotSettings["OnPrimePaidSubscriber"]["message"].ToString()
                         .Replace("##SubscriberName##", e.PrimePaidSubscriber.DisplayName)
                         .Replace("##SubscriptionPlan##", e.PrimePaidSubscriber.SubscriptionPlanName));
@@ -485,7 +469,7 @@ namespace TwitchHelperBot
             Globals.twitchChatClient.OnGiftedSubscription += (sender, e) =>
             {
                 if (bool.Parse(Globals.ChatBotSettings["OnGiftedSubscription"]["enabled"].ToString()))
-                    sendMessage(e.Channel,
+                    Globals.sendChatBotMessage(e.Channel,
                         Globals.ChatBotSettings["OnGiftedSubscription"]["message"].ToString()
                         .Replace("##GifterName##", e.GiftedSubscription.DisplayName)
                         .Replace("##RecipientName##", e.GiftedSubscription.MsgParamRecipientDisplayName)
@@ -494,14 +478,14 @@ namespace TwitchHelperBot
             Globals.twitchChatClient.OnContinuedGiftedSubscription += (sender, e) =>
             {
                 if (bool.Parse(Globals.ChatBotSettings["OnContinuedGiftedSubscription"]["enabled"].ToString()))
-                    sendMessage(e.Channel, Globals.ChatBotSettings["OnContinuedGiftedSubscription"]["message"].ToString()
+                    Globals.sendChatBotMessage(e.Channel, Globals.ChatBotSettings["OnContinuedGiftedSubscription"]["message"].ToString()
                         .Replace("##GifterName##", e.ContinuedGiftedSubscription.MsgParamSenderName)
                         .Replace("##RecipientName##", e.ContinuedGiftedSubscription.DisplayName));
             };
             Globals.twitchChatClient.OnCommunitySubscription += (sender, e) =>
             {
                 if (bool.Parse(Globals.ChatBotSettings["OnCommunitySubscription"]["enabled"].ToString()))
-                    sendMessage(e.Channel, Globals.ChatBotSettings["OnCommunitySubscription"]["message"].ToString()
+                    Globals.sendChatBotMessage(e.Channel, Globals.ChatBotSettings["OnCommunitySubscription"]["message"].ToString()
                         .Replace("##SubscriberName##", e.GiftedSubscription.DisplayName)
                         .Replace("##MassGiftCount##", e.GiftedSubscription.MsgParamMassGiftCount.ToString())
                         .Replace("##SubscriptionPlan##", e.GiftedSubscription.MsgParamSubPlan.ToString()));
@@ -529,7 +513,7 @@ namespace TwitchHelperBot
                                         XmlNode nextScheduledTime = document.SelectSingleNode("//span[@style='color:red']");
                                         XmlNode nextScheduledDate = nextScheduledTime.SelectSingleNode("../../h3/time");
 
-                                        sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - eskont"]["message"].ToString()
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - eskont"]["message"].ToString()
                                         .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                         .Replace("##ScheduledMonth##", nextScheduledDate.InnerText)
                                         .Replace("##ScheduledTime##", nextScheduledTime.InnerText)
@@ -540,7 +524,7 @@ namespace TwitchHelperBot
                                 }
                             case "time":
                                 {
-                                    sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - time"]["message"].ToString()
+                                    Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - time"]["message"].ToString()
                                         .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                         .Replace("##Time##", DateTime.Now.ToShortTimeString())
                                         .Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName),
@@ -599,7 +583,7 @@ namespace TwitchHelperBot
                                             count++;
                                         }
 
-                                        sendMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
                                     }
                                     catch (Exception ex)
                                     {
@@ -619,7 +603,7 @@ namespace TwitchHelperBot
                                     }
                                     messageToSend = messageToSend.Substring(0, messageToSend.Length - 2);
 
-                                    sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - commands"]["message"].ToString()
+                                    Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - commands"]["message"].ToString()
                                         .Replace("##EnabledCommandList##", messageToSend),
                                         e.Command.ChatMessage.Id);
                                     break;
@@ -649,13 +633,13 @@ namespace TwitchHelperBot
                                     }
 
                                     if(userToSearch == e.Command.ChatMessage.DisplayName)
-                                        sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["message"].ToString()
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["message"].ToString()
                                         .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                         .Replace("##Name##", userToSearch)
                                         .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
                                         e.Command.ChatMessage.Id);
                                     else
-                                        sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["messageWithUser"].ToString()
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["messageWithUser"].ToString()
                                         .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                         .Replace("##Name##", userToSearch)
                                         .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
@@ -664,14 +648,14 @@ namespace TwitchHelperBot
                                 }
                             case "discord":
                                 {
-                                    sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - discord"]["message"].ToString()
+                                    Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - discord"]["message"].ToString()
                                         .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()),
                                         e.Command.ChatMessage.Id);
                                     break;
                                 }
                             case "tip":
                                 {
-                                    sendMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - tip"]["message"].ToString()
+                                    Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - tip"]["message"].ToString()
                                         .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()),
                                         e.Command.ChatMessage.Id);
                                     break;
@@ -680,27 +664,6 @@ namespace TwitchHelperBot
                 }
                 catch { }
             };
-
-            Dictionary<string, DispatcherTimer> timers = new Dictionary<string, DispatcherTimer>();
-            foreach (var setting in Globals.ChatBotSettings.Properties())
-            {
-                if (setting.Name.StartsWith("Timer - "))
-                {
-                    string[] splitDetails = setting.Name.Split(new string[] { " - " }, StringSplitOptions.None);
-                    DispatcherTimer timer = new DispatcherTimer();
-                    timer.Interval = TimeSpan.FromMinutes(double.Parse(Globals.ChatBotSettings[setting.Name]["interval"].ToString()));
-                    timer.Tick += delegate
-                    {
-                        if (!Globals.ChatBotSettings.ContainsKey(setting.Name) || !bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
-                            timer.Stop();
-
-                        sendMessage(Globals.loginName, Globals.ChatBotSettings[setting.Name]["message"].ToString()
-                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()));
-                    };
-                    timer.Start();
-                    timers.Add(setting.Name, timer);
-                }
-            }
 
             //follower tracker timer
             Globals.GetFollowedData();
@@ -729,7 +692,7 @@ namespace TwitchHelperBot
                         //loop through new followers
                         foreach (var followerName in Globals.Followers.Select(x => x["user_name"].ToString()).Where(x => !followerNamesBefore.Contains(x)))
                         {
-                            sendMessage(Globals.loginName,
+                            Globals.sendChatBotMessage(Globals.loginName,
                                 Globals.ChatBotSettings["OnNewFollow"]["message"].ToString()
                                 .Replace("##FollowerName##", followerName));
                         }
@@ -741,6 +704,26 @@ namespace TwitchHelperBot
                 }
             };
             followerTimer.Start();
+
+            //setup ChatBot Timers
+            foreach (var setting in Globals.ChatBotSettings.Properties())
+            {
+                if (setting.Name.StartsWith("Timer - "))
+                {
+                    DispatcherTimer timer = new DispatcherTimer();
+                    timer.Interval = TimeSpan.FromMinutes(double.Parse(Globals.ChatBotSettings[setting.Name]["interval"].ToString()));
+                    timer.Tick += delegate
+                    {
+                        if (!Globals.ChatBotSettings.ContainsKey(setting.Name) || !bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
+                            timer.Stop();
+
+                        Globals.sendChatBotMessage(Globals.loginName, Globals.ChatBotSettings[setting.Name]["message"].ToString()
+                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()));
+                    };
+                    timer.Start();
+                    Globals.ChatbotTimers.Add(setting.Name, timer);
+                }
+            }
         }
 
         private void KeyboardHook_KeyPressed(object sender, KeyPressedEventArgs e)

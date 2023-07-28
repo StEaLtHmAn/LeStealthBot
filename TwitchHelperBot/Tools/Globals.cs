@@ -24,6 +24,7 @@ namespace TwitchHelperBot
         public static JObject ChatBotSettings;
         public static string loginName = null;
         public static TwitchClient twitchChatClient = null;
+        public static Dictionary<string, DispatcherTimer> ChatbotTimers = new Dictionary<string, DispatcherTimer>();
 
         public static void LogMessage(string message)
         {
@@ -194,6 +195,23 @@ namespace TwitchHelperBot
             }
 
             Followers = tmpFollowers;
+        }
+
+        public static void sendChatBotMessage(string channel, string message, string replyID = "")
+        {
+            if (message.Length > 500)
+            {
+                message = message.Substring(0, 500);
+            }
+
+            if (string.IsNullOrEmpty(replyID))
+            {
+                Globals.twitchChatClient.SendMessage(channel, message);
+            }
+            else
+            {
+                Globals.twitchChatClient.SendReply(channel, replyID, message);
+            }
         }
     }
 }
