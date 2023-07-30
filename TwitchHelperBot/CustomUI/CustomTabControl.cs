@@ -19,7 +19,7 @@ namespace TwitchHelperBot
             };
             if (LicenseManager.UsageMode != LicenseUsageMode.Designtime)
             {
-                DarkModeEnabled = bool.Parse(Globals.iniHelper.Read("DarkModeEnabled"));
+                DarkModeEnabled = bool.Parse(Database.ReadSettingCell("DarkModeEnabled"));
                 SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.DoubleBuffer, true);
             }
         }

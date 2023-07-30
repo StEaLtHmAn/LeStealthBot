@@ -31,7 +31,7 @@ namespace TwitchHelperBot
         public OverlayNotificationMessage(string Message, string iconURL = null, string iconFileName = null, Action onClick = null)
         {
             InitializeComponent();
-            Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
+            Globals.ToggleDarkMode(this, bool.Parse(Database.ReadSettingCell("DarkModeEnabled")));
 
             notificationText.Text = $"{Message}";
 
@@ -42,7 +42,7 @@ namespace TwitchHelperBot
             }
 
             //close after 5 seconds
-            Globals.DelayAction(int.Parse(Globals.iniHelper.Read("NotificationDuration") ?? "5000"), new Action(() => { Dispose(); }));
+            Globals.DelayAction(int.Parse(Database.ReadSettingCell("NotificationDuration") ?? "5000"), new Action(() => { Dispose(); }));
 
             //move form bottom right
             Rectangle bounds = Screen.FromPoint(Cursor.Position).Bounds;

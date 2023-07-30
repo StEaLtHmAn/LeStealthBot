@@ -1,4 +1,5 @@
 ﻿using CSCore.CoreAudioAPI;
+using LiteDB;
 using System;
 using System.Diagnostics;
 using System.Drawing;
@@ -14,7 +15,7 @@ namespace TwitchHelperBot
         {
             InitializeComponent();
 
-            Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
+            Globals.ToggleDarkMode(this, bool.Parse(Database.ReadSettingCell("DarkModeEnabled")));
 
             Task.Run(() => InitForm());
         }
@@ -107,10 +108,10 @@ namespace TwitchHelperBot
             btnVolumeUpHotkey.AutoSize = true;
             btnVolumeUpHotkey.FlatStyle = FlatStyle.Flat;
             btnVolumeUpHotkey.ForeColor = Color.Green;
-            string HotkeysUpValue = Globals.iniHelper.Read(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysUp");
-            if (!string.IsNullOrEmpty(HotkeysUpValue))
+            BsonDocument HotkeysUpValue = Database.ReadOneRecord(x => x["exePath"].AsString == (process.Id == 0 ? "0" : process.MainModule.FileName) && x["isVolumeUp"].AsBoolean, "Hotkeys");
+            if (HotkeysUpValue!=null)
             {
-                Keys keyData = (Keys)int.Parse(HotkeysUpValue);
+                Keys keyData = (Keys)int.Parse(HotkeysUpValue["keyCode"].AsString);
                 Keys Modifiers = keyData & Keys.Modifiers;
                 Keys KeyCode = keyData & Keys.KeyCode;
                 if (!Enum.IsDefined(typeof(Keys), (int)KeyCode))
@@ -136,7 +137,10 @@ namespace TwitchHelperBot
                     btnVolumeUpHotkey.Text = "Select a hotkey";
                     try
                     {
-                        Globals.iniHelper.DeleteKey(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysUp");
+                        Database.DeleteRecords(x =>
+                        x["exePath"].AsString == (process.Id == 0 ? "0" : process.MainModule.FileName) && x["isVolumeUp"].AsBoolean,
+                        "Hotkeys");
+                        //Globals.iniHelper.DeleteKey(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysUp");
                         Globals.registerAudioMixerHotkeys();
                     }
                     catch { }
@@ -151,7 +155,14 @@ namespace TwitchHelperBot
                     btnVolumeUpHotkey.Text = string.Join("+", e.Modifiers.ToString().Split(new string[] { ", " }, StringSplitOptions.RemoveEmptyEntries).Reverse()) + "+" + keyNames;
                     try
                     {
-                        Globals.iniHelper.Write(process.Id == 0 ? "0" : process.MainModule.FileName, ((int)e.KeyData).ToString(), "HotkeysUp");
+                        Database.UpsertRecord(x => x["exePath"] == (process.Id == 0 ? "0" : process.MainModule.FileName) && x["isVolumeUp"].AsBoolean,
+                            new BsonDocument()
+                            {
+                                { "exePath", process.Id == 0 ? "0" : process.MainModule.FileName },
+                                { "keyCode", ((int)e.KeyData).ToString() },
+                                { "isVolumeUp", true },
+                            }, "Hotkeys");
+                        //Database.UpsertCellValue(x => x["exePath"] == (process.Id == 0 ? "0" : process.MainModule.FileName), "keyCode", ((int)e.KeyData).ToString(), "Hotkeys");
                         Globals.registerAudioMixerHotkeys();
                     }
                     catch { }
@@ -163,10 +174,10 @@ namespace TwitchHelperBot
             btnVolumeDownHotkey.AutoSize = true;
             btnVolumeDownHotkey.FlatStyle = FlatStyle.Flat;
             btnVolumeDownHotkey.ForeColor = Color.Blue;
-            string HotkeysDownValue = Globals.iniHelper.Read(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysDown");
-            if (!string.IsNullOrEmpty(HotkeysDownValue))
+            BsonDocument HotkeysDownValue = Database.ReadOneRecord(x => x["exePath"].AsString == (process.Id == 0 ? "0" : process.MainModule.FileName) && !x["isVolumeUp"].AsBoolean, "Hotkeys");
+            if (HotkeysDownValue != null)
             {
-                Keys keyData = (Keys)int.Parse(HotkeysDownValue);
+                Keys keyData = (Keys)int.Parse(HotkeysDownValue["keyCode"].AsString);
                 Keys Modifiers = keyData & Keys.Modifiers;
                 Keys KeyCode = keyData & Keys.KeyCode;
                 if (!Enum.IsDefined(typeof(Keys), (int)KeyCode))
@@ -192,7 +203,10 @@ namespace TwitchHelperBot
                     btnVolumeDownHotkey.Text = "Select a hotkey";
                     try
                     {
-                        Globals.iniHelper.DeleteKey(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysDown");
+                        Database.DeleteRecords(x =>
+                        x["exePath"].AsString == (process.Id == 0 ? "0" : process.MainModule.FileName) && !x["isVolumeUp"].AsBoolean,
+                        "Hotkeys");
+                        //Globals.iniHelper.DeleteKey(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysDown");
                         Globals.registerAudioMixerHotkeys();
                     }
                     catch { }
@@ -207,7 +221,13 @@ namespace TwitchHelperBot
                     btnVolumeDownHotkey.Text = string.Join("+", e.Modifiers.ToString().Split(new string[] { ", " }, StringSplitOptions.RemoveEmptyEntries).Reverse()) + "+" + keyNames;
                     try
                     {
-                        Globals.iniHelper.Write(process.Id == 0 ? "0" : process.MainModule.FileName, ((int)e.KeyData).ToString(), "HotkeysDown");
+                        Database.UpsertRecord(x => x["exePath"] == (process.Id == 0 ? "0" : process.MainModule.FileName) && !x["isVolumeUp"].AsBoolean,
+                            new BsonDocument()
+                            {
+                                { "exePath", process.Id == 0 ? "0" : process.MainModule.FileName },
+                                { "keyCode", ((int)e.KeyData).ToString() },
+                                { "isVolumeUp", false },
+                            }, "Hotkeys");
                         Globals.registerAudioMixerHotkeys();
                     }
                     catch { }

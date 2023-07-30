@@ -7,8 +7,8 @@ using System.Text;
 
 public class IniHelper
 {
-    [DllImport("kernel32", CharSet = CharSet.Unicode)]
-    static extern long WritePrivateProfileString(string section, string key, string value, string FilePath);
+    //[DllImport("kernel32", CharSet = CharSet.Unicode)]
+    //static extern long WritePrivateProfileString(string section, string key, string value, string FilePath);
 
     [DllImport("kernel32", CharSet = CharSet.Unicode)]
     static extern int GetPrivateProfileString(string section, string key, string Default, StringBuilder RetVal, int Size, string FilePath);
@@ -40,7 +40,7 @@ public class IniHelper
         string[] tmp = Encoding.ASCII.GetString(buffer).Trim('\0').Split('\0');
 
         List<string> result = new List<string>();
-        if(tmp.Length > 0 && tmp[0].Length > 0)
+        if (tmp.Length > 0 && tmp[0].Length > 0)
             foreach (string entry in tmp)
             {
                 result.Add(entry.Substring(0, entry.IndexOf("=")));
@@ -63,37 +63,37 @@ public class IniHelper
                 return null;
             }
             if (RetVal.Length > 0)
-                return RetVal.ToString();
+                return RetVal.ToString().Trim().Replace("\0", string.Empty).Replace("\t", string.Empty).Replace("\r", string.Empty).Replace("\n", string.Empty);
         }
         catch { }
         return null;
     }
-    public void Write(string key, string value, string section = null)
-    {
-        if (fileAccess != FileAccess.Read)
-        {
-            WritePrivateProfileString(section ?? exe, key, value, FileInfo.FullName);
-        }
-        else
-        {
-            throw new Exception("Can`t write to file! No access!");
-        }
-    }
+    //public void Write(string key, string value, string section = null)
+    //{
+    //    if (fileAccess != FileAccess.Read)
+    //    {
+    //        WritePrivateProfileString(section ?? exe, key, value, FileInfo.FullName);
+    //    }
+    //    else
+    //    {
+    //        throw new Exception("Can`t write to file! No access!");
+    //    }
+    //}
 
-    public void DeleteKey(string key, string section = null)
-    {
-        Write(key, null, section ?? exe);
-    }
+    //public void DeleteKey(string key, string section = null)
+    //{
+    //    Write(key, null, section ?? exe);
+    //}
 
-    public void DeleteSection(string section = null)
-    {
-        Write(null, null, section ?? exe);
-    }
+    //public void DeleteSection(string section = null)
+    //{
+    //    Write(null, null, section ?? exe);
+    //}
 
-    public bool KeyExists(string key, string section = null)
-    {
-        return Read(key, section).Length > 0;
-    }
+    //public bool KeyExists(string key, string section = null)
+    //{
+    //    return Read(key, section).Length > 0;
+    //}
 
     public string[] SectionNames()
     {

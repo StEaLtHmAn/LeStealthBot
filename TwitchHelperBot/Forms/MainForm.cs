@@ -1,4 +1,5 @@
 ﻿using CSCore.CoreAudioAPI;
+using LiteDB;
 using Microsoft.Web.WebView2.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -16,11 +17,13 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.Windows.Input;
 using System.Windows.Threading;
 using System.Xml;
 using TwitchLib.Client;
 using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
+using static TwitchHelperBot.ViewerListForm;
 using WebView2 = Microsoft.Web.WebView2.WinForms.WebView2;
 
 namespace TwitchHelperBot
@@ -108,9 +111,13 @@ namespace TwitchHelperBot
 
         private void startupApp()
         {
+            Database.ConvertOldIniIntoDB();
+
+
+
             //get LoginName, if we dont have LoginName in the config then we ask the user for his LoginName with a popup textbox
             //without a LoginName we cannot continue so not entering it closes the app
-            Globals.loginName = Globals.iniHelper.Read("LoginName");
+            Globals.loginName = Database.ReadOneRecord(x => x["Key"] == "LoginName")["Value"].AsString;
             if (string.IsNullOrEmpty(Globals.loginName))
             {
                 using (TextInputForm testDialog = new TextInputForm("Setup LoginName", "Please enter your twitch LoginName to continue."))
@@ -118,7 +125,14 @@ namespace TwitchHelperBot
                     if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox.Text.Length > 0)
                     {
                         Globals.loginName = testDialog.textBox.Text;
-                        Globals.iniHelper.Write("LoginName", Globals.loginName);
+
+                        Database.UpsertRecord(x => x["Key"] == "LoginName",
+                        new BsonDocument()
+                        {
+                            { "Key", "LoginName" },
+                            { "Value", Globals.loginName }
+                        });
+                        //Database.UpsertCellValue(x => x["Key"] == "LoginName", "Value", Globals.loginName);
                     }
                     else
                     {
@@ -130,7 +144,7 @@ namespace TwitchHelperBot
 
             //get ClientId, if we dont have ClientId in the config then we ask the user for his ClientId with a popup textbox
             //without a ClientId we cannot continue so not entering it closes the app
-            Globals.clientId = Globals.iniHelper.Read("ClientId");
+            Globals.clientId = Database.ReadOneRecord(x => x["Key"] == "ClientId")["Value"].AsString;
             if (string.IsNullOrEmpty(Globals.clientId))
             {
                 using (TextInputForm testDialog = new TextInputForm("Setup ClientID", "We need your application ClientID.\r\n\r\n- Browse here: https://dev.twitch.tv/console/apps/create \r\n- Set OAuthRedirectURL to http://localhost (or something else if you know what you doing)\r\n- Set Category to Broadcaster Suite\r\n- Click Create and copy-paste the ClientID into the box below."))
@@ -138,7 +152,12 @@ namespace TwitchHelperBot
                     if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox.Text.Length > 0)
                     {
                         Globals.clientId = testDialog.textBox.Text;
-                        Globals.iniHelper.Write("ClientId", Globals.clientId);
+                        Database.UpsertRecord(x => x["Key"] == "ClientId",
+                        new BsonDocument()
+                        {
+                            { "Key", "ClientId" },
+                            { "Value", Globals.clientId }
+                        });
                     }
                     else
                     {
@@ -148,7 +167,7 @@ namespace TwitchHelperBot
                 }
             }
 
-            RedirectURI = Globals.iniHelper.Read("AuthRedirectURI");
+            RedirectURI = Database.ReadSettingCell("AuthRedirectURI");
             if (string.IsNullOrEmpty(RedirectURI))
             {
                 using (TextInputForm testDialog = new TextInputForm("Setup OAuthRedirectURL", $"We need the OAuthRedirectURL you entered for your application.\r\nIf you closed the page it can be found here https://dev.twitch.tv/console/apps/{Globals.clientId}"))
@@ -156,7 +175,7 @@ namespace TwitchHelperBot
                     if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox.Text.Length > 0)
                     {
                         RedirectURI = testDialog.textBox.Text;
-                        Globals.iniHelper.Write("AuthRedirectURI", RedirectURI);
+                        Database.UpsertRecord(x => x["Key"] == "AuthRedirectURI", new BsonDocument() { { "Key", "AuthRedirectURI" }, { "Value", RedirectURI } });
                     }
                     else
                     {
@@ -167,14 +186,14 @@ namespace TwitchHelperBot
             }
 
             //load configs
-            string tmp = Globals.iniHelper.Read("DarkModeEnabled");
+            string tmp = Database.ReadSettingCell("DarkModeEnabled");
             if (string.IsNullOrEmpty(tmp) || !bool.TryParse(tmp, out _))
             {
-                Globals.iniHelper.Write("DarkModeEnabled", "false");
+                Database.UpsertRecord(x => x["Key"] == "DarkModeEnabled", new BsonDocument() { { "Key", "DarkModeEnabled" }, { "Value", "false" } });
             }
             else
             {
-                bool DarkModeEnabled = bool.Parse(Globals.iniHelper.Read("DarkModeEnabled"));
+                bool DarkModeEnabled = bool.Parse(Database.ReadSettingCell("DarkModeEnabled"));
                 if (DarkModeEnabled)
                 {
                     Globals.ToggleDarkMode(this, DarkModeEnabled);
@@ -188,27 +207,27 @@ namespace TwitchHelperBot
                     }
                 }
             }
-            tmp = Globals.iniHelper.Read("ModifyChannelCooldown");
+            tmp = Database.ReadSettingCell("ModifyChannelCooldown");
             if (string.IsNullOrEmpty(tmp))
             {
-                Globals.iniHelper.Write("ModifyChannelCooldown", "5000");
+                Database.UpsertRecord(x => x["Key"] == "ModifyChannelCooldown", new BsonDocument() { { "Key", "ModifyChannelCooldown" }, { "Value", "5000" } });
                 updateChannelInfoTimer.Interval = 5000;
             }
             else
             {
                 updateChannelInfoTimer.Interval = int.Parse(tmp);
             }
-            if (string.IsNullOrEmpty(Globals.iniHelper.Read("NotificationDuration")))
+            if (string.IsNullOrEmpty(Database.ReadSettingCell("NotificationDuration")))
             {
-                Globals.iniHelper.Write("NotificationDuration", "5000");
+                Database.UpsertRecord(x => x["Key"] == "NotificationDuration", new BsonDocument() { { "Key", "NotificationDuration" }, { "Value", "5000" } });
             }
-            if (string.IsNullOrEmpty(Globals.iniHelper.Read("VolumeNotificationDuration")))
+            if (string.IsNullOrEmpty(Database.ReadSettingCell("VolumeNotificationDuration")))
             {
-                Globals.iniHelper.Write("VolumeNotificationDuration", "3000");
+                Database.UpsertRecord(x => x["Key"] == "VolumeNotificationDuration", new BsonDocument() { { "Key", "VolumeNotificationDuration" }, { "Value", "5000" } });
             }
 
             //Login
-            Globals.access_token = Globals.iniHelper.Read("access_token");
+            Globals.access_token = Database.ReadSettingCell("access_token");
             if (string.IsNullOrWhiteSpace(Globals.access_token) || !ValidateToken())
             {
                 string scopes = "channel:manage:broadcast+moderator:read:chatters+moderator:read:followers+channel:read:subscriptions+chat:edit+chat:read";
@@ -251,7 +270,7 @@ namespace TwitchHelperBot
         private void setupChatBot()
         {
             //read chatbot settings string
-            string ChatBotSettingsString = Globals.iniHelper.Read("ChatBotSettings");
+            string ChatBotSettingsString = Database.ReadSettingCell("ChatBotSettings");
             //create defaults chatbot settings
             Globals.ChatBotSettings = new JObject
             {
@@ -360,12 +379,14 @@ namespace TwitchHelperBot
                 //loop through tmpSettings
                 foreach (var setting in tmpSettings)
                 {
+                    //if not an onject then create a new object with enabled = false
                     if (!(setting.Value is JObject))
                     {
                         tmpSettings[setting.Key] = new JObject
                         {
                             { "enabled", "false" }
                         };
+                        //if its a timer make sure it has an interval
                         if (setting.Key.StartsWith("Timer - "))
                         {
                             (tmpSettings[setting.Key] as JObject).Add("interval", "90");
@@ -373,11 +394,12 @@ namespace TwitchHelperBot
                     }
                     else
                     {
+                        //make sure it has an enabled setting
                         if (!(setting.Value as JObject).ContainsKey("enabled") || !bool.TryParse(setting.Value["enabled"].ToString(), out _))
                         {
                             (setting.Value as JObject).Add("enabled", "false");
                         }
-
+                        //if its a timer make sure it has an interval
                         if (setting.Key.StartsWith("Timer - ") && (!(setting.Value as JObject).ContainsKey("interval") || !double.TryParse(setting.Value["interval"].ToString(), out _)))
                         {
                             (setting.Value as JObject).Add("interval", "90");
@@ -388,7 +410,12 @@ namespace TwitchHelperBot
             }
             else
             {
-                Globals.iniHelper.Write("ChatBotSettings", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None));
+                Database.UpsertRecord(x => x["Key"] == "ChatBotSettings",
+                        new BsonDocument()
+                        {
+                            { "Key", "ChatBotSettings" },
+                            { "Value", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None) }
+                        });
             }
 
             ConnectionCredentials credentials = new ConnectionCredentials(Globals.loginName, Globals.access_token);
@@ -501,34 +528,48 @@ namespace TwitchHelperBot
                         {
                             case "eskont":
                                 {
-                                    using (WebClient webClient = new WebClient())
+                                    try
                                     {
-                                        string htmlSchedule = webClient.DownloadString("https://www.ourpower.co.za/areas/nelson-mandela-bay/lorraine?block=13");
-                                        int i1 = htmlSchedule.IndexOf("time dateTime=");
-                                        int i2 = htmlSchedule.IndexOf("</section>");
-                                        htmlSchedule = "<xml><section><h3><" + htmlSchedule.Substring(i1, htmlSchedule.IndexOf("</section>", i2 + 1) - i1) + "</section></xml>";
+                                        using (WebClient webClient = new WebClient())
+                                        {
+                                            string htmlSchedule = webClient.DownloadString("https://www.ourpower.co.za/areas/nelson-mandela-bay/lorraine?block=13");
+                                            int i1 = htmlSchedule.IndexOf("time dateTime=");
+                                            int i2 = htmlSchedule.IndexOf("</section>");
+                                            htmlSchedule = "<xml><section><h3><" + htmlSchedule.Substring(i1, htmlSchedule.IndexOf("</section>", i2 + 1) - i1) + "</section></xml>";
 
-                                        XmlDocument document = new XmlDocument();
-                                        document.LoadXml(htmlSchedule);
-                                        XmlNode nextScheduledTime = document.SelectSingleNode("//span[@style='color:red']");
-                                        XmlNode nextScheduledDate = nextScheduledTime.SelectSingleNode("../../h3/time");
+                                            XmlDocument document = new XmlDocument();
+                                            document.LoadXml(htmlSchedule);
+                                            XmlNode nextScheduledTime = document.SelectSingleNode("//span[@style='color:red']");
+                                            XmlNode nextScheduledDate = nextScheduledTime.SelectSingleNode("../../h3/time");
 
-                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - eskont"]["message"].ToString()
-                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
-                                        .Replace("##ScheduledMonth##", nextScheduledDate.InnerText)
-                                        .Replace("##ScheduledTime##", nextScheduledTime.InnerText)
-                                        .Replace("##Time##", DateTime.Now.ToShortTimeString()),
-                                        e.Command.ChatMessage.Id);
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - eskont"]["message"].ToString()
+                                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
+                                            .Replace("##ScheduledMonth##", nextScheduledDate.InnerText)
+                                            .Replace("##ScheduledTime##", nextScheduledTime.InnerText)
+                                            .Replace("##Time##", DateTime.Now.ToShortTimeString()),
+                                            e.Command.ChatMessage.Id);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
                                     }
                                     break;
                                 }
                             case "time":
                                 {
-                                    Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - time"]["message"].ToString()
+                                    try
+                                    {
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - time"]["message"].ToString()
                                         .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                         .Replace("##Time##", DateTime.Now.ToShortTimeString())
                                         .Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName),
                                         e.Command.ChatMessage.Id);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
+                                    }
                                     break;
                                 }
                             case "topviewers":
@@ -537,7 +578,7 @@ namespace TwitchHelperBot
                                     {
                                         List<ViewerListForm.SessionData> Sessions = new List<ViewerListForm.SessionData>();
                                         //read x amount of archive data
-                                        int SessionsArchiveReadCount = int.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
+                                        int SessionsArchiveReadCount = int.Parse(Database.ReadSettingCell("SessionsArchiveReadCount"));
                                         for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
                                         {
                                             if (File.Exists($"SessionsArchive{i}.json"))
@@ -550,12 +591,16 @@ namespace TwitchHelperBot
                                             Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
 
                                         Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
+                                        if (Application.OpenForms.OfType<ViewerListForm>().Count() > 0)
+                                        {
+                                            tmpWatchTimeList = Application.OpenForms.OfType<ViewerListForm>().First().WatchTimeDictionary;
+                                        }
                                         foreach (var sessionData in Sessions)
                                         {
                                             foreach (var viewerData in sessionData.WatchTimeData)
                                             {
-                                                if (viewerData.Key.ToLower() == Globals.loginName)
-                                                    break;
+                                                if (viewerData.Key.ToLower() == Globals.loginName.ToLower())
+                                                    continue;
                                                 if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
                                                 {
                                                     tmpWatchTimeList.Add(viewerData.Key, viewerData.Value);
@@ -575,7 +620,7 @@ namespace TwitchHelperBot
                                             string newPart = Globals.ChatBotSettings["OnChatCommandReceived - topviewers"]["messagePart"].ToString()
                                             .Replace("##Count##", count.ToString())
                                             .Replace("##Name##", kvp.Key)
-                                            .Replace("##Watchtime##", Globals.getRelativeTimeSpan(kvp.Value));
+                                            .Replace("##Watchtime##", Globals.getShortRelativeTimeSpan(kvp.Value));
                                             if (messageToSend.Length + newPart.Length <= 500)
                                                 messageToSend += newPart;
                                             else
@@ -593,71 +638,105 @@ namespace TwitchHelperBot
                                 }
                             case "commands":
                                 {
-                                    string messageToSend = string.Empty;
-                                    foreach (string setting in Globals.ChatBotSettings.Properties().Select(p => p.Name))
+                                    try
                                     {
-                                        if (setting.StartsWith("OnChatCommandReceived - ") && bool.Parse(Globals.ChatBotSettings[setting]["enabled"].ToString()))
+                                        string messageToSend = string.Empty;
+                                        foreach (string setting in Globals.ChatBotSettings.Properties().Select(p => p.Name))
                                         {
-                                            messageToSend += setting.Replace("OnChatCommandReceived - ", string.Empty) + ", ";
+                                            if (setting.StartsWith("OnChatCommandReceived - ") && bool.Parse(Globals.ChatBotSettings[setting]["enabled"].ToString()))
+                                            {
+                                                messageToSend += setting.Replace("OnChatCommandReceived - ", string.Empty) + ", ";
+                                            }
                                         }
-                                    }
-                                    messageToSend = messageToSend.Substring(0, messageToSend.Length - 2);
+                                        messageToSend = messageToSend.Substring(0, messageToSend.Length - 2);
 
-                                    Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - commands"]["message"].ToString()
-                                        .Replace("##EnabledCommandList##", messageToSend),
-                                        e.Command.ChatMessage.Id);
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - commands"]["message"].ToString()
+                                            .Replace("##EnabledCommandList##", messageToSend),
+                                            e.Command.ChatMessage.Id);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
+                                    }
                                     break;
                                 }
                             case "watchtime":
                                 {
-                                    var userToSearch = string.IsNullOrEmpty(e.Command.ArgumentsAsString) ? e.Command.ChatMessage.DisplayName : e.Command.ArgumentsAsString.Replace("@", string.Empty);
-                                    List<ViewerListForm.SessionData> Sessions = new List<ViewerListForm.SessionData>();
-                                    //read x amount of archive data
-                                    int SessionsArchiveReadCount = int.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
-                                    for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
+                                    try
                                     {
-                                        if (File.Exists($"SessionsArchive{i}.json"))
-                                            Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
+                                        var userToSearch = string.IsNullOrEmpty(e.Command.ArgumentsAsString) ? e.Command.ChatMessage.DisplayName : e.Command.ArgumentsAsString.Replace("@", string.Empty);
+                                        List<ViewerListForm.SessionData> Sessions = new List<ViewerListForm.SessionData>();
+                                        //read x amount of archive data
+                                        int SessionsArchiveReadCount = int.Parse(Database.ReadSettingCell("SessionsArchiveReadCount"));
+                                        for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
+                                        {
+                                            if (File.Exists($"SessionsArchive{i}.json"))
+                                                Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
+                                            else
+                                                break;
+                                        }
+                                        //get session data from file
+                                        if (File.Exists("WatchTimeSessions.json"))
+                                            Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
+
+                                        TimeSpan tmpWatchTime = new TimeSpan();
+                                        if (Application.OpenForms.OfType<ViewerListForm>().Count() > 0)
+                                        {
+                                            Dictionary<string, TimeSpan> tmpWatchTimeList = Application.OpenForms.OfType<ViewerListForm>().First().WatchTimeDictionary;
+                                            if(tmpWatchTimeList.ContainsKey(userToSearch))
+                                                tmpWatchTime += tmpWatchTimeList[userToSearch];
+                                        }
+                                        foreach (var sessionData in Sessions)
+                                        {
+                                            if (sessionData.WatchTimeData.ContainsKey(userToSearch))
+                                                tmpWatchTime += sessionData.WatchTimeData[userToSearch];
+                                        }
+
+                                        if(userToSearch == e.Command.ChatMessage.DisplayName)
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["message"].ToString()
+                                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
+                                            .Replace("##Name##", userToSearch)
+                                            .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
+                                            e.Command.ChatMessage.Id);
                                         else
-                                            break;
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["messageWithUser"].ToString()
+                                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
+                                            .Replace("##Name##", userToSearch)
+                                            .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
+                                            e.Command.ChatMessage.Id);
                                     }
-                                    //get session data from file
-                                    if (File.Exists("WatchTimeSessions.json"))
-                                        Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
-
-                                    TimeSpan tmpWatchTime = new TimeSpan();
-                                    foreach (var sessionData in Sessions)
+                                    catch (Exception ex)
                                     {
-                                        if (sessionData.WatchTimeData.ContainsKey(userToSearch))
-                                            tmpWatchTime += sessionData.WatchTimeData[userToSearch];
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
                                     }
-
-                                    if(userToSearch == e.Command.ChatMessage.DisplayName)
-                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["message"].ToString()
-                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
-                                        .Replace("##Name##", userToSearch)
-                                        .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
-                                        e.Command.ChatMessage.Id);
-                                    else
-                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["messageWithUser"].ToString()
-                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
-                                        .Replace("##Name##", userToSearch)
-                                        .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
-                                        e.Command.ChatMessage.Id);
                                     break;
                                 }
                             case "discord":
                                 {
-                                    Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - discord"]["message"].ToString()
+                                    try
+                                    {
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - discord"]["message"].ToString()
                                         .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()),
                                         e.Command.ChatMessage.Id);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
+                                    }
                                     break;
                                 }
                             case "tip":
                                 {
-                                    Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - tip"]["message"].ToString()
-                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()),
-                                        e.Command.ChatMessage.Id);
+                                    try
+                                    {
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - tip"]["message"].ToString()
+                                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()),
+                                            e.Command.ChatMessage.Id);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
+                                    }
                                     break;
                                 }
                         }
@@ -728,30 +807,15 @@ namespace TwitchHelperBot
 
         private void KeyboardHook_KeyPressed(object sender, KeyPressedEventArgs e)
         {
-            string[] HotkeysUpList = Globals.iniHelper.ReadKeys("HotkeysUp");
+            int keysWithMods = (int)KeyPressedEventArgs.AddModifiers(e.Key, e.Modifier); 
+            BsonDocument dbResponse = Database.ReadOneRecord(x => x["keyCode"].AsString == keysWithMods.ToString(), "Hotkeys");
+
             string processPath = string.Empty;
             bool isUp = false;
-            foreach (string key in HotkeysUpList)
+            if (dbResponse != null)
             {
-                Keys keys = (Keys)int.Parse(Globals.iniHelper.Read(key, "HotkeysUp") ?? "0");
-                ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
-                if (keys == e.Key && modifiers == e.Modifier)
-                {
-                    processPath = key;
-                    isUp = true;
-                    break;
-                }
-            }
-            string[] HotkeysDownList = Globals.iniHelper.ReadKeys("HotkeysDown");
-            foreach (string key in HotkeysUpList)
-            {
-                Keys keys = (Keys)int.Parse(Globals.iniHelper.Read(key, "HotkeysDown") ?? "0");
-                ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
-                if (keys == e.Key && modifiers == e.Modifier)
-                {
-                    processPath = key;
-                    break;
-                }
+                processPath = dbResponse["exePath"].AsString;
+                isUp = dbResponse["isVolumeUp"].AsBoolean;
             }
 
             Task.Run(() => {
@@ -780,7 +844,7 @@ namespace TwitchHelperBot
                                         else
                                             AudioManager.SetVolumeForProcess(sessionControl.Process.Id, Math.Max(simpleVolume.MasterVolume - 0.01f, 0));
 
-                                        if (int.Parse(Globals.iniHelper.Read("VolumeNotificationDuration") ?? "3000") > 0)
+                                        if (int.Parse(Database.ReadSettingCell("VolumeNotificationDuration") ?? "3000") > 0)
                                         {
                                             string name = string.Empty;
                                             if (sessionControl.Process.Id == 0)
@@ -862,7 +926,7 @@ namespace TwitchHelperBot
             {
                 Globals.access_token = (sender as WebView2).CoreWebView2.Source.Split('#', '&')[1].Replace("access_token=", string.Empty);
                 if (!string.IsNullOrEmpty(Globals.access_token))
-                    Globals.iniHelper.Write("access_token", Globals.access_token);
+                    Database.UpsertRecord(x => x["Key"] == "access_token", new BsonDocument() { { "Key", "access_token" }, { "Value", Globals.access_token } });
                 (sender as WebView2).Parent.Dispose();
             }
             //if we land on twitch login page then we can auto-fill username
@@ -922,11 +986,11 @@ namespace TwitchHelperBot
                     if (currentProcess != null && !currentProcess.HasExited && !string.IsNullOrEmpty(currentProcess?.MainWindowTitle))
                     {
                         string forgroundAppName = currentProcess?.MainModule?.FileName ?? string.Empty;
-
-                        if (Globals.iniHelper.SectionNames().Contains(forgroundAppName))
+                        var Presets = Database.ReadAllData("Presets").Where(x => x["exePath"] == forgroundAppName);
+                        if (Presets.Count() > 0)
                         {
-                            string PresetTitle = Globals.iniHelper.Read("PresetTitle", forgroundAppName);
-                            JObject category = JObject.Parse(Globals.iniHelper.Read("PresetCategory", forgroundAppName));
+                            string PresetTitle = Presets.First()["PresetTitle"].AsString;
+                            JObject category = JObject.Parse(Presets.First()["PresetCategory"].AsString);
 
                             if (UpdateChannelInfo(category["id"].ToString(), PresetTitle))
                             {
@@ -958,8 +1022,8 @@ namespace TwitchHelperBot
             //                string forgroundAppName = p?.MainModule?.FileName ?? string.Empty;
             //                if (Globals.iniHelper.SectionNames().Contains(forgroundAppName))
             //                {
-            //                    string PresetTitle = Globals.iniHelper.Read("PresetTitle", forgroundAppName);
-            //                    string PresetCategory = Globals.iniHelper.Read("PresetCategory", forgroundAppName);
+            //                    string PresetTitle = Database.ReadSetting("PresetTitle", forgroundAppName);
+            //                    string PresetCategory = Database.ReadSetting("PresetCategory", forgroundAppName);
             //                    string PresetCategoryID = PresetCategory.Substring(PresetCategory.LastIndexOf(" - ") + 3);
 
             //                    UpdateChannelInfo(PresetCategoryID, PresetTitle);
@@ -1103,6 +1167,11 @@ namespace TwitchHelperBot
             if(Globals.twitchChatClient != null && Globals.twitchChatClient.IsConnected)
                 Globals.twitchChatClient.Disconnect();
             base.Dispose();
+        }
+
+        private void toolStripMenuItem1_Click(object sender, EventArgs e)
+        {
+            checkForUpdates();
         }
     }
 }

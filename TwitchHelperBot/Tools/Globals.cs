@@ -15,7 +15,6 @@ namespace TwitchHelperBot
     public static class Globals
     {
         public static KeyboardHook keyboardHook = new KeyboardHook();
-        public static IniHelper iniHelper = new IniHelper($"{Assembly.GetExecutingAssembly().GetName().Name}Settings.ini");
         public static Dictionary<string, string> CategoryCache = new Dictionary<string, string>();
         public static string access_token = null;
         public static string clientId = null;
@@ -58,32 +57,40 @@ namespace TwitchHelperBot
             if (ts.TotalDays < 1)//hours ago
                 return ts.Hours == 1 ? "1 Hour" : ts.Hours + " Hours";
             if (ts.TotalDays < 7)//days ago
-                return ts.Days == 1 ? "1 Day" : ts.Days + " Days";
+                return ts.TotalDays.ToString("0.##") + " Days";
             if (ts.TotalDays < 30.4368)//weeks ago
-                return (int)(ts.TotalDays / 7) == 1 ? "1 Week" : (int)(ts.TotalDays / 7) + " Weeks";
+                return (ts.TotalDays / 7).ToString("0.##") + " Weeks";
             if (ts.TotalDays < 365.242)//months ago
-                return (int)(ts.TotalDays / 30.4368) == 1 ? "1 Month" : (int)(ts.TotalDays / 30.4368) + " Months";
+                return (ts.TotalDays / 30.4368).ToString("0.##") + " Months";
             //years ago
-            return (int)(ts.TotalDays / 365.242) == 1 ? "1 Year" : (int)(ts.TotalDays / 365.242) + " Years";
+            return (ts.TotalDays / 365.242).ToString("0.##") + " Years";
+        }
+
+        public static string getShortRelativeTimeSpan(TimeSpan ts)
+        {
+            if (ts.TotalMinutes < 1)//seconds ago
+                return ts.Seconds + "s";
+            if (ts.TotalHours < 1)//min ago
+                return ts.Minutes + "m";
+            if (ts.TotalDays < 1)//hours ago
+                return ts.Hours + "h";
+            if (ts.TotalDays < 7)//days ago
+                return ts.TotalDays.ToString("0.##") + "D";
+            if (ts.TotalDays < 30.4368)//weeks ago
+                return (ts.TotalDays / 7).ToString("0.##") + "W";
+            if (ts.TotalDays < 365.242)//months ago
+                return (ts.TotalDays / 30.4368).ToString("0.##") + "M";
+            //years ago
+            return (ts.TotalDays / 365.242).ToString("0.##") + "Y";
         }
 
         public static void registerAudioMixerHotkeys()
         {
             keyboardHook.clearHotkeys();
-
-            string[] HotkeysUpList = iniHelper.ReadKeys("HotkeysUp");
-            foreach (string key in HotkeysUpList)
+            var HotkeysList = Database.ReadAllData("Hotkeys");
+            foreach (var item in HotkeysList)
             {
-                Keys keys = (Keys)int.Parse(iniHelper.Read(key, "HotkeysUp"));
-                ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
-
-                keyboardHook.RegisterHotKey(modifiers, keys);
-            }
-
-            string[] HotkeysDownList = iniHelper.ReadKeys("HotkeysDown");
-            foreach (string key in HotkeysDownList)
-            {
-                Keys keys = (Keys)int.Parse(iniHelper.Read(key, "HotkeysDown"));
+                Keys keys = (Keys)int.Parse(item["keyCode"].AsString);
                 ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
 
                 keyboardHook.RegisterHotKey(modifiers, keys);
@@ -206,11 +213,11 @@ namespace TwitchHelperBot
 
             if (string.IsNullOrEmpty(replyID))
             {
-                Globals.twitchChatClient.SendMessage(channel, message);
+                twitchChatClient.SendMessage(channel, message);
             }
             else
             {
-                Globals.twitchChatClient.SendReply(channel, replyID, message);
+                twitchChatClient.SendReply(channel, replyID, message);
             }
         }
     }

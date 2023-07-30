@@ -11,6 +11,7 @@ using System.IO;
 using System.Net;
 using System.Linq;
 using Newtonsoft.Json;
+using LiteDB;
 
 namespace TwitchHelperBot
 {
@@ -36,9 +37,6 @@ namespace TwitchHelperBot
                 Globals.DelayAction(0, new Action(() => { Dispose(); }));
                 return;
             }
-
-            SpotifyToken = Globals.iniHelper.Read("SpotifyToken");
-            SpotifyRefreshToken = Globals.iniHelper.Read("SpotifyRefreshToken");
             GetSpotifyCurrentTrack();
         }
 
@@ -55,6 +53,7 @@ namespace TwitchHelperBot
                 if (string.IsNullOrEmpty(SpotifyToken))
                 {
                     SpotifyAuth();
+                    timer1.Enabled = true;
                     return;
                 }
 
@@ -69,6 +68,8 @@ namespace TwitchHelperBot
                         SpotifyReLog();
                     else
                         SpotifyToken = string.Empty;
+
+                    timer1.Enabled = false;
                     return;
                 }
 
@@ -149,12 +150,12 @@ namespace TwitchHelperBot
             JObject jsonResponse = JObject.Parse(response.Content);
             //new token
             SpotifyToken = jsonResponse["access_token"].ToString();
-            Globals.iniHelper.Write("SpotifyToken", SpotifyToken);
+            Database.UpsertRecord(x => x["Key"] == "SpotifyToken", new BsonDocument() { { "Key", "SpotifyToken" }, { "Value", SpotifyToken } });
             //sometimes new refresh token
             if (jsonResponse.ContainsKey("refresh_token"))
             {
                 SpotifyRefreshToken = jsonResponse["refresh_token"].ToString();
-                Globals.iniHelper.Write("SpotifyRefreshToken", SpotifyRefreshToken);
+                Database.UpsertRecord(x => x["Key"] == "SpotifyRefreshToken", new BsonDocument() { { "Key", "SpotifyRefreshToken" }, { "Value", SpotifyRefreshToken } });
             }
         }
 
@@ -212,8 +213,8 @@ namespace TwitchHelperBot
 
                 SpotifyToken = JObject.Parse(response.Content)["access_token"].ToString();
                 SpotifyRefreshToken = JObject.Parse(response.Content)["refresh_token"].ToString();
-                Globals.iniHelper.Write("SpotifyToken", SpotifyToken);
-                Globals.iniHelper.Write("SpotifyRefreshToken", SpotifyRefreshToken);
+                Database.UpsertRecord(x => x["Key"] == "SpotifyToken", new BsonDocument() { { "Key", "SpotifyToken" }, { "Value", SpotifyToken } });
+                Database.UpsertRecord(x => x["Key"] == "SpotifyRefreshToken", new BsonDocument() { { "Key", "SpotifyRefreshToken" }, { "Value", SpotifyRefreshToken } });
                 timer1.Enabled = true;
             }
         }

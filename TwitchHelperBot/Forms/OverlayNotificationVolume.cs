@@ -32,7 +32,7 @@ namespace TwitchHelperBot
         public OverlayNotificationVolume(string Message, int Volume, Bitmap Icon = null)
         {
             InitializeComponent();
-            int VolumeNotificationDuration = int.Parse(Globals.iniHelper.Read("VolumeNotificationDuration") ?? "3000");
+            int VolumeNotificationDuration = int.Parse(Database.ReadSettingCell("VolumeNotificationDuration") ?? "3000");
             //if already open
             if (Application.OpenForms.OfType<OverlayNotificationVolume>().Count() > 0)
             {
@@ -44,7 +44,7 @@ namespace TwitchHelperBot
                 //move form top right
                 Rectangle bounds = Screen.FromPoint(Cursor.Position).Bounds;
                 Location = new Point(bounds.Width - Width, 0);
-                Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
+                Globals.ToggleDarkMode(this, bool.Parse(Database.ReadSettingCell("DarkModeEnabled")));
                 
                 UpdateInfo(Message, Volume, Icon);
 

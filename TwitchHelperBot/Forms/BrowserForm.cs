@@ -15,7 +15,7 @@ namespace TwitchHelperBot
         public BrowserForm(string url)
         {
             InitializeComponent();
-            Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
+            Globals.ToggleDarkMode(this, bool.Parse(Database.ReadSettingCell("DarkModeEnabled")));
 
             Text = url;
 

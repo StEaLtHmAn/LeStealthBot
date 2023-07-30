@@ -158,6 +158,23 @@ public class KeyPressedEventArgs : EventArgs
         get { return _key; }
     }
 
+    public static Keys AddModifiers(Keys keys, ModifierKeys modifers)
+    {
+        if ((modifers & ModifierKeys.Control) == ModifierKeys.Control)
+        {
+            keys |= Keys.Control;
+        }
+        if ((modifers & ModifierKeys.Alt) == ModifierKeys.Alt)
+        {
+            keys |= Keys.Alt;
+        }
+        if ((modifers & ModifierKeys.Shift) == ModifierKeys.Shift)
+        {
+            keys |= Keys.Shift;
+        }
+        return keys;
+    }
+
     public static ModifierKeys GetModifiers(Keys keydata, out Keys key)
     {
         key = keydata;
@@ -168,8 +185,7 @@ public class KeyPressedEventArgs : EventArgs
         if ((keydata & Keys.Control) == Keys.Control)
         {
             modifers |= ModifierKeys.Control;
-
-            key = keydata ^ Keys.Control;
+            key = key ^ Keys.Control;
         }
 
         // Check whether the keydata contains the SHIFT modifier key.

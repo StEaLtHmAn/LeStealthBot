@@ -32,7 +32,7 @@ public class PopupWindow : ToolStripDropDown
             Items.Add(_host);
 
             //custom dark mode for popups
-            if (bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")))
+            if (bool.Parse(Database.ReadSettingCell("DarkModeEnabled")))
             {
                 if (content.BackColor == SystemColors.Control)
                 {

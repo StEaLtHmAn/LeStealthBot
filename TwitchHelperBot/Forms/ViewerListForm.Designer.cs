@@ -51,7 +51,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.textBox2.Location = new System.Drawing.Point(107, 30);
             this.textBox2.Name = "textBox2";
-            this.textBox2.Size = new System.Drawing.Size(170, 20);
+            this.textBox2.Size = new System.Drawing.Size(180, 20);
             this.textBox2.TabIndex = 2;
             this.textBox2.TextChanged += new System.EventHandler(this.textBox2_TextChanged);
             // 
@@ -86,9 +86,9 @@
             // button1
             // 
             this.button1.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button1.Location = new System.Drawing.Point(58, 2);
+            this.button1.Location = new System.Drawing.Point(60, 2);
             this.button1.Name = "button1";
-            this.button1.Size = new System.Drawing.Size(54, 23);
+            this.button1.Size = new System.Drawing.Size(56, 23);
             this.button1.TabIndex = 5;
             this.button1.Text = "List";
             this.button1.UseVisualStyleBackColor = true;
@@ -104,7 +104,7 @@
             this.flowLayoutPanel1.Location = new System.Drawing.Point(3, 28);
             this.flowLayoutPanel1.Margin = new System.Windows.Forms.Padding(0);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(274, 306);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(284, 322);
             this.flowLayoutPanel1.TabIndex = 6;
             this.flowLayoutPanel1.Visible = false;
             this.flowLayoutPanel1.WrapContents = false;
@@ -124,9 +124,9 @@
             // button3
             // 
             this.button3.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button3.Location = new System.Drawing.Point(113, 2);
+            this.button3.Location = new System.Drawing.Point(117, 2);
             this.button3.Name = "button3";
-            this.button3.Size = new System.Drawing.Size(54, 23);
+            this.button3.Size = new System.Drawing.Size(56, 23);
             this.button3.TabIndex = 8;
             this.button3.Text = "Stats";
             this.button3.UseVisualStyleBackColor = true;
@@ -135,9 +135,9 @@
             // button4
             // 
             this.button4.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button4.Location = new System.Drawing.Point(168, 2);
+            this.button4.Location = new System.Drawing.Point(174, 2);
             this.button4.Name = "button4";
-            this.button4.Size = new System.Drawing.Size(54, 23);
+            this.button4.Size = new System.Drawing.Size(56, 23);
             this.button4.TabIndex = 9;
             this.button4.Text = "Graph";
             this.button4.UseVisualStyleBackColor = true;
@@ -146,9 +146,9 @@
             // button5
             // 
             this.button5.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button5.Location = new System.Drawing.Point(223, 2);
+            this.button5.Location = new System.Drawing.Point(231, 2);
             this.button5.Name = "button5";
-            this.button5.Size = new System.Drawing.Size(54, 23);
+            this.button5.Size = new System.Drawing.Size(56, 23);
             this.button5.TabIndex = 10;
             this.button5.Text = "History";
             this.button5.UseVisualStyleBackColor = true;
@@ -159,7 +159,7 @@
             this.button6.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.button6.Location = new System.Drawing.Point(3, 2);
             this.button6.Name = "button6";
-            this.button6.Size = new System.Drawing.Size(54, 23);
+            this.button6.Size = new System.Drawing.Size(56, 23);
             this.button6.TabIndex = 11;
             this.button6.Text = "Session";
             this.button6.UseVisualStyleBackColor = true;
@@ -177,7 +177,7 @@
             this.richTextBox1.Name = "richTextBox1";
             this.richTextBox1.ReadOnly = true;
             this.richTextBox1.ScrollBars = System.Windows.Forms.RichTextBoxScrollBars.Vertical;
-            this.richTextBox1.Size = new System.Drawing.Size(274, 282);
+            this.richTextBox1.Size = new System.Drawing.Size(284, 298);
             this.richTextBox1.TabIndex = 4;
             this.richTextBox1.Text = "";
             this.richTextBox1.WordWrap = false;
@@ -187,7 +187,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(280, 337);
+            this.ClientSize = new System.Drawing.Size(290, 353);
             this.Controls.Add(this.button6);
             this.Controls.Add(this.button5);
             this.Controls.Add(this.button4);

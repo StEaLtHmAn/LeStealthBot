@@ -39,10 +39,14 @@
             this.toolsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.showViewerListToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.AudioMixerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.spotifyPreviewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.quitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.spotifyPreviewToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
+            this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripSeparator4 = new System.Windows.Forms.ToolStripSeparator();
+            this.toolStripSeparator5 = new System.Windows.Forms.ToolStripSeparator();
             this.NotificationMenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -64,16 +68,20 @@
             // NotificationMenuStrip
             // 
             this.NotificationMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStripSeparator5,
             this.setupPresetsToolStripMenuItem,
             this.pauseToolStripMenuItem,
+            this.toolStripSeparator3,
+            this.toolStripMenuItem1,
             this.toolStripSeparator2,
             this.toolsToolStripMenuItem,
             this.settingsToolStripMenuItem,
             this.toolStripSeparator1,
-            this.quitToolStripMenuItem});
+            this.quitToolStripMenuItem,
+            this.toolStripSeparator4});
             this.NotificationMenuStrip.Name = "contextMenuStrip1";
             this.NotificationMenuStrip.ShowImageMargin = false;
-            this.NotificationMenuStrip.Size = new System.Drawing.Size(156, 148);
+            this.NotificationMenuStrip.Size = new System.Drawing.Size(156, 188);
             this.NotificationMenuStrip.Opened += new System.EventHandler(this.NotificationMenuStrip_Opened);
             // 
             // setupPresetsToolStripMenuItem
@@ -108,16 +116,23 @@
             // showViewerListToolStripMenuItem
             // 
             this.showViewerListToolStripMenuItem.Name = "showViewerListToolStripMenuItem";
-            this.showViewerListToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.showViewerListToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.showViewerListToolStripMenuItem.Text = "Viewer List";
             this.showViewerListToolStripMenuItem.Click += new System.EventHandler(this.showViewerListToolStripMenuItem_Click);
             // 
             // AudioMixerToolStripMenuItem
             // 
             this.AudioMixerToolStripMenuItem.Name = "AudioMixerToolStripMenuItem";
-            this.AudioMixerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.AudioMixerToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
             this.AudioMixerToolStripMenuItem.Text = "Audio Mixer";
             this.AudioMixerToolStripMenuItem.Click += new System.EventHandler(this.AudioMixerToolStripMenuItem_Click);
+            // 
+            // spotifyPreviewToolStripMenuItem
+            // 
+            this.spotifyPreviewToolStripMenuItem.Name = "spotifyPreviewToolStripMenuItem";
+            this.spotifyPreviewToolStripMenuItem.Size = new System.Drawing.Size(155, 22);
+            this.spotifyPreviewToolStripMenuItem.Text = "Spotify Preview";
+            this.spotifyPreviewToolStripMenuItem.Click += new System.EventHandler(this.spotifyPreviewToolStripMenuItem_Click);
             // 
             // settingsToolStripMenuItem
             // 
@@ -138,12 +153,27 @@
             this.quitToolStripMenuItem.Text = "Quit";
             this.quitToolStripMenuItem.Click += new System.EventHandler(this.quitToolStripMenuItem_Click);
             // 
-            // spotifyPreviewToolStripMenuItem
+            // toolStripMenuItem1
             // 
-            this.spotifyPreviewToolStripMenuItem.Name = "spotifyPreviewToolStripMenuItem";
-            this.spotifyPreviewToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
-            this.spotifyPreviewToolStripMenuItem.Text = "Spotify Preview";
-            this.spotifyPreviewToolStripMenuItem.Click += new System.EventHandler(this.spotifyPreviewToolStripMenuItem_Click);
+            this.toolStripMenuItem1.Name = "toolStripMenuItem1";
+            this.toolStripMenuItem1.Size = new System.Drawing.Size(155, 22);
+            this.toolStripMenuItem1.Text = "Check For Updates";
+            this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
+            // 
+            // toolStripSeparator3
+            // 
+            this.toolStripSeparator3.Name = "toolStripSeparator3";
+            this.toolStripSeparator3.Size = new System.Drawing.Size(152, 6);
+            // 
+            // toolStripSeparator4
+            // 
+            this.toolStripSeparator4.Name = "toolStripSeparator4";
+            this.toolStripSeparator4.Size = new System.Drawing.Size(152, 6);
+            // 
+            // toolStripSeparator5
+            // 
+            this.toolStripSeparator5.Name = "toolStripSeparator5";
+            this.toolStripSeparator5.Size = new System.Drawing.Size(152, 6);
             // 
             // MainForm
             // 
@@ -178,5 +208,9 @@
         private System.Windows.Forms.ToolStripMenuItem showViewerListToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem spotifyPreviewToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator5;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+        private System.Windows.Forms.ToolStripSeparator toolStripSeparator4;
     }
 }

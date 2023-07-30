@@ -72,7 +72,7 @@ public class AutoCompleteTextBox : TextBox
 
     private void ShowListBox()
     {
-        if (!_isAdded && Data != null && Data.Count > 0)
+        if (!_isAdded && Data != null && Data.Count > 0 && Focused)
         {
             popup.Show(this, new Point(0, Height));
             _isAdded = true;

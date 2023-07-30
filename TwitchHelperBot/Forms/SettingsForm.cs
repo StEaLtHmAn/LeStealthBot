@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using LiteDB;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Drawing;
 using System.Linq;
@@ -14,21 +15,21 @@ namespace TwitchHelperBot
         {
             InitializeComponent();
 
-            textBox1.Text = Globals.iniHelper.Read("LoginName");
-            textBox2.Text = Globals.iniHelper.Read("ClientId");
-            textBox3.Text = Globals.iniHelper.Read("AuthRedirectURI");
-            numericUpDown1.Value = decimal.Parse(Globals.iniHelper.Read("ModifyChannelCooldown"));
-            numericUpDown2.Value = decimal.Parse(Globals.iniHelper.Read("NotificationDuration"));
-            numericUpDown3.Value = decimal.Parse(Globals.iniHelper.Read("VolumeNotificationDuration"));
-            numericUpDown4.Value = decimal.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
-            numericUpDown5.Value = decimal.Parse(Globals.iniHelper.Read("SubscriberCheckCooldown"));
+            textBox1.Text = Database.ReadSettingCell("LoginName");
+            textBox2.Text = Database.ReadSettingCell("ClientId");
+            textBox3.Text = Database.ReadSettingCell("AuthRedirectURI");
+            numericUpDown1.Value = decimal.Parse(Database.ReadSettingCell("ModifyChannelCooldown"));
+            numericUpDown2.Value = decimal.Parse(Database.ReadSettingCell("NotificationDuration"));
+            numericUpDown3.Value = decimal.Parse(Database.ReadSettingCell("VolumeNotificationDuration"));
+            numericUpDown4.Value = decimal.Parse(Database.ReadSettingCell("SessionsArchiveReadCount"));
+            numericUpDown5.Value = decimal.Parse(Database.ReadSettingCell("SubscriberCheckCooldown"));
 
-            tmpChatBotSettings = Globals.ChatBotSettings;
+            tmpChatBotSettings = Globals.ChatBotSettings.DeepClone() as JObject;
 
             loadChatBotSettingsUI();
 
             //check if darkmode is enabled and toggle UI
-            bool DarkModeEnabled = bool.Parse(Globals.iniHelper.Read("DarkModeEnabled"));
+            bool DarkModeEnabled = bool.Parse(Database.ReadSettingCell("DarkModeEnabled"));
             Globals.ToggleDarkMode(this, DarkModeEnabled);
 
             checkBox1.Checked = DarkModeEnabled;
@@ -162,14 +163,13 @@ namespace TwitchHelperBot
                         panel1.Controls.Add(lblMessage);
 
                         TextBox txtMessage = new TextBox();
-                        txtMessage.Text = Globals.ChatBotSettings[settingName]["messageWithReason"].ToString();
+                        txtMessage.Text = tmpChatBotSettings[settingName]["messageWithReason"].ToString();
                         txtMessage.Location = new Point(lblMessage.Width + 10, yValue);
                         txtMessage.Size = new Size(panel1.Width - lblMessage.Width - 20, 50);
                         txtMessage.Multiline = true;
                         txtMessage.TextChanged += delegate
                         {
-                            Globals.ChatBotSettings[settingName]["messageWithReason"] = txtMessage.Text;
-                            Globals.iniHelper.Write("ChatBotSettings", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None));
+                            tmpChatBotSettings[settingName]["messageWithReason"] = txtMessage.Text;
                         };
                         panel1.Controls.Add(txtMessage);
                         yValue += txtMessage.Height + 10;
@@ -212,7 +212,7 @@ namespace TwitchHelperBot
                         numericInput.Maximum = 1337;
                         numericInput.ValueChanged += delegate
                         {
-                            tmpChatBotSettings[settingName]["interval"] = numericInput.Text;
+                            tmpChatBotSettings[settingName]["interval"] = numericInput.Value;
                         };
                         panel1.Controls.Add(numericInput);
                         yValue += numericInput.Height + 10;
@@ -230,18 +230,18 @@ namespace TwitchHelperBot
 
         private void button1_Click(object sender, EventArgs e)
         {
-            Globals.iniHelper.Write("LoginName", textBox1.Text);
-            Globals.iniHelper.Write("ClientId", textBox2.Text);
-            Globals.iniHelper.Write("AuthRedirectURI", textBox3.Text);
-            Globals.iniHelper.Write("ModifyChannelCooldown", ((int)numericUpDown1.Value).ToString());
-            Globals.iniHelper.Write("NotificationDuration", ((int)numericUpDown2.Value).ToString());
-            Globals.iniHelper.Write("VolumeNotificationDuration", ((int)numericUpDown3.Value).ToString());
-            Globals.iniHelper.Write("DarkModeEnabled", checkBox1.Checked.ToString());
-            Globals.iniHelper.Write("SessionsArchiveReadCount", ((int)numericUpDown4.Value).ToString());
-            Globals.iniHelper.Write("SubscriberCheckCooldown", ((int)numericUpDown5.Value).ToString());
+            Database.UpsertRecord(x => x["Key"] == "LoginName", new BsonDocument() { { "Key", "LoginName" }, { "Value", textBox1.Text } });
+            Database.UpsertRecord(x => x["Key"] == "ClientId", new BsonDocument() { { "Key", "ClientId" }, { "Value", textBox2.Text } });
+            Database.UpsertRecord(x => x["Key"] == "AuthRedirectURI", new BsonDocument() { { "Key", "AuthRedirectURI" }, { "Value", textBox3.Text } });
+            Database.UpsertRecord(x => x["Key"] == "ModifyChannelCooldown", new BsonDocument() { { "Key", "ModifyChannelCooldown" }, { "Value", ((int)numericUpDown1.Value).ToString() } });
+            Database.UpsertRecord(x => x["Key"] == "NotificationDuration", new BsonDocument() { { "Key", "NotificationDuration" }, { "Value", ((int)numericUpDown2.Value).ToString() } });
+            Database.UpsertRecord(x => x["Key"] == "VolumeNotificationDuration", new BsonDocument() { { "Key", "VolumeNotificationDuration" }, { "Value", ((int)numericUpDown3.Value).ToString() } });
+            Database.UpsertRecord(x => x["Key"] == "DarkModeEnabled", new BsonDocument() { { "Key", "DarkModeEnabled" }, { "Value", checkBox1.Checked.ToString() } });
+            Database.UpsertRecord(x => x["Key"] == "SessionsArchiveReadCount", new BsonDocument() { { "Key", "SessionsArchiveReadCount" }, { "Value", ((int)numericUpDown4.Value).ToString() } });
+            Database.UpsertRecord(x => x["Key"] == "SubscriberCheckCooldown", new BsonDocument() { { "Key", "SubscriberCheckCooldown" }, { "Value", ((int)numericUpDown5.Value).ToString() } });
 
             Globals.ChatBotSettings = tmpChatBotSettings;
-            Globals.iniHelper.Write("ChatBotSettings", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None));
+            Database.UpsertRecord(x => x["Key"] == "ChatBotSettings", new BsonDocument() { { "Key", "ChatBotSettings" }, { "Value", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None) } });
 
             resetChatBotTimers();
 

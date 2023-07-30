@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using LiteDB;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Data;
@@ -17,7 +18,7 @@ namespace TwitchHelperBot
         public GameMatcherForm()
         {
             InitializeComponent();
-            bool DarkModeEnabled = bool.Parse(Globals.iniHelper.Read("DarkModeEnabled"));
+            bool DarkModeEnabled = bool.Parse(Database.ReadSettingCell("DarkModeEnabled"));
             if (DarkModeEnabled)
             {
                 Globals.ToggleDarkMode(this, DarkModeEnabled);
@@ -83,30 +84,26 @@ namespace TwitchHelperBot
             presetsListView.SmallImageList = new ImageList();
             presetsListView.SmallImageList.ImageSize = new Size(26, 36);
             presetsListView.SmallImageList.ColorDepth = ColorDepth.Depth32Bit;
-            string[] sections = Globals.iniHelper.SectionNames();
-            for (int i = 0; i < sections.Length; i++)
+            var presets = Database.ReadAllData("Presets");
+            foreach (var preset in presets)
             {
-                string PresetCategory = Globals.iniHelper.Read("PresetCategory", sections[i]);
-                if (PresetCategory != null)
+                JObject category = JObject.Parse(preset["PresetCategory"]);
+                GetImageFromURL(category["box_art_url"].ToString(), "ImageCache\\" + category["id"].ToString() + ".jpg", () =>
                 {
-                    JObject category = JObject.Parse(PresetCategory);
-                    GetImageFromURL(category["box_art_url"].ToString(), "ImageCache\\" + category["id"].ToString() + ".jpg", () =>
+                    using (FileStream fs = new FileStream("ImageCache\\" + category["id"].ToString() + ".jpg", FileMode.Open, FileAccess.Read))
                     {
-                        using (FileStream fs = new FileStream("ImageCache\\" + category["id"].ToString() + ".jpg", FileMode.Open, FileAccess.Read))
-                        {
-                            presetsListView.SmallImageList.Images.Add(Image.FromStream(fs));
-                        }
-                    });
-                    var item = new ListViewItem(new string[]
-                    {
+                        presetsListView.SmallImageList.Images.Add(Image.FromStream(fs));
+                    }
+                });
+                var item = new ListViewItem(new string[]
+                {
                         category["name"].ToString(),
-                        Globals.iniHelper.Read("PresetTitle", sections[i]),
-                        sections[i],
-                    }, presetsListView.SmallImageList.Images.Count - 1);
-                    presetsListView.Items.Add(item);
-                }
+                        preset["PresetTitle"],
+                        preset["exePath"],
+                }, presetsListView.SmallImageList.Images.Count - 1);
+                presetsListView.Items.Add(item);
             }
-            if(presetsListView.Items.Count > 0)
+            if (presetsListView.Items.Count > 0)
                 presetsListView.AutoResizeColumns(ColumnHeaderAutoResizeStyle.ColumnContent);
         }
 
@@ -116,16 +113,28 @@ namespace TwitchHelperBot
             {
                 if (!string.IsNullOrEmpty(txtPresetTitle.Text) && !string.IsNullOrEmpty(txtPresetCategory.Text) && cbxPresetExePath.SelectedItem != null)
                 {
-                    Globals.iniHelper.Write("PresetTitle", txtPresetTitle.Text, cbxPresetExePath.SelectedItem.ToString());
-                    Globals.iniHelper.Write("PresetCategory", GetSelectedListItemData().ToString(Newtonsoft.Json.Formatting.None), cbxPresetExePath.SelectedItem.ToString());
-
-                    loadPresets();
+                    bool changes = Database.UpsertRecord(x => x["exePath"].AsString == cbxPresetExePath.SelectedItem.ToString(), 
+                        new BsonDocument()
+                        {
+                            { "exePath", cbxPresetExePath.SelectedItem.ToString() },
+                            { "PresetTitle", txtPresetTitle.Text },
+                            { "PresetCategory", GetSelectedListItemData().ToString(Newtonsoft.Json.Formatting.None) }
+                        }
+                        , "Presets");
+                    if(changes)
+                        loadPresets();
                 }
                 else if (!string.IsNullOrEmpty(txtPresetTitle.Text) || !string.IsNullOrEmpty(txtPresetCategory.Text))
                 {
                     string configKey = "Manual_" + DateTime.Now.Ticks;
-                    Globals.iniHelper.Write("PresetTitle", txtPresetTitle.Text, configKey);
-                    Globals.iniHelper.Write("PresetCategory", GetSelectedListItemData().ToString(Newtonsoft.Json.Formatting.None), configKey);
+                    Database.UpsertRecord(x => x["exePath"].AsString == configKey,
+                        new BsonDocument()
+                        {
+                            { "exePath", configKey },
+                            { "PresetTitle", txtPresetTitle.Text },
+                            { "PresetCategory", GetSelectedListItemData().ToString(Newtonsoft.Json.Formatting.None) }
+                        }
+                        , "Presets");
 
                     loadPresets();
                 }
@@ -172,7 +181,8 @@ namespace TwitchHelperBot
             {
                 if (presetsListView.SelectedItems.Count > 0)
                 {
-                    Globals.iniHelper.DeleteSection(presetsListView.SelectedItems[0].SubItems[2].Text);
+                    Database.DeleteRecords(x => x["exePath"].AsString == cbxPresetExePath.SelectedItem.ToString(), "Presets");
+                    //Globals.iniHelper.DeleteSection(presetsListView.SelectedItems[0].SubItems[2].Text);
 
                     loadPresets();
                 }
@@ -197,6 +207,26 @@ namespace TwitchHelperBot
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/search/categories", Method.Get);
             request.AddQueryParameter("query", query);
             RestResponse response = await client.ExecuteAsync(request);
+            if (!Globals.CategoryCache.ContainsKey(query))
+            {
+                Globals.CategoryCache.Add(query, response.Content);
+            }
+            return response.Content;
+        }
+
+        public string SearchCategoriesSync(string query)
+        {
+            if (Globals.CategoryCache.ContainsKey(query))
+            {
+                return Globals.CategoryCache[query];
+            }
+
+            RestClient client = new RestClient();
+            client.AddDefaultHeader("Client-ID", Globals.clientId);
+            client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
+            RestRequest request = new RestRequest("https://api.twitch.tv/helix/search/categories", Method.Get);
+            request.AddQueryParameter("query", query);
+            RestResponse response = client.Execute(request);
             if (!Globals.CategoryCache.ContainsKey(query))
             {
                 Globals.CategoryCache.Add(query, response.Content);
@@ -229,11 +259,14 @@ namespace TwitchHelperBot
             {
                 if (presetsListView.SelectedItems.Count > 0)
                 {
-                    txtPresetTitle.Text = Globals.iniHelper.Read("PresetTitle", presetsListView.SelectedItems[0].SubItems[2].Text);
-                    if (!cbxPresetExePath.Items.Contains(presetsListView.SelectedItems[0].SubItems[2].Text))
-                        cbxPresetExePath.Items.Add(presetsListView.SelectedItems[0].SubItems[2].Text);
-                    cbxPresetExePath.SelectedItem = presetsListView.SelectedItems[0].SubItems[2].Text;
-                    JObject selectedData = JObject.Parse(Globals.iniHelper.Read("PresetCategory", presetsListView.SelectedItems[0].SubItems[2].Text));
+                    string selectedItemColumn3Text = presetsListView.SelectedItems[0].SubItems[2].Text;
+
+                    var Preset = Database.ReadOneRecord(x => x["exePath"].AsString == selectedItemColumn3Text, "Presets");
+                    txtPresetTitle.Text = Preset["PresetTitle"].AsString;
+                    if (!cbxPresetExePath.Items.Contains(selectedItemColumn3Text))
+                        cbxPresetExePath.Items.Add(selectedItemColumn3Text);
+                    cbxPresetExePath.SelectedItem = selectedItemColumn3Text;
+                    JObject selectedData = JObject.Parse(Preset["PresetCategory"].AsString);
                     txtPresetCategory.Text = selectedData["name"].ToString();
                     GetImageFromURL(selectedData["box_art_url"].ToString(), "ImageCache\\" + selectedData["id"].ToString() + ".jpg", () =>
                     {
@@ -265,6 +298,15 @@ namespace TwitchHelperBot
 
         private JObject GetSelectedListItemData()
         {
+            if (txtPresetCategory.Data == null  && txtPresetCategory.Text.Length > 0)
+            {
+                JObject categoryList = JObject.Parse(SearchCategoriesSync(txtPresetCategory.Text.Trim()));
+                if (categoryList["data"] != null && categoryList["data"].Count() > 0)
+                {
+                    txtPresetCategory.Data = categoryList["data"] as JArray;
+                }
+            }
+
             var tempList = txtPresetCategory.Data.Where(x => x["name"].ToString() == txtPresetCategory.Text).ToArray();
             if (tempList.Count() == 1)
             {
@@ -327,8 +369,11 @@ namespace TwitchHelperBot
             {
                 if (presetsListView.SelectedItems.Count > 0)
                 {
-                    string PresetTitle = Globals.iniHelper.Read("PresetTitle", presetsListView.SelectedItems[0].SubItems[2].Text);
-                    JObject category = JObject.Parse(Globals.iniHelper.Read("PresetCategory", presetsListView.SelectedItems[0].SubItems[2].Text));
+                    string SelectedExePath = presetsListView.SelectedItems[0].SubItems[2].Text;
+                    BsonDocument data = Database.ReadOneRecord(x => x["exePath"].AsString == SelectedExePath, "Presets");
+
+                    string PresetTitle = data["PresetTitle"].AsString;
+                    JObject category = JObject.Parse(data["PresetCategory"].AsString);
 
                     if (Application.OpenForms.OfType<MainForm>().First().UpdateChannelInfo(category["id"].ToString(), PresetTitle))
                     {

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using LiteDB;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
@@ -18,7 +19,7 @@ namespace TwitchHelperBot
     {
         private string[] ViewerNames = new string[0];
         private List<SessionData> Sessions = new List<SessionData>();
-        private Dictionary<string, TimeSpan> WatchTimeDictionary = new Dictionary<string, TimeSpan>();
+        public Dictionary<string, TimeSpan> WatchTimeDictionary = new Dictionary<string, TimeSpan>();
         private List<int> ViewerCountPerMinute = new List<int>();
         private DateTime lastViewerCountCheck = DateTime.UtcNow;
         private DateTime lastSubscriberCheck = DateTime.UtcNow;
@@ -30,12 +31,12 @@ namespace TwitchHelperBot
         {
             InitializeComponent();
 
-            Globals.ToggleDarkMode(this, bool.Parse(Globals.iniHelper.Read("DarkModeEnabled")));
+            Globals.ToggleDarkMode(this, bool.Parse(Database.ReadSettingCell("DarkModeEnabled")));
 
             //read x amount of archive data
-            if (string.IsNullOrEmpty(Globals.iniHelper.Read("SessionsArchiveReadCount")))
-                Globals.iniHelper.Write("SessionsArchiveReadCount", "5");
-            int SessionsArchiveReadCount = int.Parse(Globals.iniHelper.Read("SessionsArchiveReadCount"));
+            if (string.IsNullOrEmpty(Database.ReadSettingCell("SessionsArchiveReadCount")))
+                Database.UpsertRecord(x => x["Key"] == "SessionsArchiveReadCount", new BsonDocument() { { "Key", "SessionsArchiveReadCount" }, { "Value", "5" } });
+            int SessionsArchiveReadCount = int.Parse(Database.ReadSettingCell("SessionsArchiveReadCount"));
             for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
             {
                 if (File.Exists($"SessionsArchive{i}.json"))
@@ -47,9 +48,9 @@ namespace TwitchHelperBot
             if (File.Exists("WatchTimeSessions.json"))
                 Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
 
-            if (string.IsNullOrEmpty(Globals.iniHelper.Read("SubscriberCheckCooldown")))
-                Globals.iniHelper.Write("SubscriberCheckCooldown", "5");
-            SubscriberCheckCooldown = int.Parse(Globals.iniHelper.Read("SubscriberCheckCooldown"));
+            if (string.IsNullOrEmpty(Database.ReadSettingCell("SubscriberCheckCooldown")))
+                Database.UpsertRecord(x => x["Key"] == "SubscriberCheckCooldown", new BsonDocument() { { "Key", "SubscriberCheckCooldown" }, { "Value", "5" } });
+            SubscriberCheckCooldown = int.Parse(Database.ReadSettingCell("SubscriberCheckCooldown"));
 
             Subscribers = GetSubscribedData();
             timer1_Tick(null,null);
@@ -266,11 +267,24 @@ namespace TwitchHelperBot
                 double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours);
 
                 richTextBox1.SelectionColor = Color.Green;
+                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold|FontStyle.Underline);
                 richTextBox1.AppendText(
-                    $"Session Stats:{Environment.NewLine}" +
+                $"Session Stats:{Environment.NewLine}");
+                richTextBox1.SelectionColor = Color.Green;
+                richTextBox1.SelectionFont = richTextBox1.Font;
+                richTextBox1.AppendText(
                     $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
-                    $"- Current/Average/Peak Viewers: {ViewerNames.Length} / {currentAverage:0.##} / {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
-                    $"- Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}{Environment.NewLine}");
+                    $"- Current Vewers: {ViewerNames.Length}{Environment.NewLine}" +
+                    $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
+                    $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
+                    $"- Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}" +
+                    $"{Environment.NewLine}");
+
+                richTextBox1.SelectionColor = richTextBox1.ForeColor;
+                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold | FontStyle.Underline);
+                richTextBox1.AppendText(
+                $"Session Viewers:{Environment.NewLine}");
+                richTextBox1.SelectionFont = richTextBox1.Font;
 
                 int count = 1;
                 IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
@@ -321,8 +335,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            //request.AddQueryParameter("broadcaster_id", "526375465");
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -540,6 +554,21 @@ namespace TwitchHelperBot
                     Label lblLastSession = new Label();
                     Label lblTotalHoursWatched = new Label();
                     Label lblAccountCreated = new Label();
+                    Button btnExit = new Button();
+
+                    btnExit.Location = new Point(340, 1);
+                    btnExit.AutoSize = true;
+                    btnExit.Text = "Close";
+                    btnExit.FlatStyle = FlatStyle.Flat;
+                    btnExit.ForeColor = Color.Red;
+                    btnExit.Click += delegate
+                    {
+                        try
+                        {
+                            popup.Close();
+                        }
+                        catch { }
+                    };
 
                     pbxProfileImage.Location = new Point(12, 12);
                     pbxProfileImage.Size = new Size(150, 150);
@@ -575,7 +604,7 @@ namespace TwitchHelperBot
                     pbxProfileImage.Image = GetImageFromURL(userDetails["data"][0]["profile_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString());
 
                     // Display the watched sessions.
-                    lblLastSession.Text = "Watching since " + Globals.getRelativeTimeSpan(DateTime.UtcNow - SessionsListClone.First().DateTimeEnded) + " ago";
+                    lblLastSession.Text = "Started watching " + Globals.getRelativeTimeSpan(DateTime.UtcNow - SessionsListClone.First().DateTimeEnded) + " ago";
                     TimeSpan total = WatchTimeDictionary.ContainsKey(RightClickedWord) ? WatchTimeDictionary[RightClickedWord] : TimeSpan.Zero;
                     foreach (var x in SessionsListClone)
                     {
@@ -615,6 +644,7 @@ namespace TwitchHelperBot
                     panel.Controls.Add(lblTotalHoursWatched);
                     panel.Controls.Add(lblSubscribed);
                     panel.Controls.Add(lblFollowed);
+                    panel.Controls.Add(btnExit);
 
                     if (!string.IsNullOrWhiteSpace(userDetails["data"][0]["offline_image_url"].ToString()))
                         panel.BackgroundImage = GetImageFromURL(userDetails["data"][0]["offline_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString() + "_offline");

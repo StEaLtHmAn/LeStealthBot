@@ -45,7 +45,7 @@
             this.panel1.BackColor = System.Drawing.Color.Black;
             this.panel1.Location = new System.Drawing.Point(0, 58);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(255, 3);
+            this.panel1.Size = new System.Drawing.Size(265, 3);
             this.panel1.TabIndex = 0;
             // 
             // label1
@@ -130,7 +130,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.panel1);
             this.Name = "SessionHistoryItem";
-            this.Size = new System.Drawing.Size(255, 61);
+            this.Size = new System.Drawing.Size(265, 61);
             this.ResumeLayout(false);
             this.PerformLayout();
 
