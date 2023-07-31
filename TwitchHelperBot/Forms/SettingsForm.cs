@@ -1,6 +1,7 @@
 ﻿using LiteDB;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -42,6 +43,7 @@ namespace TwitchHelperBot
             for (int i = 0; i < ChatBotSettingsProperties.Count; i++)
             {
                 string settingName = ChatBotSettingsProperties[i].Name;
+                bool isDefaultSetting = bool.Parse(tmpChatBotSettings[settingName]["default"]?.ToString() ?? "false");
 
                 Button button = new Button();
                 button.FlatStyle = FlatStyle.Flat;
@@ -51,16 +53,27 @@ namespace TwitchHelperBot
                 {
                     panel1.Controls.Clear();
                     int yValue = 10;
+                    DispatcherTimer TextChangedDelayTimer = new DispatcherTimer();
 
                     TextBox lblHeading = new TextBox();
                     lblHeading.Text = settingName;
                     lblHeading.Location = new Point(10, yValue);
                     lblHeading.Size = new Size(250, 30);
+                    lblHeading.Enabled = !isDefaultSetting;
                     lblHeading.TextChanged += delegate
                     {
-                        var tmp = tmpChatBotSettings[settingName].DeepClone();
-                        tmpChatBotSettings.Remove(settingName);
-                        tmpChatBotSettings.Add(lblHeading.Text, tmp);
+                        TextChangedDelayTimer = new DispatcherTimer();
+                        TextChangedDelayTimer.Interval = TimeSpan.FromMilliseconds(300);
+                        TextChangedDelayTimer.Tick += delegate
+                        {
+                            var tmp = tmpChatBotSettings[settingName].DeepClone();
+                            tmpChatBotSettings.Remove(settingName);
+                            settingName = lblHeading.Text;
+                            tmpChatBotSettings.Add(lblHeading.Text, tmp);
+
+                            TextChangedDelayTimer.Stop();
+                        };
+                        TextChangedDelayTimer.Start();
                     };
                     panel1.Controls.Add(lblHeading);
 
@@ -79,12 +92,28 @@ namespace TwitchHelperBot
                     btnDelete.Location = new Point(cbxEnabled.Location.X + cbxEnabled.Width + 10, yValue);
                     btnDelete.FlatStyle = FlatStyle.Flat;
                     btnDelete.AutoSize = true;
-                    btnDelete.Text = "Delete";
-                    btnDelete.Click += delegate
+                    if (!isDefaultSetting)
                     {
-                        tmpChatBotSettings.Remove(settingName);
-                        loadChatBotSettingsUI();
-                    };
+                        btnDelete.Text = "Delete";
+                        btnDelete.Click += delegate
+                        {
+                            tmpChatBotSettings.Remove(settingName);
+                            loadChatBotSettingsUI();
+                        };
+                    }
+                    else
+                    {
+                        btnDelete.Text = "Duplicate";
+                        btnDelete.Click += delegate
+                        {
+                            var tmp = tmpChatBotSettings[settingName].DeepClone();
+                            if((tmp as JObject).ContainsKey("default"))
+                                (tmp as JObject).Remove("default");
+                            tmpChatBotSettings.Add(settingName+" - Copy", tmp);
+
+                            loadChatBotSettingsUI();
+                        };
+                    }
                     panel1.Controls.Add(btnDelete);
 
                     yValue += lblHeading.Height + 10;
@@ -250,6 +279,20 @@ namespace TwitchHelperBot
 
         public void resetChatBotTimers()
         {
+            ArrayList listTodelete = new ArrayList();
+            foreach (var timer in Globals.ChatbotTimers)
+            {
+                if (!Globals.ChatBotSettings.ContainsKey(timer.Key))
+                {
+                    timer.Value.Stop();
+                    listTodelete.Add(timer.Key);
+                }
+            }
+            for (int i = 0; i < listTodelete.Count; i++)
+            {
+                Globals.ChatBotSettings.Remove(listTodelete[0].ToString());
+            }
+
             foreach (var setting in Globals.ChatBotSettings.Properties())
             {
                 if (setting.Name.StartsWith("Timer - "))

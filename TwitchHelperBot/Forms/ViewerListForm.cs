@@ -556,7 +556,7 @@ namespace TwitchHelperBot
                     Label lblAccountCreated = new Label();
                     Button btnExit = new Button();
 
-                    btnExit.Location = new Point(340, 1);
+                    btnExit.Location = new Point(333, 1);
                     btnExit.AutoSize = true;
                     btnExit.Text = "Close";
                     btnExit.FlatStyle = FlatStyle.Flat;

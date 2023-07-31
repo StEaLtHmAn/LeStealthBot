@@ -157,6 +157,7 @@ namespace TwitchHelperBot
                             attempts++;
                             goto retry;
                         }
+                        return true;
                     }
                     else
                     {
@@ -165,13 +166,13 @@ namespace TwitchHelperBot
                             if (document.ContainsKey(item.Key))
                                 document[item.Key] = item.Value;
                         }
-                        if (!col.Update(newDocument) && attempts < 5)
+                        if (!col.Update(document) && attempts < 5)
                         {
                             Thread.Sleep(1);
                             attempts++;
                             goto retry;
                         }
-                        return col.Update(document);
+                        return true;
                     }
                 }
             }
@@ -189,20 +190,50 @@ namespace TwitchHelperBot
 
         public static int DeleteRecords(Expression<Func<BsonDocument, bool>> predicate, string collection = null)
         {
-            using (var db = new LiteDatabase($"{exe}Settings.db"))
+            int attempts = 0;
+        retry:
+            try
             {
-                var col = db.GetCollection(collection ?? exe);
-                return col.DeleteMany(predicate);
+                using (var db = new LiteDatabase($"{exe}Settings.db"))
+                {
+                    var col = db.GetCollection(collection ?? exe);
+                    return col.DeleteMany(predicate);
+                }
             }
+            catch
+            {
+                if (attempts < 5)
+                {
+                    Thread.Sleep(1);
+                    attempts++;
+                    goto retry;
+                }
+            }
+            return 0;
         }
 
         public static List<BsonDocument> ReadAllData(string collection)
         {
-            using (var db = new LiteDatabase($"{exe}Settings.db"))
+            int attempts = 0;
+        retry:
+            try
             {
-                var col = db.GetCollection(collection);
-                return col.FindAll().ToList();
+                using (var db = new LiteDatabase($"{exe}Settings.db"))
+                {
+                    var col = db.GetCollection(collection);
+                    return col.FindAll().ToList();
+                }
             }
+            catch
+            {
+                if (attempts < 5)
+                {
+                    Thread.Sleep(1);
+                    attempts++;
+                    goto retry;
+                }
+            }
+            return new List<BsonDocument>();
         }
     }
 }

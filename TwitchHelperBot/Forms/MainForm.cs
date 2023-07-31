@@ -17,13 +17,11 @@ using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Input;
 using System.Windows.Threading;
 using System.Xml;
 using TwitchLib.Client;
 using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
-using static TwitchHelperBot.ViewerListForm;
 using WebView2 = Microsoft.Web.WebView2.WinForms.WebView2;
 
 namespace TwitchHelperBot
@@ -276,78 +274,96 @@ namespace TwitchHelperBot
             {
                 { "OnNewFollow", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid Thanks @##FollowerName## for the follow." }
                 } },
                 { "OnNewSubscriber", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid Thanks @##SubscriberName##, for the ##SubscriptionPlan## subscription." }
                 } },
                 { "OnReSubscriber", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid Thanks @##SubscriberName##, for the ##CumulativeMonths## Months ##SubscriptionPlan## subscription." }
                 } },
                 { "OnPrimePaidSubscriber", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid Thanks @##SubscriberName##, for the ##SubscriptionPlan## subscription." }
                 } },
                 { "OnGiftedSubscription", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid Thanks @##GifterName##, for gifting @##RecipientName## a ##SubscriptionPlan## subscription." }
                 } },
                 { "OnContinuedGiftedSubscription", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid Thanks @##GifterName##, for gifting @##RecipientName## a subscription." }
                 } },
                 { "OnCommunitySubscription", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid Thanks @##SubscriberName##, for the gifting ##MassGiftCount## ##SubscriptionPlan## subscriptions." }
                 } },
                 { "OnMessageReceived - Bits > 0", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid Thanks @##SenderName##, for the ##Bits## bits (##BitsInDollars##)" }
                 } },
                 { "OnUserBanned", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "messageNoReason", "##BannedUsername## BANNED" },
                     { "messageWithReason", "##BannedUsername## BANNED Reason: ##BanReason##" }
                 } },
                 { "OnUserTimedout", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "messageNoReason", "##TimedoutUsername## BANNED Duration: ##TimeoutDuration##" },
                     { "messageWithReason", "##TimedoutUsername## BANNED Reason: ##TimeoutReason## Duration: ##TimeoutDuration##" }
                 } },
                 { "OnChatCommandReceived - eskont", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid @##YourName##'s next loadshedding is scheduled for: ##ScheduledMonth## @ ##ScheduledTime##. @##YourName##'s current local time is ##Time##" }
                 } },
                 { "OnChatCommandReceived - time", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid @##YourName##'s current local time is: ##Time## ##TimeZone##" }
                 } },
                 { "OnChatCommandReceived - topviewers", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid " },
                     { "messagePart", "##Count##. @##Name## - ##Watchtime## | " }
                 } },
                 { "OnChatCommandReceived - watchtime", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid You have watched @##YourName## for ##Watchtime##." },
                     { "messageWithUser", "MrDestructoid @##Name## has watched @##YourName## for ##Watchtime##." }
                 } },
                 { "OnChatCommandReceived - commands", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid Available commands: ##EnabledCommandList##." }
                 } },
                 { "OnChatCommandReceived - discord", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid Join our community Discord server using this link :) https://discord.gg/DbC55YXeh4" }
                 } },
                 { "OnChatCommandReceived - tip", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "message", "MrDestructoid You can Tip to @##YourName## using this link https://StreamElements.com/##YourName##/tip" }
                 } },
                 { "Timer - Prime Reminder", new JObject{
                     { "enabled", "false" },
+                    { "default", "true" },
                     { "interval", "90" },
                     { "message", "MrDestructoid Hey! Just a friendly reminder that if you have Amazon Prime, you also have Twitch Prime! This means you can use your free monthly subscription to support your favourite streamers. <3" },
                 } },
