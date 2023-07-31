@@ -277,7 +277,7 @@ namespace TwitchHelperBot
                     $"- Current Vewers: {ViewerNames.Length}{Environment.NewLine}" +
                     $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
-                    $"- Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}" +
+                    $"- Combined Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}" +
                     $"{Environment.NewLine}");
 
                 richTextBox1.SelectionColor = richTextBox1.ForeColor;
@@ -335,8 +335,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            request.AddQueryParameter("broadcaster_id", "526375465");
-            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            //request.AddQueryParameter("broadcaster_id", "526375465");
+            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
