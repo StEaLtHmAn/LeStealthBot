@@ -107,9 +107,9 @@ namespace TwitchHelperBot
                         btnDelete.Click += delegate
                         {
                             var tmp = tmpChatBotSettings[settingName].DeepClone();
-                            if((tmp as JObject).ContainsKey("default"))
+                            if ((tmp as JObject).ContainsKey("default"))
                                 (tmp as JObject).Remove("default");
-                            tmpChatBotSettings.Add(settingName+" - Copy", tmp);
+                            tmpChatBotSettings.Add(settingName + " - Copy", tmp);
 
                             loadChatBotSettingsUI();
                         };
@@ -272,6 +272,8 @@ namespace TwitchHelperBot
             Globals.ChatBotSettings = tmpChatBotSettings;
             Database.UpsertRecord(x => x["Key"] == "ChatBotSettings", new BsonDocument() { { "Key", "ChatBotSettings" }, { "Value", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None) } });
 
+            //todo reset commands
+
             resetChatBotTimers();
 
             Dispose();
@@ -305,7 +307,7 @@ namespace TwitchHelperBot
                         }
                         if (Globals.ChatbotTimers[setting.Name].IsEnabled != bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
                         {
-                            if(bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
+                            if (bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
                                 Globals.ChatbotTimers[setting.Name].Start();
                             else
                                 Globals.ChatbotTimers[setting.Name].Stop();
@@ -323,7 +325,7 @@ namespace TwitchHelperBot
                             Globals.sendChatBotMessage(Globals.loginName, Globals.ChatBotSettings[setting.Name]["message"].ToString()
                                 .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()));
                         };
-                        if(bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
+                        if (bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
                             timer.Start();
                         Globals.ChatbotTimers.Add(setting.Name, timer);
                     }

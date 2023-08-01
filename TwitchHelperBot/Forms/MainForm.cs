@@ -607,15 +607,36 @@ namespace TwitchHelperBot
                                             Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
 
                                         Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
-                                        if (Application.OpenForms.OfType<ViewerListForm>().Count() > 0)
+                                        var OpenForms = Application.OpenForms.OfType<ViewerListForm>();
+                                        ViewerListForm viewerListForm = null;
+                                        if (OpenForms.Count() > 0)
                                         {
-                                            tmpWatchTimeList = Application.OpenForms.OfType<ViewerListForm>().First().WatchTimeDictionary;
+                                            viewerListForm = OpenForms.First();
+                                            foreach (var viewerData in viewerListForm.WatchTimeDictionary)
+                                            {
+                                                if (viewerData.Key.ToLower() == Globals.loginName.ToLower())
+                                                    continue;
+                                                if(e.Command.ArgumentsAsString.ToLower().Contains("online") && !viewerListForm.ViewersOnlineNames.Contains(viewerData.Key))
+                                                    continue;
+                                                if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
+                                                {
+                                                    tmpWatchTimeList.Add(viewerData.Key, viewerData.Value);
+                                                }
+                                                else
+                                                {
+                                                    tmpWatchTimeList[viewerData.Key] += viewerData.Value;
+                                                }
+                                            }
                                         }
                                         foreach (var sessionData in Sessions)
                                         {
                                             foreach (var viewerData in sessionData.WatchTimeData)
                                             {
                                                 if (viewerData.Key.ToLower() == Globals.loginName.ToLower())
+                                                    continue;
+                                                if (e.Command.ArgumentsAsString.ToLower().Contains("online") &&
+                                                viewerListForm != null &&
+                                                !viewerListForm.ViewersOnlineNames.Contains(viewerData.Key))
                                                     continue;
                                                 if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
                                                 {
@@ -629,7 +650,7 @@ namespace TwitchHelperBot
                                         }
 
                                         int count = 1;
-                                        IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
+                                        IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value.TotalHours).ThenBy(x => x.Key);
                                         string messageToSend = Globals.ChatBotSettings["OnChatCommandReceived - topviewers"]["message"].ToString();
                                         foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
                                         {

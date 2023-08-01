@@ -17,7 +17,7 @@ namespace TwitchHelperBot
 {
     public partial class ViewerListForm : Form
     {
-        private string[] ViewerNames = new string[0];
+        public string[] ViewersOnlineNames = new string[0];
         private List<SessionData> Sessions = new List<SessionData>();
         public Dictionary<string, TimeSpan> WatchTimeDictionary = new Dictionary<string, TimeSpan>();
         private List<int> ViewerCountPerMinute = new List<int>();
@@ -84,7 +84,7 @@ namespace TwitchHelperBot
                     Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString())).ToList());
 
                     //We use the name if the login is the same otherwise we use the login
-                    ViewerNames = Viewers.Select(x =>
+                    ViewersOnlineNames = Viewers.Select(x =>
                     (x as JObject)["user_name"].ToString().ToLower() == (x as JObject)["user_login"].ToString().ToLower() ?
                     (x as JObject)["user_name"].ToString() :
                     (x as JObject)["user_login"].ToString()).ToArray();
@@ -97,7 +97,7 @@ namespace TwitchHelperBot
                     }
                     TimeSpan span = DateTime.UtcNow - lastCheck;
                     lastCheck = DateTime.UtcNow;
-                    foreach (string name in ViewerNames)
+                    foreach (string name in ViewersOnlineNames)
                     {
                         if (WatchTimeDictionary.ContainsKey(name))
                         {
@@ -158,10 +158,10 @@ namespace TwitchHelperBot
 
                 int count = 1;
                 IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
-                if (button2.Text == "Sort WT")
+                if (!checkBox1.Checked)
                     sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
                 else
-                    sortedList = tmpWatchTimeList.OrderByDescending(x => ViewerNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
+                    sortedList = tmpWatchTimeList.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
                 foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
                 {
                     if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
@@ -171,7 +171,7 @@ namespace TwitchHelperBot
 
                         richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
 
-                        richTextBox1.SelectionColor = ViewerNames.Contains(kvp.Key) ? Color.Green : Color.Red;
+                        richTextBox1.SelectionColor = ViewersOnlineNames.Contains(kvp.Key) ? Color.Green : Color.Red;
                         richTextBox1.AppendText("⚫ ");
 
                         if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
@@ -254,7 +254,7 @@ namespace TwitchHelperBot
                 richTextBox1.AppendText(
                     $"Session Stats:{Environment.NewLine}" +
                     $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
-                    $"- Current Viewers: {ViewerNames.Length}{Environment.NewLine}" +
+                    $"- Current Viewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
                     $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
                     $"- Unique Viewers: {WatchTimeDictionary.Count}{Environment.NewLine}" +
@@ -274,7 +274,7 @@ namespace TwitchHelperBot
                 richTextBox1.SelectionFont = richTextBox1.Font;
                 richTextBox1.AppendText(
                     $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
-                    $"- Current Vewers: {ViewerNames.Length}{Environment.NewLine}" +
+                    $"- Current Vewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
                     $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
                     $"- Combined Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}" +
@@ -288,21 +288,21 @@ namespace TwitchHelperBot
 
                 int count = 1;
                 IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
-                if (button2.Text == "Sort WT")
+                if (!checkBox1.Checked)
                     sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
                 else
-                    sortedList = WatchTimeDictionary.OrderByDescending(x => ViewerNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
+                    sortedList = WatchTimeDictionary.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
                 foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
                 {
                     if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
                     {
                         richTextBox1.SelectionColor = richTextBox1.ForeColor;
-                        if (ViewerNames.Contains(kvp.Key))
+                        if (ViewersOnlineNames.Contains(kvp.Key))
                             richTextBox1.AppendText($"{count}. ");
 
                         richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
 
-                        richTextBox1.SelectionColor = ViewerNames.Contains(kvp.Key) ? Color.Green : Color.Red;
+                        richTextBox1.SelectionColor = ViewersOnlineNames.Contains(kvp.Key) ? Color.Green : Color.Red;
                         richTextBox1.AppendText("⚫ ");
 
                         if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
@@ -326,7 +326,7 @@ namespace TwitchHelperBot
 
             richTextBox1.ResumePainting();
         }
-        
+
         public JArray GetChattersList()
         {
             JArray Viewers = new JArray();
@@ -335,8 +335,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            //request.AddQueryParameter("broadcaster_id", "526375465");
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -556,11 +556,12 @@ namespace TwitchHelperBot
                     Label lblAccountCreated = new Label();
                     Button btnExit = new Button();
 
-                    btnExit.Location = new Point(333, 1);
-                    btnExit.AutoSize = true;
-                    btnExit.Text = "Close";
+                    btnExit.Location = new Point(372, 0);
+                    btnExit.Size = new Size(26, 26);
+                    btnExit.Text = "×";
                     btnExit.FlatStyle = FlatStyle.Flat;
-                    btnExit.ForeColor = Color.Red;
+                    btnExit.ForeColor = Color.White;
+                    btnExit.BackColor = Color.Red;
                     btnExit.Click += delegate
                     {
                         try
@@ -580,7 +581,7 @@ namespace TwitchHelperBot
 
                     lblDescription.AutoSize = true;
                     lblDescription.Location = new Point(12, 174);
-                    lblDescription.MaximumSize = new Size(376, 48);
+                    lblDescription.MaximumSize = new Size(376, 80);
 
                     lblAccountCreated.AutoSize = true;
                     lblAccountCreated.Location = new Point(174, 36);
@@ -930,19 +931,6 @@ namespace TwitchHelperBot
             generateViewerCountChart();
         }
 
-        private void button2_Click(object sender, EventArgs e)
-        {
-            if (button2.Text == "Sort WT")
-            {
-                button2.Text = "Sort ON";
-            }
-            else
-            {
-                button2.Text = "Sort WT";
-            }
-            UpdateText();
-        }
-
         private void flowLayoutPanel1_SizeChanged(object sender, EventArgs e)
         {
             flowLayoutPanel1.SizeChanged += delegate
@@ -992,6 +980,16 @@ namespace TwitchHelperBot
             richTextBox1.SelectionStart = 0;
             richTextBox1.SelectionLength = 0;
             richTextBox1.ScrollToCaret();
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            UpdateText();
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            UpdateText();
         }
     }
 }
