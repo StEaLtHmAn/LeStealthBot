@@ -324,78 +324,97 @@ namespace TwitchHelperBot
                     { "messageNoReason", "##TimedoutUsername## BANNED Duration: ##TimeoutDuration##" },
                     { "messageWithReason", "##TimedoutUsername## BANNED Reason: ##TimeoutReason## Duration: ##TimeoutDuration##" }
                 } },
-                { "OnChatCommandReceived - eskont", new JObject{
+                { "ChatCommand - eskont", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
                     { "message", "MrDestructoid @##YourName##'s next loadshedding is scheduled for: ##ScheduledMonth## @ ##ScheduledTime##. @##YourName##'s current local time is ##Time##" }
                 } },
-                { "OnChatCommandReceived - time", new JObject{
-                    { "enabled", "false" },
-                    { "default", "true" },
-                    { "message", "MrDestructoid @##YourName##'s current local time is: ##Time## ##TimeZone##" }
-                } },
-                { "OnChatCommandReceived - topviewers", new JObject{
+                { "ChatCommand - topviewers", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
                     { "message", "MrDestructoid " },
                     { "messagePart", "##Count##. @##Name## - ##Watchtime## | " }
                 } },
-                { "OnChatCommandReceived - watchtime", new JObject{
+                { "ChatCommand - watchtime", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
                     { "message", "MrDestructoid You have watched @##YourName## for ##Watchtime##." },
                     { "messageWithUser", "MrDestructoid @##Name## has watched @##YourName## for ##Watchtime##." }
                 } },
-                { "OnChatCommandReceived - commands", new JObject{
+                { "ChatCommand - commands", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
                     { "message", "MrDestructoid Available commands: ##EnabledCommandList##." }
                 } },
-                { "OnChatCommandReceived - discord", new JObject{
+                { "ChatCommand - time", new JObject{
                     { "enabled", "false" },
-                    { "default", "true" },
+                    { "default", "false" },//
+                    { "message", "MrDestructoid @##YourName##'s current local time is: ##Time## ##TimeZone##" }
+                } },
+                { "ChatCommand - discord", new JObject{
+                    { "enabled", "false" },
+                    { "default", "false" },//
                     { "message", "MrDestructoid Join our community Discord server using this link :) https://discord.gg/DbC55YXeh4" }
                 } },
-                { "OnChatCommandReceived - tip", new JObject{
+                { "ChatCommand - tip", new JObject{
                     { "enabled", "false" },
-                    { "default", "true" },
+                    { "default", "false" },//
                     { "message", "MrDestructoid You can Tip to @##YourName## using this link https://StreamElements.com/##YourName##/tip" }
                 } },
                 { "Timer - Prime Reminder", new JObject{
                     { "enabled", "false" },
-                    { "default", "true" },
+                    { "default", "false" },//
                     { "interval", "90" },
                     { "message", "MrDestructoid Hey! Just a friendly reminder that if you have Amazon Prime, you also have Twitch Prime! This means you can use your free monthly subscription to support your favourite streamers. <3" },
                 } },
             };
             //chatbot settings validation/correction
+            bool needSave = false;
             if (ChatBotSettingsString != null && ChatBotSettingsString.StartsWith("{"))
             {
+                //rename OnChatCommandReceived
+                if (ChatBotSettingsString.Contains("OnChatCommandReceived - "))
+                {
+                    ChatBotSettingsString = ChatBotSettingsString.Replace("OnChatCommandReceived - ", "ChatCommand - ");
+                    needSave = true;
+                }
                 //Parse json
                 JObject tmpSettings = JObject.Parse(ChatBotSettingsString);
+
                 //loop through defaults
                 foreach (var setting in Globals.ChatBotSettings)
                 {
                     //add missing default chatbot settings
-                    if (!tmpSettings.ContainsKey(setting.Key))
+                    if (bool.Parse(setting.Value["default"].ToString()))
                     {
-                        tmpSettings.Add(setting.Key, setting.Value);
-                    }
-                    else//add missing default chatbot setting attributes
-                    {
-                        foreach (var attributes in setting.Value as JObject)
+                        if (!tmpSettings.ContainsKey(setting.Key))
                         {
-                            if (!(tmpSettings[setting.Key] as JObject).ContainsKey(attributes.Key))
+                            tmpSettings.Add(setting.Key, setting.Value);
+                            needSave = true;
+                        }
+                        else//add missing default chatbot setting attributes
+                        {
+                            foreach (var attributes in setting.Value as JObject)
                             {
-                                (tmpSettings[setting.Key] as JObject).Add(attributes.Key, attributes.Value);
+                                if (!(tmpSettings[setting.Key] as JObject).ContainsKey(attributes.Key))
+                                {
+                                    (tmpSettings[setting.Key] as JObject).Add(attributes.Key, attributes.Value);
+                                    needSave = true;
+                                }
                             }
                         }
+                    }
+                    //remove old defaults
+                    else if ((tmpSettings[setting.Key] as JObject)["default"].ToString() != setting.Value["default"].ToString())
+                    {
+                        (tmpSettings[setting.Key] as JObject)["default"] = setting.Value["default"].ToString();
+                        needSave = true;
                     }
                 }
                 //loop through tmpSettings
                 foreach (var setting in tmpSettings)
                 {
-                    //if not an onject then create a new object with enabled = false
+                    //if not an object then create a new object with enabled = false
                     if (!(setting.Value is JObject))
                     {
                         tmpSettings[setting.Key] = new JObject
@@ -407,6 +426,7 @@ namespace TwitchHelperBot
                         {
                             (tmpSettings[setting.Key] as JObject).Add("interval", "90");
                         }
+                        needSave = true;
                     }
                     else
                     {
@@ -414,24 +434,37 @@ namespace TwitchHelperBot
                         if (!(setting.Value as JObject).ContainsKey("enabled") || !bool.TryParse(setting.Value["enabled"].ToString(), out _))
                         {
                             (setting.Value as JObject).Add("enabled", "false");
+                            needSave = true;
+                        }
+                        //make sure it has an default setting
+                        if (!(setting.Value as JObject).ContainsKey("enabled") || !bool.TryParse(setting.Value["enabled"].ToString(), out _))
+                        {
+                            (setting.Value as JObject).Add("default", "false");
+                            needSave = true;
                         }
                         //if its a timer make sure it has an interval
                         if (setting.Key.StartsWith("Timer - ") && (!(setting.Value as JObject).ContainsKey("interval") || !double.TryParse(setting.Value["interval"].ToString(), out _)))
                         {
                             (setting.Value as JObject).Add("interval", "90");
+                            needSave = true;
                         }
                     }
                 }
+
                 Globals.ChatBotSettings = tmpSettings;
             }
             else
             {
+                needSave = true;
+            }
+            if (needSave)
+            {
                 Database.UpsertRecord(x => x["Key"] == "ChatBotSettings",
-                        new BsonDocument()
-                        {
+                    new BsonDocument()
+                    {
                             { "Key", "ChatBotSettings" },
                             { "Value", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None) }
-                        });
+                    });
             }
 
             ConnectionCredentials credentials = new ConnectionCredentials(Globals.loginName, Globals.access_token);
@@ -537,9 +570,9 @@ namespace TwitchHelperBot
             {
                 try
                 {
-                    if (Globals.ChatBotSettings.ContainsKey($"OnChatCommandReceived - {e.Command.CommandText.ToLower()}")
-                    && (Globals.ChatBotSettings[$"OnChatCommandReceived - {e.Command.CommandText.ToLower()}"] as JObject).ContainsKey("enabled")
-                    && bool.Parse(Globals.ChatBotSettings[$"OnChatCommandReceived - {e.Command.CommandText.ToLower()}"]["enabled"].ToString()))
+                    if (Globals.ChatBotSettings.ContainsKey($"ChatCommand - {e.Command.CommandText.ToLower()}")
+                    && (Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"] as JObject).ContainsKey("enabled")
+                    && bool.Parse(Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["enabled"].ToString()))
                         switch (e.Command.CommandText.ToLower())
                         {
                             case "eskont":
@@ -558,29 +591,13 @@ namespace TwitchHelperBot
                                             XmlNode nextScheduledTime = document.SelectSingleNode("//span[@style='color:red']");
                                             XmlNode nextScheduledDate = nextScheduledTime.SelectSingleNode("../../h3/time");
 
-                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - eskont"]["message"].ToString()
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - eskont"]["message"].ToString()
                                             .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                             .Replace("##ScheduledMonth##", nextScheduledDate.InnerText)
                                             .Replace("##ScheduledTime##", nextScheduledTime.InnerText)
                                             .Replace("##Time##", DateTime.Now.ToShortTimeString()),
                                             e.Command.ChatMessage.Id);
                                         }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
-                                    }
-                                    break;
-                                }
-                            case "time":
-                                {
-                                    try
-                                    {
-                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - time"]["message"].ToString()
-                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
-                                        .Replace("##Time##", DateTime.Now.ToShortTimeString())
-                                        .Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName),
-                                        e.Command.ChatMessage.Id);
                                     }
                                     catch (Exception ex)
                                     {
@@ -651,10 +668,10 @@ namespace TwitchHelperBot
 
                                         int count = 1;
                                         IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value.TotalHours).ThenBy(x => x.Key);
-                                        string messageToSend = Globals.ChatBotSettings["OnChatCommandReceived - topviewers"]["message"].ToString();
+                                        string messageToSend = Globals.ChatBotSettings["ChatCommand - topviewers"]["message"].ToString();
                                         foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
                                         {
-                                            string newPart = Globals.ChatBotSettings["OnChatCommandReceived - topviewers"]["messagePart"].ToString()
+                                            string newPart = Globals.ChatBotSettings["ChatCommand - topviewers"]["messagePart"].ToString()
                                             .Replace("##Count##", count.ToString())
                                             .Replace("##Name##", kvp.Key)
                                             .Replace("##Watchtime##", Globals.getShortRelativeTimeSpan(kvp.Value));
@@ -680,14 +697,14 @@ namespace TwitchHelperBot
                                         string messageToSend = string.Empty;
                                         foreach (string setting in Globals.ChatBotSettings.Properties().Select(p => p.Name))
                                         {
-                                            if (setting.StartsWith("OnChatCommandReceived - ") && bool.Parse(Globals.ChatBotSettings[setting]["enabled"].ToString()))
+                                            if (setting.StartsWith("ChatCommand - ") && bool.Parse(Globals.ChatBotSettings[setting]["enabled"].ToString()))
                                             {
-                                                messageToSend += setting.Replace("OnChatCommandReceived - ", string.Empty) + ", ";
+                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
                                             }
                                         }
                                         messageToSend = messageToSend.Substring(0, messageToSend.Length - 2);
 
-                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - commands"]["message"].ToString()
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - commands"]["message"].ToString()
                                             .Replace("##EnabledCommandList##", messageToSend),
                                             e.Command.ChatMessage.Id);
                                     }
@@ -730,13 +747,13 @@ namespace TwitchHelperBot
                                         }
 
                                         if(userToSearch == e.Command.ChatMessage.DisplayName)
-                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["message"].ToString()
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - watchtime"]["message"].ToString()
                                             .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                             .Replace("##Name##", userToSearch)
                                             .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
                                             e.Command.ChatMessage.Id);
                                         else
-                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - watchtime"]["messageWithUser"].ToString()
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - watchtime"]["messageWithUser"].ToString()
                                             .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                             .Replace("##Name##", userToSearch)
                                             .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
@@ -748,26 +765,14 @@ namespace TwitchHelperBot
                                     }
                                     break;
                                 }
-                            case "discord":
+                            default:
                                 {
                                     try
                                     {
-                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - discord"]["message"].ToString()
-                                        .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()),
-                                        e.Command.ChatMessage.Id);
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
-                                    }
-                                    break;
-                                }
-                            case "tip":
-                                {
-                                    try
-                                    {
-                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["OnChatCommandReceived - tip"]["message"].ToString()
-                                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()),
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["message"].ToString()
+                                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
+                                            .Replace("##Time##", DateTime.Now.ToShortTimeString())
+                                            .Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName),
                                             e.Command.ChatMessage.Id);
                                     }
                                     catch (Exception ex)

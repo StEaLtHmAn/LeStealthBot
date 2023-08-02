@@ -69,7 +69,7 @@ namespace TwitchHelperBot
                     else
                         SpotifyToken = string.Empty;
 
-                    timer1.Enabled = false;
+                    timer1.Enabled = true;
                     return;
                 }
 
