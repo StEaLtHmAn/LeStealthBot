@@ -370,7 +370,7 @@ namespace TwitchHelperBot
                 } },
             };
             //chatbot settings validation/correction
-            bool needSave = true;
+            bool needSave = false;
             if (ChatBotSettingsString != null && ChatBotSettingsString.StartsWith("{"))
             {
                 //ChatBotSettingsString = ChatBotSettingsString.Replace(",\"messageWithUser\":\"City-Of-Cape-Town/Edgemead?block=13\"", string.Empty);
@@ -407,10 +407,18 @@ namespace TwitchHelperBot
                         }
                     }
                     //remove old defaults
-                    else if (tmpSettings.ContainsKey(setting.Key) && (tmpSettings[setting.Key] as JObject)["default"].ToString() != setting.Value["default"].ToString())
+                    else if (tmpSettings.ContainsKey(setting.Key))
                     {
-                        (tmpSettings[setting.Key] as JObject)["default"] = setting.Value["default"].ToString();
-                        needSave = true;
+                        if (!(tmpSettings[setting.Key] as JObject).ContainsKey("default"))
+                        {
+                            (tmpSettings[setting.Key] as JObject).Add("default", setting.Value["default"].ToString());
+                            needSave = true;
+                        }
+                        else if ((tmpSettings[setting.Key] as JObject)["default"].ToString() != setting.Value["default"].ToString())
+                        {
+                            (tmpSettings[setting.Key] as JObject)["default"] = setting.Value["default"].ToString();
+                            needSave = true;
+                        }
                     }
                 }
                 //loop through tmpSettings
