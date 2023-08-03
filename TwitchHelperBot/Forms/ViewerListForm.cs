@@ -27,6 +27,7 @@ namespace TwitchHelperBot
         private DateTime sessionStart = DateTime.UtcNow;
         private string[] botNamesList = new string[0];
         private int SubscriberCheckCooldown;
+        private JObject TwitchTrackerData = new JObject();
         public ViewerListForm()
         {
             InitializeComponent();
@@ -53,6 +54,9 @@ namespace TwitchHelperBot
             SubscriberCheckCooldown = int.Parse(Database.ReadSettingCell("SubscriberCheckCooldown"));
 
             Subscribers = GetSubscribedData();
+
+            TwitchTrackerData = GetTwitchTrackerData();
+
             timer1_Tick(null,null);
         }
 
@@ -229,8 +233,12 @@ namespace TwitchHelperBot
                     }
                 }
                 richTextBox1.SelectionColor = Color.Gold;
+                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold | FontStyle.Underline);
                 richTextBox1.AppendText(
-                    $"Overall Stats:{Environment.NewLine}" +
+                $"Overall Stats:{Environment.NewLine}");
+                richTextBox1.SelectionColor = Color.Gold;
+                richTextBox1.SelectionFont = richTextBox1.Font;
+                richTextBox1.AppendText(
                     $"- Session Count: {Sessions.Count + 1}{Environment.NewLine}" +
                     $"- Total Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
                     $"- Average Viewers: {totalAverage / (Sessions.Count + 1):0.##}{Environment.NewLine}" +
@@ -241,18 +249,27 @@ namespace TwitchHelperBot
                     $"- Follower Count: {Globals.Followers.Count}{Environment.NewLine}{Environment.NewLine}"
                     );
                 richTextBox1.SelectionColor = Color.Red;
+                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold | FontStyle.Underline);
                 richTextBox1.AppendText(
-                    $"Last 30 Days Stats:{Environment.NewLine}" +
+                $"Last 30 Days Stats:{Environment.NewLine}");
+                richTextBox1.SelectionColor = Color.Red;
+                richTextBox1.SelectionFont = richTextBox1.Font;
+                richTextBox1.AppendText(
                     $"- Session Count: {last30DaysSessionCount}{Environment.NewLine}" +
                     $"- Total Duration: {Globals.getRelativeTimeSpan(last30DaysTotalDuration)}{Environment.NewLine}" +
                     $"- Average Viewers: {last30DaysTotalAverage / last30DaysSessionCount:0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {last30DaysPeakViewers}{Environment.NewLine}" +
                     $"- Peak Unique Viewers: {last30DaysUniqueViewerCount}{Environment.NewLine}" +
-                    $"- Combined Hours Watched: {last30DaysTotalHours:0.##}{Environment.NewLine}{Environment.NewLine}"
+                    $"- Combined Hours Watched: {last30DaysTotalHours:0.##}{Environment.NewLine}" +
+                    $"{(TwitchTrackerData.ContainsKey("rank")?$"- Estimated Twitch Rank: {TwitchTrackerData["rank"]}{Environment.NewLine}" : string.Empty)}{Environment.NewLine}"
                     );
                 richTextBox1.SelectionColor = Color.Green;
+                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold | FontStyle.Underline);
                 richTextBox1.AppendText(
-                    $"Session Stats:{Environment.NewLine}" +
+                $"Session Stats:{Environment.NewLine}");
+                richTextBox1.SelectionColor = Color.Green;
+                richTextBox1.SelectionFont = richTextBox1.Font;
+                richTextBox1.AppendText(
                     $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
                     $"- Current Viewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
                     $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
@@ -327,6 +344,19 @@ namespace TwitchHelperBot
             richTextBox1.ResumePainting();
         }
 
+        public JObject GetTwitchTrackerData()
+        {
+            try
+            {
+                RestClient client = new RestClient();
+                RestRequest request = new RestRequest("https://twitchtracker.com/api/channels/summary/"+Globals.loginName, Method.Get);
+                RestResponse response = client.Execute(request);
+                return JObject.Parse(response.Content);
+            }
+            catch { }
+            return new JObject();
+        }
+
         public JArray GetChattersList()
         {
             JArray Viewers = new JArray();
@@ -335,8 +365,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            //request.AddQueryParameter("broadcaster_id", "526375465");
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -369,7 +399,7 @@ namespace TwitchHelperBot
             if (File.Exists("botList.data"))
             {
                 string[] lines = File.ReadAllLines("botList.data");
-                if (DateTime.UtcNow - DateTime.Parse(lines[0]) <= TimeSpan.FromDays(5))
+                if (DateTime.UtcNow - DateTime.Parse(lines[0]) <= TimeSpan.FromDays(3))
                     return JArray.Parse(string.Join("\n", lines.Skip(1)));
                 else
                     bots = JArray.Parse(string.Join("\n", lines.Skip(1)));
@@ -377,50 +407,41 @@ namespace TwitchHelperBot
 
             //if we cant find the file or if the file is old then we download a new file
 
-            RestClient client = new RestClient();
-            RestRequest request = new RestRequest("https://api.twitchinsights.net/v1/bots/all", Method.Get);
-            RestResponse response = client.Execute(request);
-            if (response.Content.StartsWith("{"))
+            int attempts = 1;
+        retry:
+            try
             {
-                bots = JObject.Parse(response.Content)["bots"] as JArray;
+                RestClient client = new RestClient();
+                RestRequest request = new RestRequest("https://api.twitchinsights.net/v1/bots/all", Method.Get);
+                RestResponse response = client.Execute(request);
+                foreach (var item in (JObject.Parse(response.Content)["bots"] as JArray))
+                {
+                    if (bots.Count(x => item[1].ToString() == x[1].ToString()) == 0)
+                        bots.Add(item);
+                    else
+                    {
+                        JArray matchingBot = bots.Where(x => item[1].ToString() == x[1].ToString()).First() as JArray;
+                        matchingBot[0] = item[0];
+                        matchingBot[2] = item[2];
+                    }
+                }
                 File.WriteAllText("botList.data", DateTime.UtcNow.ToString() + "\n" + bots.ToString(Formatting.None));
             }
-            else
+            catch (Exception ex)
             {
-                Thread.Sleep(500);
-                response = client.Execute(request);
-                if (response.Content.StartsWith("{"))
+                if (attempts < 5)
                 {
-                    bots = JObject.Parse(response.Content)["bots"] as JArray;
-                    File.WriteAllText("botList.data", DateTime.UtcNow.ToString() + "\n" + bots.ToString(Formatting.None));
+                    attempts++;
+                    goto retry;
                 }
-                //else
-                //{
-                //    client = new RestClient();
-                //    request = new RestRequest("https://api.twitchbots.info/v2/bot", Method.Get);
-                //    response = client.Execute(request);
+            }
 
-                //    if (response.Content.StartsWith("{"))
-                //    {
-                //        JObject data = JObject.Parse(response.Content);
-                //        bots = data["bots"] as JArray;
-                //        try
-                //        {
-                //            while (data?["_links"]?["next"] != null && data["_links"]["next"].ToString().StartsWith("http"))
-                //            {
-                //                client = new RestClient();
-                //                request = new RestRequest(data["_links"]["next"].ToString(), Method.Get);
-                //                response = client.Execute(request);
-                //                data = JObject.Parse(response.Content);
-                //                bots.Merge(data["bots"]);
-                //            }
-                //        }
-                //        catch
-                //        {
-                //        }
-                //        File.WriteAllText("botList.data", DateTime.UtcNow.ToString() + "\n" + bots.ToString(Formatting.None));
-                //    }
-                //}
+            //after getting a new bot list we clean past data
+            foreach (var session in Sessions)
+            {
+                var tmp = session.WatchTimeData.Where(x => !botNamesList.Contains(x.Key, StringComparer.OrdinalIgnoreCase));
+                if (tmp.Count() < session.WatchTimeData.Count)
+                    session.WatchTimeData = tmp.ToDictionary(t => t.Key, t => t.Value);
             }
 
             return bots;
@@ -464,16 +485,25 @@ namespace TwitchHelperBot
                 //archive yearly data to split into chuncks
                 if (!archived)
                 {
-                    DateTime SessionsDateTimeStarted = Sessions.First().DateTimeStarted;
-                    if (DateTime.UtcNow - SessionsDateTimeStarted > TimeSpan.FromDays(365))
+                    int currentYear = DateTime.UtcNow.Year;
+                    int firstYear = Sessions.First().DateTimeStarted.Year;
+                    for (int i = firstYear; i < currentYear; i++)
                     {
-                        File.WriteAllText($"SessionsArchive{SessionsDateTimeStarted.Year}.json", JsonConvert.SerializeObject(Sessions));
-                        Sessions.Clear();
+                        var sessionForYear = Sessions.Where(x=>x.DateTimeStarted.Year == i).ToList();
+                        Sessions.RemoveAll(x => x.DateTimeStarted.Year == i);
+                        if (!File.Exists($"SessionsArchive{i}.json"))
+                        {
+                            File.WriteAllText($"SessionsArchive{i}.json", JsonConvert.SerializeObject(sessionForYear));
+                        }
                     }
+                    archived = true;
                 }
 
                 if (!saved)
+                {
                     File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
+                    saved = true;
+                }
             }
             catch
             {
@@ -552,11 +582,12 @@ namespace TwitchHelperBot
                     Label lblFollowed = new Label();
                     PictureBox pbxProfileImage = new PictureBox();
                     Label lblLastSession = new Label();
+                    Label lblFirstSession = new Label();
                     Label lblTotalHoursWatched = new Label();
                     Label lblAccountCreated = new Label();
                     Button btnExit = new Button();
 
-                    btnExit.Location = new Point(372, 0);
+                    btnExit.Location = new Point(374, 0);
                     btnExit.Size = new Size(26, 26);
                     btnExit.Text = "×";
                     btnExit.FlatStyle = FlatStyle.Flat;
@@ -571,32 +602,35 @@ namespace TwitchHelperBot
                         catch { }
                     };
 
-                    pbxProfileImage.Location = new Point(12, 12);
+                    pbxProfileImage.Location = new Point(0, 0);
                     pbxProfileImage.Size = new Size(150, 150);
                     pbxProfileImage.SizeMode = PictureBoxSizeMode.Zoom;
 
                     lblDisplayName.AutoSize = true;
                     lblDisplayName.Font = new Font(lblDisplayName.Font, FontStyle.Bold);
-                    lblDisplayName.Location = new Point(174, 12);
+                    lblDisplayName.Location = new Point(160, 12);
 
                     lblDescription.AutoSize = true;
-                    lblDescription.Location = new Point(12, 174);
+                    lblDescription.Location = new Point(12, 162);
                     lblDescription.MaximumSize = new Size(376, 80);
 
                     lblAccountCreated.AutoSize = true;
-                    lblAccountCreated.Location = new Point(174, 36);
+                    lblAccountCreated.Location = new Point(162, 33);
 
                     lblSubscribed.AutoSize = true;
-                    lblSubscribed.Location = new Point(174, 60);
+                    lblSubscribed.Location = new Point(162, 54);
 
                     lblFollowed.AutoSize = true;
-                    lblFollowed.Location = new Point(174, 84);
+                    lblFollowed.Location = new Point(162, 75);
 
                     lblLastSession.AutoSize = true;
-                    lblLastSession.Location = new Point(174, 108);
+                    lblLastSession.Location = new Point(162, 96);
+
+                    lblFirstSession.AutoSize = true;
+                    lblFirstSession.Location = new Point(162, 117);
 
                     lblTotalHoursWatched.AutoSize = true;
-                    lblTotalHoursWatched.Location = new Point(174, 132);
+                    lblTotalHoursWatched.Location = new Point(162, 138);
 
                     // Display the user details.
                     lblDisplayName.Text = RightClickedWord;
@@ -605,7 +639,8 @@ namespace TwitchHelperBot
                     pbxProfileImage.Image = GetImageFromURL(userDetails["data"][0]["profile_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString());
 
                     // Display the watched sessions.
-                    lblLastSession.Text = "Started watching " + Globals.getRelativeTimeSpan(DateTime.UtcNow - SessionsListClone.First().DateTimeEnded) + " ago";
+                    lblFirstSession.Text = "Started watching " + Globals.getRelativeTimeSpan(DateTime.UtcNow - SessionsListClone.First().DateTimeStarted) + " ago";
+                    lblLastSession.Text = "Last seen " + Globals.getRelativeTimeSpan(DateTime.UtcNow - SessionsListClone.Last().DateTimeEnded) + " ago";
                     TimeSpan total = WatchTimeDictionary.ContainsKey(RightClickedWord) ? WatchTimeDictionary[RightClickedWord] : TimeSpan.Zero;
                     foreach (var x in SessionsListClone)
                     {
@@ -617,11 +652,22 @@ namespace TwitchHelperBot
                     if (subscribedata != null)
                     {
                         lblSubscribed.Text = "Subscribed";
-                        if (subscribedata?["tier"] != null)
+                        if (subscribedata?["tier"] != null && subscribedata?["tier"].ToString().Length > 0)
                         {
-                            lblSubscribed.Text += $" (tier {subscribedata["tier"]})";
+                            switch (subscribedata["tier"].ToString())
+                            {
+                                case "1000":
+                                    lblSubscribed.Text += $" (Tier 1)";
+                                    break;
+                                case "2000":
+                                    lblSubscribed.Text += $" (Tier 1)";
+                                    break;
+                                case "3000":
+                                    lblSubscribed.Text += $" (Tier 1)";
+                                    break;
+                            }
                         }
-                        if (subscribedata?["gifter_name"] != null)
+                        if (subscribedata?["gifter_name"] != null && subscribedata["gifter_name"].ToString().Length > 0)
                         {
                             lblSubscribed.Text += $" (gift from {subscribedata["gifter_name"]})";
                         }
@@ -634,14 +680,17 @@ namespace TwitchHelperBot
 
                     Panel panel = new Panel()
                     {
-                        MinimumSize = new Size(400, 222),
-                        BackgroundImageLayout = ImageLayout.Zoom
+                        MinimumSize = new Size(395, 250),
+                        BackgroundImageLayout = ImageLayout.Stretch,
+                        Margin = Padding.Empty,
+                        Padding = Padding.Empty
                     };
                     panel.Controls.Add(lblDisplayName);
                     panel.Controls.Add(lblDescription);
                     panel.Controls.Add(lblAccountCreated);
                     panel.Controls.Add(pbxProfileImage);
                     panel.Controls.Add(lblLastSession);
+                    panel.Controls.Add(lblFirstSession);
                     panel.Controls.Add(lblTotalHoursWatched);
                     panel.Controls.Add(lblSubscribed);
                     panel.Controls.Add(lblFollowed);
@@ -664,19 +713,6 @@ namespace TwitchHelperBot
                 }
             }
         }
-
-        //public JObject GetSubscribedDataByUser(string user_id)
-        //{
-        //    RestClient client = new RestClient();
-        //    client.AddDefaultHeader("Client-ID", Globals.clientId);
-        //    client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
-        //    RestRequest request = new RestRequest("https://api.twitch.tv/helix/subscriptions", Method.Get);
-        //    request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
-        //    request.AddQueryParameter("user_id", user_id);
-        //    RestResponse response = client.Execute(request);
-
-        //    return JObject.Parse(response.Content);
-        //}
 
         JArray Subscribers = new JArray();
         public JArray GetSubscribedData()
