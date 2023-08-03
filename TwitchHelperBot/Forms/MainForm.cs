@@ -327,6 +327,7 @@ namespace TwitchHelperBot
                 { "ChatCommand - eskont", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
+                    { "suburb", "nelson-mandela-bay/lorraine?block=13" },
                     { "message", "MrDestructoid @##YourName##'s next loadshedding is scheduled for: ##ScheduledMonth## @ ##ScheduledTime##. @##YourName##'s current local time is ##Time##" }
                 } },
                 { "ChatCommand - topviewers", new JObject{
@@ -369,9 +370,10 @@ namespace TwitchHelperBot
                 } },
             };
             //chatbot settings validation/correction
-            bool needSave = false;
+            bool needSave = true;
             if (ChatBotSettingsString != null && ChatBotSettingsString.StartsWith("{"))
             {
+                //ChatBotSettingsString = ChatBotSettingsString.Replace(",\"messageWithUser\":\"City-Of-Cape-Town/Edgemead?block=13\"", string.Empty);
                 //rename OnChatCommandReceived
                 if (ChatBotSettingsString.Contains("OnChatCommandReceived - "))
                 {
@@ -405,7 +407,7 @@ namespace TwitchHelperBot
                         }
                     }
                     //remove old defaults
-                    else if ((tmpSettings[setting.Key] as JObject)["default"].ToString() != setting.Value["default"].ToString())
+                    else if (tmpSettings.ContainsKey(setting.Key) && (tmpSettings[setting.Key] as JObject)["default"].ToString() != setting.Value["default"].ToString())
                     {
                         (tmpSettings[setting.Key] as JObject)["default"] = setting.Value["default"].ToString();
                         needSave = true;
@@ -581,7 +583,7 @@ namespace TwitchHelperBot
                                     {
                                         using (WebClient webClient = new WebClient())
                                         {
-                                            string htmlSchedule = webClient.DownloadString("https://www.ourpower.co.za/areas/nelson-mandela-bay/lorraine?block=13");
+                                            string htmlSchedule = webClient.DownloadString($"https://www.ourpower.co.za/areas/{Globals.ChatBotSettings["ChatCommand - eskont"]["suburb"]}");
                                             int i1 = htmlSchedule.IndexOf("time dateTime=");
                                             int i2 = htmlSchedule.IndexOf("</section>");
                                             htmlSchedule = "<xml><section><h3><" + htmlSchedule.Substring(i1, htmlSchedule.IndexOf("</section>", i2 + 1) - i1) + "</section></xml>";

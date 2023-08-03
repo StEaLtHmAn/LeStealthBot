@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Net;
 using System.Windows.Forms;
 using System.Windows.Threading;
 
@@ -50,7 +51,7 @@ namespace TwitchHelperBot
 
                 Button button = new Button();
                 button.FlatStyle = FlatStyle.Flat;
-                button.Size = new Size(200,28);
+                button.Size = new Size(230,28);
                 button.Font = new Font(button.Font.FontFamily, 10);
                 button.Text = settingName;
                 button.ForeColor = isDefaultSetting ? Color.Red : Color.DarkOrange;
@@ -75,33 +76,42 @@ namespace TwitchHelperBot
                 lblHeading = new TextBox();
                 lblHeading.Text = settingName;
                 lblHeading.Location = new Point(10, yValue);
-                lblHeading.Size = new Size(250, 30);
+                lblHeading.Size = new Size(200, 30);
                 lblHeading.LostFocus += delegate
                 {
                     if (lblHeading.Text != settingName)
                     {
-                        var tmp = tmpChatBotSettings[settingName].DeepClone();
-                        tmpChatBotSettings.Remove(settingName);
-                        settingName = lblHeading.Text;
-                        tmpChatBotSettings.Add(lblHeading.Text, tmp);
-                        loadChatBotSettingsOuterUI();
-                        flowLayoutPanel1.ScrollControlIntoView(ChatBotSettingsTabButtons[settingName]);
+                        if ((settingName.Contains("ChatCommand - ") && !lblHeading.Text.Contains("ChatCommand - ")) ||
+                        (settingName.Contains("Timer - ") && !lblHeading.Text.Contains("Timer - ")))
+                        {
+                            lblHeading.Text = settingName;
+                        }
+                        else
+                        {
+                            var tmp = tmpChatBotSettings[settingName].DeepClone();
+                            tmpChatBotSettings.Remove(settingName);
+                            settingName = lblHeading.Text;
+                            tmpChatBotSettings.Add(lblHeading.Text, tmp);
+                            loadChatBotSettingsOuterUI();
+                            flowLayoutPanel1.ScrollControlIntoView(ChatBotSettingsTabButtons[settingName]);
+                        }
                     }
                 };
-                panel1.Controls.Add(lblHeading);
             }
             else
             {
                 lblHeading = new Label();
+                lblHeading.Font = new Font(lblHeading.Font.FontFamily, 9);
                 lblHeading.Text = settingName;
                 lblHeading.Location = new Point(10, yValue);
-                lblHeading.Size = new Size(250, 30);
-                panel1.Controls.Add(lblHeading);
+                lblHeading.Size = new Size(180, 26);
             }
+            panel1.Controls.Add(lblHeading);
 
             CheckBox cbxEnabled = new CheckBox();
+            cbxEnabled.Font = new Font(lblHeading.Font.FontFamily, 9);
             cbxEnabled.Text = "Enabled";
-            cbxEnabled.Location = new Point(lblHeading.Location.X + lblHeading.Width + 10, yValue + 6);
+            cbxEnabled.Location = new Point(lblHeading.Location.X + lblHeading.Width + 10, yValue + 2);
             cbxEnabled.Checked = bool.Parse(tmpChatBotSettings[settingName]["enabled"].ToString());
             cbxEnabled.AutoSize = true;
             cbxEnabled.CheckedChanged += delegate
@@ -110,20 +120,23 @@ namespace TwitchHelperBot
             };
             panel1.Controls.Add(cbxEnabled);
 
-            Button btnDelete = new Button();
-            btnDelete.Location = new Point(cbxEnabled.Location.X + cbxEnabled.Width, yValue);
-            btnDelete.FlatStyle = FlatStyle.Flat;
-            btnDelete.ForeColor = Color.Red;
-            btnDelete.AutoSize = true;
-            btnDelete.Text = "Delete";
-            btnDelete.Enabled = !isDefaultSetting;
-            btnDelete.Click += delegate
+            if (!isDefaultSetting)
             {
-                tmpChatBotSettings.Remove(settingName);
-                loadChatBotSettingsOuterUI();
-                panel1.Controls.Clear();
-            };
-            panel1.Controls.Add(btnDelete);
+                Button btnDelete = new Button();
+                btnDelete.Location = new Point(cbxEnabled.Location.X + cbxEnabled.Width, yValue-3);
+                btnDelete.FlatStyle = FlatStyle.Flat;
+                btnDelete.ForeColor = Color.Red;
+                btnDelete.AutoSize = true;
+                btnDelete.Text = "Delete";
+                btnDelete.Size = new Size(60, 28);
+                btnDelete.Click += delegate
+                {
+                    tmpChatBotSettings.Remove(settingName);
+                    loadChatBotSettingsOuterUI();
+                    panel1.Controls.Clear();
+                };
+                panel1.Controls.Add(btnDelete);
+            }
 
             yValue += lblHeading.Height + 10;
 
@@ -254,6 +267,47 @@ namespace TwitchHelperBot
                 };
                 panel1.Controls.Add(numericInput);
                 yValue += numericInput.Height + 10;
+            }
+
+            if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("suburb"))
+            {
+                Label lblMessage = new Label();
+                lblMessage.Text = "suburb: ";
+                lblMessage.Location = new Point(lblHeading.Location.X, yValue);
+                lblMessage.AutoSize = true;
+                panel1.Controls.Add(lblMessage);
+
+                ComboBox txtMessage = new ComboBox();
+                txtMessage.Text = tmpChatBotSettings[settingName]["suburb"].ToString();
+                txtMessage.Location = new Point(lblMessage.Width + 10, yValue);
+                txtMessage.Size = new Size(panel1.Width - lblMessage.Width - 20, 30);
+                txtMessage.TextChanged += delegate
+                {
+                    try
+                    {
+                        if (txtMessage.Text.Length > 3 && !txtMessage.Items.Contains(txtMessage.Text))
+                        {
+                            using (WebClient webClient = new WebClient())
+                            {
+                                string htmlSchedule = webClient.DownloadString($"https://www.ourpower.co.za/api/suburbs?q={txtMessage.Text}");
+                                var json = JArray.Parse(htmlSchedule);
+                                int carotIndex = txtMessage.SelectionStart;
+                                txtMessage.Items.Clear();
+                                txtMessage.Items.AddRange(json.Select(x => $"{x["municipality"].ToString().Replace(" ", "-")}/{x["suburb"].ToString().Replace(" ", "-")}?block={x["block"]}").ToArray());
+                                txtMessage.DroppedDown = txtMessage.Items.Count > 0;
+                                Cursor.Current = Cursors.Default;
+                                txtMessage.SelectionStart = carotIndex;
+                            }
+                        }
+                        else if(txtMessage.Items.Contains(txtMessage.Text))
+                        {
+                            tmpChatBotSettings[settingName]["suburb"] = txtMessage.Text;
+                        }
+                    }
+                    catch { }
+                };
+                panel1.Controls.Add(txtMessage);
+                yValue += txtMessage.Height + 10;
             }
         }
 
