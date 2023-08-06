@@ -324,6 +324,11 @@ namespace TwitchHelperBot
                     { "messageNoReason", "##TimedoutUsername## BANNED Duration: ##TimeoutDuration##" },
                     { "messageWithReason", "##TimedoutUsername## BANNED Reason: ##TimeoutReason## Duration: ##TimeoutDuration##" }
                 } },
+                { "OnRaidNotification", new JObject{
+                    { "enabled", "false" },
+                    { "default", "true" },
+                    { "message", "MrDestructoid Thanks @##RaiderName##, for the ##RaidViewerCount## viewer raid." }
+                } },
                 { "ChatCommand - eskont", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
@@ -368,6 +373,13 @@ namespace TwitchHelperBot
                     { "interval", "90" },
                     { "message", "MrDestructoid Hey! Just a friendly reminder that if you have Amazon Prime, you also have Twitch Prime! This means you can use your free monthly subscription to support your favourite streamers. <3" },
                 } },
+                //"##YourName##"
+                //"##Time##"
+                //"##Name##"
+                //"##TimeZone##"
+                //"##Argument0##"
+                //"##Argument1##"
+                //"##Argument2##"
             };
             //chatbot settings validation/correction
             bool needSave = false;
@@ -576,6 +588,13 @@ namespace TwitchHelperBot
                         .Replace("##MassGiftCount##", e.GiftedSubscription.MsgParamMassGiftCount.ToString())
                         .Replace("##SubscriptionPlan##", e.GiftedSubscription.MsgParamSubPlan.ToString()));
             };
+            Globals.twitchChatClient.OnRaidNotification += (sender, e) =>
+            {
+                if (bool.Parse(Globals.ChatBotSettings["OnRaidNotification"]["enabled"].ToString()))
+                    Globals.sendChatBotMessage(e.Channel, Globals.ChatBotSettings["OnRaidNotification"]["message"].ToString()
+                        .Replace("##RaiderName##", e.RaidNotification.MsgParamDisplayName)
+                        .Replace("##RaidViewerCount##", e.RaidNotification.MsgParamViewerCount));
+            };
             Globals.twitchChatClient.OnChatCommandReceived += (sender, e) =>
             {
                 try
@@ -583,6 +602,7 @@ namespace TwitchHelperBot
                     if (Globals.ChatBotSettings.ContainsKey($"ChatCommand - {e.Command.CommandText.ToLower()}")
                     && (Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"] as JObject).ContainsKey("enabled")
                     && bool.Parse(Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["enabled"].ToString()))
+                    {
                         switch (e.Command.CommandText.ToLower())
                         {
                             case "eskont":
@@ -643,15 +663,15 @@ namespace TwitchHelperBot
                                             {
                                                 if (viewerData.Key.ToLower() == Globals.loginName.ToLower())
                                                     continue;
-                                                if(e.Command.ArgumentsAsString.ToLower().Contains("online") && !viewerListForm.ViewersOnlineNames.Contains(viewerData.Key))
+                                                if (e.Command.ArgumentsAsString.ToLower().Contains("online") && !viewerListForm.ViewersOnlineNames.Contains(viewerData.Key))
                                                     continue;
                                                 if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
                                                 {
-                                                    tmpWatchTimeList.Add(viewerData.Key, viewerData.Value);
+                                                    tmpWatchTimeList.Add(viewerData.Key, viewerData.Value.WatchTime);
                                                 }
                                                 else
                                                 {
-                                                    tmpWatchTimeList[viewerData.Key] += viewerData.Value;
+                                                    tmpWatchTimeList[viewerData.Key] += viewerData.Value.WatchTime;
                                                 }
                                             }
                                         }
@@ -667,11 +687,11 @@ namespace TwitchHelperBot
                                                     continue;
                                                 if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
                                                 {
-                                                    tmpWatchTimeList.Add(viewerData.Key, viewerData.Value);
+                                                    tmpWatchTimeList.Add(viewerData.Key, viewerData.Value.WatchTime);
                                                 }
                                                 else
                                                 {
-                                                    tmpWatchTimeList[viewerData.Key] += viewerData.Value;
+                                                    tmpWatchTimeList[viewerData.Key] += viewerData.Value.WatchTime;
                                                 }
                                             }
                                         }
@@ -696,7 +716,7 @@ namespace TwitchHelperBot
                                     }
                                     catch (Exception ex)
                                     {
-                                        Globals.LogMessage(e.Command.CommandText+": "+ex.ToString());
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
                                     }
                                     break;
                                 }
@@ -746,17 +766,17 @@ namespace TwitchHelperBot
                                         TimeSpan tmpWatchTime = new TimeSpan();
                                         if (Application.OpenForms.OfType<ViewerListForm>().Count() > 0)
                                         {
-                                            Dictionary<string, TimeSpan> tmpWatchTimeList = Application.OpenForms.OfType<ViewerListForm>().First().WatchTimeDictionary;
-                                            if(tmpWatchTimeList.ContainsKey(userToSearch))
-                                                tmpWatchTime += tmpWatchTimeList[userToSearch];
+                                            Dictionary<string, ViewerListForm.SessionData.WatchData> tmpWatchTimeList = Application.OpenForms.OfType<ViewerListForm>().First().WatchTimeDictionary;
+                                            if (tmpWatchTimeList.ContainsKey(userToSearch))
+                                                tmpWatchTime += tmpWatchTimeList[userToSearch].WatchTime;
                                         }
                                         foreach (var sessionData in Sessions)
                                         {
                                             if (sessionData.WatchTimeData.ContainsKey(userToSearch))
-                                                tmpWatchTime += sessionData.WatchTimeData[userToSearch];
+                                                tmpWatchTime += sessionData.WatchTimeData[userToSearch].WatchTime;
                                         }
 
-                                        if(userToSearch == e.Command.ChatMessage.DisplayName)
+                                        if (userToSearch == e.Command.ChatMessage.DisplayName)
                                             Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - watchtime"]["message"].ToString()
                                             .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                             .Replace("##Name##", userToSearch)
@@ -782,7 +802,11 @@ namespace TwitchHelperBot
                                         Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["message"].ToString()
                                             .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                             .Replace("##Time##", DateTime.Now.ToShortTimeString())
-                                            .Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName),
+                                            .Replace("##Name##", e.Command.ChatMessage.DisplayName)
+                                            .Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName)
+                                            .Replace("##Argument0##", e.Command.ArgumentsAsList[0])
+                                            .Replace("##Argument1##", e.Command.ArgumentsAsList[1])
+                                            .Replace("##Argument2##", e.Command.ArgumentsAsList[2]),
                                             e.Command.ChatMessage.Id);
                                     }
                                     catch (Exception ex)
@@ -792,6 +816,7 @@ namespace TwitchHelperBot
                                     break;
                                 }
                         }
+                    }
                 }
                 catch { }
             };

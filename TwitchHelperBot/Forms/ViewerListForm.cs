@@ -8,7 +8,6 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
@@ -19,7 +18,7 @@ namespace TwitchHelperBot
     {
         public string[] ViewersOnlineNames = new string[0];
         private List<SessionData> Sessions = new List<SessionData>();
-        public Dictionary<string, TimeSpan> WatchTimeDictionary = new Dictionary<string, TimeSpan>();
+        public Dictionary<string, SessionData.WatchData> WatchTimeDictionary = new Dictionary<string, SessionData.WatchData>();
         private List<int> ViewerCountPerMinute = new List<int>();
         private DateTime lastViewerCountCheck = DateTime.UtcNow;
         private DateTime lastSubscriberCheck = DateTime.UtcNow;
@@ -45,9 +44,87 @@ namespace TwitchHelperBot
                 else
                     break;
             }
+            
             //get session data from file
             if (File.Exists("WatchTimeSessions.json"))
-                Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
+            {
+                string sessionDataString = File.ReadAllText("WatchTimeSessions.json");
+                //if (sessionDataString.Contains("UserID"))
+                    Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(sessionDataString));
+                //else
+                //{
+                //    var oldData = JsonConvert.DeserializeObject<List<SessionDataOLD>>(sessionDataString);
+                //    string newName = string.Empty;
+                //    string oldNames = string.Empty;
+                //    Dictionary<string, string> namesCompleted = new Dictionary<string, string>();
+                //    foreach (var item in oldData)
+                //    {
+                //        var tmp = new SessionData()
+                //        {
+                //            DateTimeStarted = item.DateTimeStarted,
+                //            DateTimeEnded = item.DateTimeEnded,
+                //            AverageViewerCount = item.AverageViewerCount,
+                //            PeakViewerCount = item.PeakViewerCount,
+                //            UniqueViewerCount = item.UniqueViewerCount,
+                //            CombinedHoursWatched = item.CombinedHoursWatched,
+                //            WatchTimeData = new Dictionary<string, SessionData.WatchData>()
+                //        };
+                //        foreach (var item2 in item.WatchTimeData)
+                //        {
+                //            if (namesCompleted.ContainsKey(item2.Key))
+                //            {
+                //                if(tmp.WatchTimeData.ContainsKey(item2.Key))
+                //                    tmp.WatchTimeData[item2.Key].WatchTime += item2.Value;
+                //                else
+                //                    tmp.WatchTimeData.Add(item2.Key, new SessionData.WatchData() { WatchTime = item2.Value, UserID = namesCompleted[item2.Key] });
+                //            }
+                //            else
+                //            {
+                //                switch (item2.Key)
+                //                {
+                //                    case "tiaan_kemp":
+                //                        newName = "happadoodle";
+                //                        break;
+                //                    case "TattedUpTeacher1988":
+                //                        newName = "tattedtani";
+                //                        break;
+                //                    case "kid_blazed":
+                //                        newName = "Regal_D";
+                //                        break;
+                //                    default:
+                //                        newName = item2.Key;
+                //                        break;
+                //                }
+                //                if (newName != "")
+                //                {
+                //                    if (namesCompleted.ContainsKey(newName))
+                //                    {
+                //                        if (tmp.WatchTimeData.ContainsKey(newName))
+                //                            tmp.WatchTimeData[newName].WatchTime += item2.Value;
+                //                        else
+                //                            tmp.WatchTimeData.Add(newName, new SessionData.WatchData() { WatchTime = item2.Value, UserID = namesCompleted[newName] });
+                //                    }
+                //                    else
+                //                    {
+                //                        JObject userDetails = JObject.Parse(Globals.GetUserDetails(newName));
+                //                        if (userDetails.ContainsKey("data") && (userDetails["data"] as JArray).Count > 0)
+                //                        {
+                //                            namesCompleted.Add(newName, userDetails["data"][0]["id"].ToString());
+                //                            tmp.WatchTimeData.Add(newName, new SessionData.WatchData() { WatchTime = item2.Value, UserID = userDetails["data"][0]["id"].ToString() });
+                //                        }
+                //                        else if(!oldNames.Contains(newName))
+                //                        {
+                //                            oldNames += $"{newName}\n";
+                //                        }
+                //                    }
+                //                }
+                //            }
+                //        }
+                //        Sessions.Add(tmp);
+                //    }
+                //    File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
+                //}
+            }
 
             if (string.IsNullOrEmpty(Database.ReadSettingCell("SubscriberCheckCooldown")))
                 Database.UpsertRecord(x => x["Key"] == "SubscriberCheckCooldown", new BsonDocument() { { "Key", "SubscriberCheckCooldown" }, { "Value", "5" } });
@@ -75,8 +152,6 @@ namespace TwitchHelperBot
                     JArray botData = GetBotList();
                     if (botData.Count > 0 && botData[0] is JArray)
                         botNamesList = botData.Select(x => (x as JArray)[0].ToString()).ToArray();
-                    else if (botData.Count > 0 && botData[0] is JObject)
-                        botNamesList = botData.Select(x => x["username"].ToString()).ToArray();
 
                     if ((DateTime.UtcNow - lastSubscriberCheck).TotalMinutes >= SubscriberCheckCooldown)
                     {
@@ -101,15 +176,17 @@ namespace TwitchHelperBot
                     }
                     TimeSpan span = DateTime.UtcNow - lastCheck;
                     lastCheck = DateTime.UtcNow;
-                    foreach (string name in ViewersOnlineNames)
+                    foreach (JObject viewer in Viewers)
                     {
+                        string name = viewer["user_name"].ToString().ToLower() == viewer["user_login"].ToString().ToLower() ? viewer["user_name"].ToString() :viewer["user_login"].ToString();
+
                         if (WatchTimeDictionary.ContainsKey(name))
                         {
-                            WatchTimeDictionary[name] += span;
+                            WatchTimeDictionary[name].WatchTime += span;
                         }
                         else
                         {
-                            WatchTimeDictionary.Add(name, TimeSpan.Zero);
+                            WatchTimeDictionary.Add(name, new SessionData.WatchData() { WatchTime = TimeSpan.Zero, UserID = viewer["user_id"].ToString() });
                         }
                     }
                     Invoke(new Action(() =>
@@ -142,7 +219,7 @@ namespace TwitchHelperBot
                     DateTimeEnded = DateTime.UtcNow,
                     AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
                     PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
-                    CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
+                    CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours),
                     WatchTimeData = WatchTimeDictionary
                 });
                 foreach (var sessionData in SessionsListClone)
@@ -151,11 +228,11 @@ namespace TwitchHelperBot
                     {
                         if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
                         {
-                            tmpWatchTimeList.Add(viewerData.Key, viewerData.Value);
+                            tmpWatchTimeList.Add(viewerData.Key, viewerData.Value.WatchTime);
                         }
                         else
                         {
-                            tmpWatchTimeList[viewerData.Key] += viewerData.Value;
+                            tmpWatchTimeList[viewerData.Key] += viewerData.Value.WatchTime;
                         }
                     }
                 }
@@ -166,17 +243,17 @@ namespace TwitchHelperBot
                     sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
                 else
                     sortedList = tmpWatchTimeList.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
+                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold | FontStyle.Underline);
+                richTextBox1.AppendText(
+                $"Viewer List:{Environment.NewLine}");
                 foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
                 {
                     if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
                     {
-                        richTextBox1.SelectionColor = richTextBox1.ForeColor;
-                        richTextBox1.AppendText($"{count}. ");
-
-                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
-
                         richTextBox1.SelectionColor = ViewersOnlineNames.Contains(kvp.Key) ? Color.Green : Color.Red;
                         richTextBox1.AppendText("⚫ ");
+
+                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
 
                         if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
                             richTextBox1.SelectionColor = Color.Gold;
@@ -200,7 +277,7 @@ namespace TwitchHelperBot
             {
                 TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
                 TimeSpan totalDuration = SessionDuration;
-                double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours);
+                double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours);
                 double totalHours = SessionHoursWatched;
                 double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
                 double totalAverage = currentAverage;
@@ -217,7 +294,7 @@ namespace TwitchHelperBot
                 {
                     totalDuration += session.DateTimeEnded - session.DateTimeStarted;
                     totalAverage += session.AverageViewerCount;
-                    totalHours += session.WatchTimeData.Sum(x => x.Value.TotalHours);
+                    totalHours += session.WatchTimeData.Sum(x => x.Value.WatchTime.TotalHours);
                     if (session.PeakViewerCount > peakViewers)
                         peakViewers = session.PeakViewerCount;
                     if ((DateTime.UtcNow - session.DateTimeStarted).TotalDays <= 30)
@@ -229,7 +306,7 @@ namespace TwitchHelperBot
                             last30DaysPeakViewers = session.PeakViewerCount;
                         if (session.UniqueViewerCount > last30DaysUniqueViewerCount)
                             last30DaysUniqueViewerCount = session.UniqueViewerCount;
-                        last30DaysTotalHours += session.WatchTimeData.Sum(x => x.Value.TotalHours);
+                        last30DaysTotalHours += session.WatchTimeData.Sum(x => x.Value.WatchTime.TotalHours);
                     }
                 }
                 richTextBox1.SelectionColor = Color.Gold;
@@ -281,7 +358,7 @@ namespace TwitchHelperBot
             {
                 TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
                 double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
-                double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours);
+                double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours);
 
                 richTextBox1.SelectionColor = Color.Green;
                 richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold|FontStyle.Underline);
@@ -304,23 +381,19 @@ namespace TwitchHelperBot
                 richTextBox1.SelectionFont = richTextBox1.Font;
 
                 int count = 1;
-                IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
+                IOrderedEnumerable<KeyValuePair<string, SessionData.WatchData>> sortedList;
                 if (!checkBox1.Checked)
-                    sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
+                    sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
                 else
-                    sortedList = WatchTimeDictionary.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
-                foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
+                    sortedList = WatchTimeDictionary.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
+                foreach (KeyValuePair<string, SessionData.WatchData> kvp in sortedList)
                 {
                     if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
                     {
-                        richTextBox1.SelectionColor = richTextBox1.ForeColor;
-                        if (ViewersOnlineNames.Contains(kvp.Key))
-                            richTextBox1.AppendText($"{count}. ");
-
-                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
-
                         richTextBox1.SelectionColor = ViewersOnlineNames.Contains(kvp.Key) ? Color.Green : Color.Red;
                         richTextBox1.AppendText("⚫ ");
+
+                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
 
                         if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
                             richTextBox1.SelectionColor = Color.Gold;
@@ -335,7 +408,7 @@ namespace TwitchHelperBot
 
                         richTextBox1.SelectionFont = richTextBox1.Font;
                         richTextBox1.SelectionColor = richTextBox1.ForeColor;
-                        richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
+                        richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value.WatchTime)}{Environment.NewLine}");
                         count++;
                     }
                 }
@@ -365,8 +438,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            //request.AddQueryParameter("broadcaster_id", "526375465");
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+           // request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -476,7 +549,7 @@ namespace TwitchHelperBot
                         AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
                         PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
                         UniqueViewerCount = WatchTimeDictionary.Count,
-                        CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
+                        CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours),
                         WatchTimeData = WatchTimeDictionary
                     });
                     added = true;
@@ -535,7 +608,7 @@ namespace TwitchHelperBot
             return Image.FromFile("ImageCache\\" + filename);
         }
 
-        public class SessionData
+        public class SessionDataOLD
         {
             public DateTime DateTimeStarted { get; set; }
             public DateTime DateTimeEnded { get; set; }
@@ -544,6 +617,21 @@ namespace TwitchHelperBot
             public int UniqueViewerCount { get; set; }
             public double CombinedHoursWatched { get; set; }
             public Dictionary<string, TimeSpan> WatchTimeData { get; set; }
+        }
+        public class SessionData
+        {
+            public class WatchData
+            {
+                public TimeSpan WatchTime { get; set; }
+                public string UserID { get; set; }
+            }
+            public DateTime DateTimeStarted { get; set; }
+            public DateTime DateTimeEnded { get; set; }
+            public double AverageViewerCount { get; set; }
+            public int PeakViewerCount { get; set; }
+            public int UniqueViewerCount { get; set; }
+            public double CombinedHoursWatched { get; set; }
+            public Dictionary<string, WatchData> WatchTimeData { get; set; }
         }
 
         private string RightClickedWord = string.Empty;
@@ -559,6 +647,9 @@ namespace TwitchHelperBot
                 if (Sessions.Any(x => x.WatchTimeData.ContainsKey(RightClickedWord)) || WatchTimeDictionary.ContainsKey(RightClickedWord))
                 {
                     JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
+
+                    //todo merge users?
+
                     var checkFollowList = Globals.Followers.Where(x => x["user_id"].ToString() == userDetails["data"][0]["id"].ToString());
                     JObject followdata = checkFollowList.Count() > 0 ? checkFollowList.First() as JObject : null;
                     var checkSubList = Subscribers.Where(x => x["user_id"].ToString() == userDetails["data"][0]["id"].ToString());
@@ -571,7 +662,7 @@ namespace TwitchHelperBot
                         DateTimeEnded = DateTime.UtcNow,
                         AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
                         PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
-                        CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
+                        CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours),
                         WatchTimeData = WatchTimeDictionary
                     });
                     SessionsListClone = SessionsListClone.Where(x => x.WatchTimeData.ContainsKey(RightClickedWord)).ToList();
@@ -641,10 +732,10 @@ namespace TwitchHelperBot
                     // Display the watched sessions.
                     lblFirstSession.Text = "Started watching " + Globals.getRelativeTimeSpan(DateTime.UtcNow - SessionsListClone.First().DateTimeStarted) + " ago";
                     lblLastSession.Text = "Last seen " + Globals.getRelativeTimeSpan(DateTime.UtcNow - SessionsListClone.Last().DateTimeEnded) + " ago";
-                    TimeSpan total = WatchTimeDictionary.ContainsKey(RightClickedWord) ? WatchTimeDictionary[RightClickedWord] : TimeSpan.Zero;
+                    TimeSpan total = TimeSpan.Zero;
                     foreach (var x in SessionsListClone)
                     {
-                        total += x.WatchTimeData[userDetails["data"][0]["display_name"].ToString()];
+                        total += x.WatchTimeData[RightClickedWord].WatchTime;
                     }
                     lblTotalHoursWatched.Text = $"Watched for {Globals.getRelativeTimeSpan(total)}";
 
@@ -819,7 +910,7 @@ namespace TwitchHelperBot
                     Label lblDescription = new Label();
                     lblDescription.AutoSize = true;
                     lblDescription.Location = new Point(12, 12);
-                    lblDescription.Text = string.Join(Environment.NewLine, sessionData.WatchTimeData.OrderByDescending(x => x.Value).ThenBy(x => x.Key).Select(x => $"{x.Key} - {Globals.getRelativeTimeSpan(x.Value)}"));
+                    lblDescription.Text = string.Join(Environment.NewLine, sessionData.WatchTimeData.OrderByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key).Select(x => $"{x.Key} - {Globals.getRelativeTimeSpan(x.Value.WatchTime)}"));
 
                     Panel panel = new Panel()
                     {
@@ -922,7 +1013,7 @@ namespace TwitchHelperBot
                     DateTimeEnded = DateTime.UtcNow,
                     AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
                     PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
-                    CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.TotalHours),
+                    CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours),
                     WatchTimeData = WatchTimeDictionary
                 });
 

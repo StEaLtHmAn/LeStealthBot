@@ -58,7 +58,7 @@ namespace TwitchHelperBot
                 return ts.Hours == 1 ? "1 Hour" : ts.Hours + " Hours";
             if (ts.TotalDays < 7)//days ago
                 return ts.TotalDays.ToString("0.##") + " Days";
-            if (ts.TotalDays < 30.4368)//weeks ago
+            if (ts.TotalDays < 30.436875)//weeks ago
                 return (ts.TotalDays / 7).ToString("0.##") + " Weeks";
             if (ts.TotalDays < 365.242)//months ago
                 return (ts.TotalDays / 30.4368).ToString("0.##") + " Months";
