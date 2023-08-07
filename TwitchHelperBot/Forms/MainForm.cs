@@ -799,15 +799,23 @@ namespace TwitchHelperBot
                                 {
                                     try
                                     {
-                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["message"].ToString()
-                                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
-                                            .Replace("##Time##", DateTime.Now.ToShortTimeString())
-                                            .Replace("##Name##", e.Command.ChatMessage.DisplayName)
-                                            .Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName)
-                                            .Replace("##Argument0##", e.Command.ArgumentsAsList[0])
-                                            .Replace("##Argument1##", e.Command.ArgumentsAsList[1])
-                                            .Replace("##Argument2##", e.Command.ArgumentsAsList[2]),
-                                            e.Command.ChatMessage.Id);
+                                        string messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["message"].ToString();
+                                        if (messageToSend.Contains("##YourName##"))
+                                            messageToSend = messageToSend.Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString());
+                                        if (messageToSend.Contains("##Time##"))
+                                            messageToSend = messageToSend.Replace("##Time##", DateTime.Now.ToShortTimeString());
+                                        if (messageToSend.Contains("##Name##"))
+                                            messageToSend = messageToSend.Replace("##Name##", e.Command.ChatMessage.DisplayName);
+                                        if (messageToSend.Contains("##TimeZone##"))
+                                            messageToSend = messageToSend.Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName);
+                                        if (messageToSend.Contains("##Argument0##") && e.Command.ArgumentsAsList.Count > 0)
+                                            messageToSend = messageToSend.Replace("##Argument0##", e.Command.ArgumentsAsList[0]);
+                                        if (messageToSend.Contains("##Argument1##") && e.Command.ArgumentsAsList.Count > 1)
+                                            messageToSend = messageToSend.Replace("##Argument1##", e.Command.ArgumentsAsList[1]);
+                                        if (messageToSend.Contains("##Argument2##") && e.Command.ArgumentsAsList.Count > 2)
+                                            messageToSend = messageToSend.Replace("##Argument2##", e.Command.ArgumentsAsList[2]);
+
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
                                     }
                                     catch (Exception ex)
                                     {
@@ -945,10 +953,19 @@ namespace TwitchHelperBot
                                             {
                                                 icon = Bitmap.FromHicon(SystemIcons.WinLogo.Handle);
                                             }
+                                            if(int.Parse(Database.ReadSettingCell("VolumeNotificationDuration") ?? "3000") > 0)
                                             Invoke(new Action(() =>
                                             {
-                                                OverlayNotificationVolume form = new OverlayNotificationVolume($"{name} - {(int)(simpleVolume.MasterVolume * 100f)}%", (int)(simpleVolume.MasterVolume * 100f), icon);
-                                                form.Show();
+                                                var forms = Application.OpenForms.OfType<OverlayNotificationVolume>();
+                                                if (forms.Count() == 0)
+                                                {
+                                                    OverlayNotificationVolume form = new OverlayNotificationVolume($"{name} - {(int)(simpleVolume.MasterVolume * 100f)}%", (int)(simpleVolume.MasterVolume * 100f), icon);
+                                                    form.Show();
+                                                }
+                                                else
+                                                {
+                                                    forms.First().UpdateInfo($"{name} - {(int)(simpleVolume.MasterVolume * 100f)}%", (int)(simpleVolume.MasterVolume * 100f), icon);
+                                                }
                                             }));
                                         }
                                     }
@@ -1078,9 +1095,8 @@ namespace TwitchHelperBot
                     }
                 }
             }
-            catch (Exception ex)
+            catch
             {
-                Globals.LogMessage("updateChannelInfoTimer_Tick exception: " + ex);
             }
 
             //old code was used as a backup to set category/title based on whats running and not whats in forground

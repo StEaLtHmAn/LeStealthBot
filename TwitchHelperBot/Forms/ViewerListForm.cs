@@ -134,6 +134,7 @@ namespace TwitchHelperBot
 
             TwitchTrackerData = GetTwitchTrackerData();
 
+            TextDisplaying = button6.Text;
             timer1_Tick(null,null);
         }
 
@@ -142,10 +143,10 @@ namespace TwitchHelperBot
             UpdateText();
         }
 
-        private async void timer1_Tick(object sender, EventArgs e)
+        private void timer1_Tick(object sender, EventArgs e)
         {
             timer1.Enabled = false;
-            await Task.Run(() =>
+            Task.Run(() =>
             {
                 try
                 {
@@ -189,13 +190,10 @@ namespace TwitchHelperBot
                             WatchTimeDictionary.Add(name, new SessionData.WatchData() { WatchTime = TimeSpan.Zero, UserID = viewer["user_id"].ToString() });
                         }
                     }
-                    Invoke(new Action(() =>
+                    if (TextDisplaying == button3.Text || TextDisplaying == button6.Text)
+                        Invoke(new Action(() =>
                     {
-                        try
-                        {
-                            UpdateText();
-                        }
-                        catch { }
+                        UpdateText();
                     }));
                 }
                 catch { }
@@ -320,7 +318,7 @@ namespace TwitchHelperBot
                     $"- Total Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
                     $"- Average Viewers: {totalAverage / (Sessions.Count + 1):0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {peakViewers}{Environment.NewLine}" +
-                    $"- Peak Unique Viewers: {Sessions.Max(x=> x.UniqueViewerCount)}{Environment.NewLine}" +
+                    $"- Unique Viewers: {Sessions.Max(x=> x.UniqueViewerCount)}{Environment.NewLine}" +
                     $"- Combined Hours Watched: {totalHours:0.##}{Environment.NewLine}" +
                     $"- Subscriber Count: {Subscribers.Count}{Environment.NewLine}" +
                     $"- Follower Count: {Globals.Followers.Count}{Environment.NewLine}{Environment.NewLine}"
@@ -336,7 +334,7 @@ namespace TwitchHelperBot
                     $"- Total Duration: {Globals.getRelativeTimeSpan(last30DaysTotalDuration)}{Environment.NewLine}" +
                     $"- Average Viewers: {last30DaysTotalAverage / last30DaysSessionCount:0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {last30DaysPeakViewers}{Environment.NewLine}" +
-                    $"- Peak Unique Viewers: {last30DaysUniqueViewerCount}{Environment.NewLine}" +
+                    $"- Unique Viewers: {last30DaysUniqueViewerCount}{Environment.NewLine}" +
                     $"- Combined Hours Watched: {last30DaysTotalHours:0.##}{Environment.NewLine}" +
                     $"{(TwitchTrackerData.ContainsKey("rank")?$"- Estimated Twitch Rank: {TwitchTrackerData["rank"]}{Environment.NewLine}" : string.Empty)}{Environment.NewLine}"
                     );
@@ -438,8 +436,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            request.AddQueryParameter("broadcaster_id", "526375465");
-           // request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            //request.AddQueryParameter("broadcaster_id", "526375465");
+            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
