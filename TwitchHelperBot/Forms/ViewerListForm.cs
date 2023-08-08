@@ -4,6 +4,7 @@ using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -147,6 +148,7 @@ namespace TwitchHelperBot
         private void timer1_Tick(object sender, EventArgs e)
         {
             timer1.Enabled = false;
+            //DateTime before = DateTime.Now;
             Task.Run(() =>
             {
                 try
@@ -191,261 +193,273 @@ namespace TwitchHelperBot
                             WatchTimeDictionary.Add(name, new SessionData.WatchData() { WatchTime = TimeSpan.Zero, UserID = viewer["user_id"].ToString() });
                         }
                     }
-                    if (TextDisplaying == button3.Text || TextDisplaying == button6.Text || TextDisplaying == button1.Text)
-                        Invoke(new Action(() =>
-                        {
-                            UpdateText();
-                        }));
                 }
                 catch { }
-            });
-            timer1.Enabled = true;
+            }).ContinueWith((t) =>
+            {
+                UpdateText();
+                timer1.Enabled = true;
+                //Debug.WriteLine("Timer ran for: " + (DateTime.Now - before).TotalMilliseconds);
+            }, TaskScheduler.FromCurrentSynchronizationContext());
         }
 
+        private RtfDocument doc = new RtfDocument(PaperSize.A4, PaperOrientation.Landscape, Lcid.English);
+        private RtfParagraph par;
+        private RtfCharFormat fmt;
+        private bool initializedRTF = false;
+        private FontDescriptor font = null;
+        private ColorDescriptor defaultColour = null;
+        private ColorDescriptor defaultBGColour = null;
+        private ColorDescriptor green = null;
+        private ColorDescriptor red = null;
+        private ColorDescriptor gold = null;
+        private ColorDescriptor cyan = null;
+        private ColorDescriptor lightGreen = null;
         private void UpdateText()
         {
-            richTextBox1.SuspendPainting();
-            richTextBox1.Clear();
-
-            RtfDocument doc = new RtfDocument(PaperSize.A4, PaperOrientation.Landscape, Lcid.English);
-            RtfParagraph par;
-            RtfCharFormat fmt;
-            
-            FontDescriptor font = doc.CreateFont("Cascadia Mono");
-            ColorDescriptor defaultColour = doc.CreateColor(new RtfColor(richTextBox1.ForeColor.R, richTextBox1.ForeColor.G, richTextBox1.ForeColor.B));
-            ColorDescriptor defaultBGColour = doc.CreateColor(new RtfColor(richTextBox1.BackColor.R, richTextBox1.BackColor.G, richTextBox1.BackColor.B));
-            ColorDescriptor green = doc.CreateColor(new RtfColor(Color.Green.R, Color.Green.G, Color.Green.B));
-            ColorDescriptor red = doc.CreateColor(new RtfColor(Color.Red.R, Color.Red.G, Color.Red.B));
-            ColorDescriptor gold = doc.CreateColor(new RtfColor(Color.Gold.R, Color.Gold.G, Color.Gold.B));
-            ColorDescriptor cyan = doc.CreateColor(new RtfColor(Color.Cyan.R, Color.Cyan.G, Color.Cyan.B));
-            ColorDescriptor lightGreen = doc.CreateColor(new RtfColor(Color.LightGreen.R, Color.LightGreen.G, Color.LightGreen.B));
-
-            doc.DefaultCharFormat.Font = font;
-            doc.DefaultCharFormat.AnsiFont = font;
-            doc.DefaultCharFormat.FontSize = 10;
-            doc.DefaultCharFormat.BgColor = defaultBGColour;
-            doc.DefaultCharFormat.FgColor = defaultColour;
-
-            if (TextDisplaying == button1.Text)//list
+            if (TextDisplaying == button3.Text || TextDisplaying == button6.Text || TextDisplaying == button1.Text)
             {
-                Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
-                List<SessionData> SessionsListClone = new List<SessionData>();
-                SessionsListClone.AddRange(Sessions);
-                SessionsListClone.Add(new SessionData()
+                Task.Run(() =>
                 {
-                    DateTimeStarted = sessionStart,
-                    DateTimeEnded = DateTime.UtcNow,
-                    AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
-                    PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
-                    CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours),
-                    WatchTimeData = WatchTimeDictionary
-                });
-                foreach (var sessionData in SessionsListClone)
-                {
-                    foreach (var viewerData in sessionData.WatchTimeData)
+                    doc = new RtfDocument(PaperSize.A4, PaperOrientation.Landscape, Lcid.English);
+                    if (!initializedRTF)
                     {
-                        if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
+                        font = doc.CreateFont("Cascadia Mono");
+                        defaultColour = doc.CreateColor(new RtfColor(richTextBox1.ForeColor.R, richTextBox1.ForeColor.G, richTextBox1.ForeColor.B));
+                        defaultBGColour = doc.CreateColor(new RtfColor(richTextBox1.BackColor.R, richTextBox1.BackColor.G, richTextBox1.BackColor.B));
+                        green = doc.CreateColor(new RtfColor(Color.Green.R, Color.Green.G, Color.Green.B));
+                        red = doc.CreateColor(new RtfColor(Color.Red.R, Color.Red.G, Color.Red.B));
+                        gold = doc.CreateColor(new RtfColor(Color.Gold.R, Color.Gold.G, Color.Gold.B));
+                        cyan = doc.CreateColor(new RtfColor(Color.Cyan.R, Color.Cyan.G, Color.Cyan.B));
+                        lightGreen = doc.CreateColor(new RtfColor(Color.LightGreen.R, Color.LightGreen.G, Color.LightGreen.B));
+
+                        doc.DefaultCharFormat.Font = font;
+                        doc.DefaultCharFormat.AnsiFont = font;
+                        doc.DefaultCharFormat.FontSize = 10.25f;
+                        doc.DefaultCharFormat.BgColor = defaultBGColour;
+                        doc.DefaultCharFormat.FgColor = defaultColour;
+                    }
+
+                    if (TextDisplaying == button1.Text)//list
+                    {
+                        Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
+                        List<SessionData> SessionsListClone = new List<SessionData>();
+                        SessionsListClone.AddRange(Sessions);
+                        SessionsListClone.Add(new SessionData()
                         {
-                            tmpWatchTimeList.Add(viewerData.Key, viewerData.Value.WatchTime);
+                            DateTimeStarted = sessionStart,
+                            DateTimeEnded = DateTime.UtcNow,
+                            AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
+                            PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
+                            CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours),
+                            WatchTimeData = WatchTimeDictionary
+                        });
+                        foreach (var sessionData in SessionsListClone)
+                        {
+                            foreach (var viewerData in sessionData.WatchTimeData)
+                            {
+                                if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
+                                {
+                                    tmpWatchTimeList.Add(viewerData.Key, viewerData.Value.WatchTime);
+                                }
+                                else
+                                {
+                                    tmpWatchTimeList[viewerData.Key] += viewerData.Value.WatchTime;
+                                }
+                            }
                         }
+
+                        IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
+                        if (!checkBox1.Checked)
+                            sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
                         else
+                            sortedList = tmpWatchTimeList.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
+                        string line = string.Empty;
+                        foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
                         {
-                            tmpWatchTimeList[viewerData.Key] += viewerData.Value.WatchTime;
+                            if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
+                            {
+                                par = doc.AddParagraph();
+                                line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value)}";
+                                par.SetText(line);
+                                //format online indicator
+                                fmt = par.AddCharFormat(0, 1);
+                                fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
+                                //format name
+                                fmt = par.AddCharFormat(2, kvp.Key.Length + 1);
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                                if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                                    fmt.FgColor = gold;
+                                else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                                    fmt.FgColor = cyan;
+                                else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
+                                    fmt.FgColor = lightGreen;
+                            }
                         }
                     }
-                }
-
-                //int count = 1;
-                IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
-                if (!checkBox1.Checked)
-                    sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
-                else
-                    sortedList = tmpWatchTimeList.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
-
-                par = doc.AddParagraph();
-                string line = $"Viewer List:";
-                par.SetText(line);
-                fmt = par.AddCharFormat();
-                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
-
-                foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
-                {
-                    if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
+                    else if (TextDisplaying == button3.Text)//stats
                     {
+                        TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
+                        TimeSpan totalDuration = SessionDuration;
+                        double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours);
+                        double totalHours = SessionHoursWatched;
+                        double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
+                        double totalAverage = currentAverage;
+                        int peakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
+
+                        int last30DaysSessionCount = 1;
+                        TimeSpan last30DaysTotalDuration = SessionDuration;
+                        double last30DaysTotalAverage = currentAverage;
+                        int last30DaysPeakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
+                        int last30DaysUniqueViewerCount = 0;
+                        double last30DaysTotalHours = SessionHoursWatched;
+
+                        foreach (SessionData session in Sessions)
+                        {
+                            totalDuration += session.DateTimeEnded - session.DateTimeStarted;
+                            totalAverage += session.AverageViewerCount;
+                            totalHours += session.WatchTimeData.Sum(x => x.Value.WatchTime.TotalHours);
+                            if (session.PeakViewerCount > peakViewers)
+                                peakViewers = session.PeakViewerCount;
+                            if ((DateTime.UtcNow - session.DateTimeStarted).TotalDays <= 30)
+                            {
+                                last30DaysSessionCount++;
+                                last30DaysTotalDuration += session.DateTimeEnded - session.DateTimeStarted;
+                                last30DaysTotalAverage += session.AverageViewerCount;
+                                if (session.PeakViewerCount > last30DaysPeakViewers)
+                                    last30DaysPeakViewers = session.PeakViewerCount;
+                                if (session.UniqueViewerCount > last30DaysUniqueViewerCount)
+                                    last30DaysUniqueViewerCount = session.UniqueViewerCount;
+                                last30DaysTotalHours += session.WatchTimeData.Sum(x => x.Value.WatchTime.TotalHours);
+                            }
+                        }
+
                         par = doc.AddParagraph();
-                        line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value)}";
+                        string line = $"Overall Stats:";
                         par.SetText(line);
-                        //format online indicator
-                        fmt = par.AddCharFormat(0,1);
-                        fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
-                        //format name
-                        fmt = par.AddCharFormat(2, kvp.Key.Length+1);
+                        fmt = par.AddCharFormat();
                         fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                        if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                            fmt.FgColor = gold;
-                        else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                            fmt.FgColor = cyan;
-                        else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
-                            fmt.FgColor = lightGreen;
-                    }
-                }
-            }
-            else if (TextDisplaying == button3.Text)//stats
-            {
-                TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
-                TimeSpan totalDuration = SessionDuration;
-                double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours);
-                double totalHours = SessionHoursWatched;
-                double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
-                double totalAverage = currentAverage;
-                int peakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
-
-                int last30DaysSessionCount = 1;
-                TimeSpan last30DaysTotalDuration = SessionDuration;
-                double last30DaysTotalAverage = currentAverage;
-                int last30DaysPeakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
-                int last30DaysUniqueViewerCount = 0;
-                double last30DaysTotalHours = SessionHoursWatched;
-
-                foreach (SessionData session in Sessions)
-                {
-                    totalDuration += session.DateTimeEnded - session.DateTimeStarted;
-                    totalAverage += session.AverageViewerCount;
-                    totalHours += session.WatchTimeData.Sum(x => x.Value.WatchTime.TotalHours);
-                    if (session.PeakViewerCount > peakViewers)
-                        peakViewers = session.PeakViewerCount;
-                    if ((DateTime.UtcNow - session.DateTimeStarted).TotalDays <= 30)
-                    {
-                        last30DaysSessionCount++;
-                        last30DaysTotalDuration += session.DateTimeEnded - session.DateTimeStarted;
-                        last30DaysTotalAverage += session.AverageViewerCount;
-                        if (session.PeakViewerCount > last30DaysPeakViewers)
-                            last30DaysPeakViewers = session.PeakViewerCount;
-                        if (session.UniqueViewerCount > last30DaysUniqueViewerCount)
-                            last30DaysUniqueViewerCount = session.UniqueViewerCount;
-                        last30DaysTotalHours += session.WatchTimeData.Sum(x => x.Value.WatchTime.TotalHours);
-                    }
-                }
-
-                par = doc.AddParagraph();
-                string line = $"Overall Stats:";
-                par.SetText(line);
-                fmt = par.AddCharFormat();
-                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
-                fmt.FgColor = gold;
-                par = doc.AddParagraph();
-                line = $"- Session Count: {Sessions.Count + 1}{Environment.NewLine}" +
-                    $"- Total Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
-                    $"- Average Viewers: {totalAverage / (Sessions.Count + 1):0.##}{Environment.NewLine}" +
-                    $"- Peak Viewers: {peakViewers}{Environment.NewLine}" +
-                    $"- Unique Viewers: {Sessions.Max(x => x.UniqueViewerCount)}{Environment.NewLine}" +
-                    $"- Combined Hours Watched: {totalHours:0.##}{Environment.NewLine}" +
-                    $"- Subscriber Count: {Subscribers.Count}{Environment.NewLine}" +
-                    $"- Follower Count: {Globals.Followers.Count}{Environment.NewLine}";
-                par.SetText(line);
-                fmt = par.AddCharFormat();
-                fmt.FgColor = gold;
-
-                par = doc.AddParagraph();
-                line = $"Last 30 Days Stats:";
-                par.SetText(line);
-                fmt = par.AddCharFormat();
-                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
-                fmt.FgColor = red;
-                par = doc.AddParagraph();
-                line = $"- Session Count: {last30DaysSessionCount}{Environment.NewLine}" +
-                    $"- Total Duration: {Globals.getRelativeTimeSpan(last30DaysTotalDuration)}{Environment.NewLine}" +
-                    $"- Average Viewers: {last30DaysTotalAverage / last30DaysSessionCount:0.##}{Environment.NewLine}" +
-                    $"- Peak Viewers: {last30DaysPeakViewers}{Environment.NewLine}" +
-                    $"- Unique Viewers: {last30DaysUniqueViewerCount}{Environment.NewLine}" +
-                    $"- Combined Hours Watched: {last30DaysTotalHours:0.##}{Environment.NewLine}" +
-                    $"{(TwitchTrackerData.ContainsKey("rank") ? $"- Estimated Twitch Rank: {TwitchTrackerData["rank"]}" : string.Empty)}";
-                par.SetText(line);
-                fmt = par.AddCharFormat();
-                fmt.FgColor = red;
-
-                par = doc.AddParagraph();
-                line = $"Session Stats:";
-                par.SetText(line);
-                fmt = par.AddCharFormat();
-                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
-                fmt.FgColor = green;
-                par = doc.AddParagraph();
-                line = $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
-                    $"- Current Viewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
-                    $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
-                    $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
-                    $"- Unique Viewers: {WatchTimeDictionary.Count}{Environment.NewLine}" +
-                    $"- Combined Hours Watched: {SessionHoursWatched:0.###}";
-                par.SetText(line);
-                fmt = par.AddCharFormat();
-                fmt.FgColor = green;
-            }
-            else//session
-            {
-                TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
-                double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
-                double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours);
-
-                par = doc.AddParagraph();
-                string line = $"Session Stats:";
-                par.SetText(line);
-                fmt = par.AddCharFormat();
-                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
-                fmt.FgColor = green;
-                par = doc.AddParagraph();
-                line = $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
-                    $"- Current Vewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
-                    $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
-                    $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
-                    $"- Combined Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}";
-                par.SetText(line);
-                fmt = par.AddCharFormat();
-                fmt.FgColor = green;
-
-                par = doc.AddParagraph();
-                line = $"Session Viewer:";
-                par.SetText(line);
-                fmt = par.AddCharFormat();
-                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
-
-                IOrderedEnumerable<KeyValuePair<string, SessionData.WatchData>> sortedList;
-                if (!checkBox1.Checked)
-                    sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
-                else
-                    sortedList = WatchTimeDictionary.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
-                
-                foreach (KeyValuePair<string, SessionData.WatchData> kvp in sortedList)
-                {
-                    if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
-                    {
+                        fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                        fmt.FgColor = gold;
                         par = doc.AddParagraph();
-                        line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value.WatchTime)}";
+                        line = $"- Session Count: {Sessions.Count + 1}{Environment.NewLine}" +
+                            $"- Total Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
+                            $"- Average Viewers: {totalAverage / (Sessions.Count + 1):0.##}{Environment.NewLine}" +
+                            $"- Peak Viewers: {peakViewers}{Environment.NewLine}" +
+                            $"- Unique Viewers: {Sessions.Max(x => x.UniqueViewerCount)}{Environment.NewLine}" +
+                            $"- Combined Hours Watched: {totalHours:0.##}{Environment.NewLine}" +
+                            $"- Subscriber Count: {Subscribers.Count}{Environment.NewLine}" +
+                            $"- Follower Count: {Globals.Followers.Count}{Environment.NewLine}";
                         par.SetText(line);
-                        //format online indicator
-                        fmt = par.AddCharFormat(0, 1);
-                        fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
-                        //format name
-                        fmt = par.AddCharFormat(2, kvp.Key.Length + 1);
-                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                        if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                            fmt.FgColor = gold;
-                        else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                            fmt.FgColor = cyan;
-                        else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
-                            fmt.FgColor = lightGreen;
-                    }
-                }
-            }
+                        fmt = par.AddCharFormat();
+                        fmt.FgColor = gold;
 
-            richTextBox1.Rtf = doc.Render();
-            richTextBox1.ResumePainting();
+                        par = doc.AddParagraph();
+                        line = $"Last 30 Days Stats:";
+                        par.SetText(line);
+                        fmt = par.AddCharFormat();
+                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                        fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                        fmt.FgColor = red;
+                        par = doc.AddParagraph();
+                        line = $"- Session Count: {last30DaysSessionCount}{Environment.NewLine}" +
+                            $"- Total Duration: {Globals.getRelativeTimeSpan(last30DaysTotalDuration)}{Environment.NewLine}" +
+                            $"- Average Viewers: {last30DaysTotalAverage / last30DaysSessionCount:0.##}{Environment.NewLine}" +
+                            $"- Peak Viewers: {last30DaysPeakViewers}{Environment.NewLine}" +
+                            $"- Unique Viewers: {last30DaysUniqueViewerCount}{Environment.NewLine}" +
+                            $"- Combined Hours Watched: {last30DaysTotalHours:0.##}{Environment.NewLine}" +
+                            $"{(TwitchTrackerData.ContainsKey("rank") ? $"- Estimated Twitch Rank: {TwitchTrackerData["rank"]}" : string.Empty)}";
+                        par.SetText(line);
+                        fmt = par.AddCharFormat();
+                        fmt.FgColor = red;
+
+                        par = doc.AddParagraph();
+                        line = $"Session Stats:";
+                        par.SetText(line);
+                        fmt = par.AddCharFormat();
+                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                        fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                        fmt.FgColor = green;
+                        par = doc.AddParagraph();
+                        line = $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                            $"- Current Viewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
+                            $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
+                            $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
+                            $"- Unique Viewers: {WatchTimeDictionary.Count}{Environment.NewLine}" +
+                            $"- Combined Hours Watched: {SessionHoursWatched:0.###}";
+                        par.SetText(line);
+                        fmt = par.AddCharFormat();
+                        fmt.FgColor = green;
+                    }
+                    else//session
+                    {
+                        TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
+                        double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
+                        double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours);
+
+                        par = doc.AddParagraph();
+                        string line = $"Session Stats:";
+                        par.SetText(line);
+                        fmt = par.AddCharFormat();
+                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                        fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                        fmt.FgColor = green;
+                        par = doc.AddParagraph();
+                        line = $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                            $"- Current Vewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
+                            $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
+                            $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
+                            $"- Combined Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}";
+                        par.SetText(line);
+                        fmt = par.AddCharFormat();
+                        fmt.FgColor = green;
+
+                        par = doc.AddParagraph();
+                        line = $"Session Viewer:";
+                        par.SetText(line);
+                        fmt = par.AddCharFormat();
+                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                        fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+
+                        IOrderedEnumerable<KeyValuePair<string, SessionData.WatchData>> sortedList;
+                        if (!checkBox1.Checked)
+                            sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
+                        else
+                            sortedList = WatchTimeDictionary.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
+
+                        foreach (KeyValuePair<string, SessionData.WatchData> kvp in sortedList)
+                        {
+                            if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
+                            {
+                                par = doc.AddParagraph();
+                                line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value.WatchTime)}";
+                                par.SetText(line);
+                                //format online indicator
+                                fmt = par.AddCharFormat(0, 1);
+                                fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
+                                //format name
+                                fmt = par.AddCharFormat(2, kvp.Key.Length + 1);
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                                if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                                    fmt.FgColor = gold;
+                                else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                                    fmt.FgColor = cyan;
+                                else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
+                                    fmt.FgColor = lightGreen;
+                            }
+                        }
+                    }
+
+                }).ContinueWith((t) =>
+                    {
+                        //DateTime before = DateTime.Now;
+                        richTextBox1.SuspendPainting();
+                        richTextBox1.Clear();
+                        richTextBox1.Rtf = doc.Render();
+                        richTextBox1.ResumePainting();
+                        //Debug.WriteLine("RTF Text Update: "+(DateTime.Now - before).TotalMilliseconds);
+                    }, TaskScheduler.FromCurrentSynchronizationContext());
+            }
         }
 
         public JObject GetTwitchTrackerData()
