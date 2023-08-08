@@ -11,6 +11,7 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
+using TwitchHelperBot.RtfWriter;
 
 namespace TwitchHelperBot
 {
@@ -190,11 +191,11 @@ namespace TwitchHelperBot
                             WatchTimeDictionary.Add(name, new SessionData.WatchData() { WatchTime = TimeSpan.Zero, UserID = viewer["user_id"].ToString() });
                         }
                     }
-                    if (TextDisplaying == button3.Text || TextDisplaying == button6.Text)
+                    if (TextDisplaying == button3.Text || TextDisplaying == button6.Text || TextDisplaying == button1.Text)
                         Invoke(new Action(() =>
-                    {
-                        UpdateText();
-                    }));
+                        {
+                            UpdateText();
+                        }));
                 }
                 catch { }
             });
@@ -205,6 +206,25 @@ namespace TwitchHelperBot
         {
             richTextBox1.SuspendPainting();
             richTextBox1.Clear();
+
+            RtfDocument doc = new RtfDocument(PaperSize.A4, PaperOrientation.Landscape, Lcid.English);
+            RtfParagraph par;
+            RtfCharFormat fmt;
+            
+            FontDescriptor font = doc.CreateFont("Cascadia Mono");
+            ColorDescriptor defaultColour = doc.CreateColor(new RtfColor(richTextBox1.ForeColor.R, richTextBox1.ForeColor.G, richTextBox1.ForeColor.B));
+            ColorDescriptor defaultBGColour = doc.CreateColor(new RtfColor(richTextBox1.BackColor.R, richTextBox1.BackColor.G, richTextBox1.BackColor.B));
+            ColorDescriptor green = doc.CreateColor(new RtfColor(Color.Green.R, Color.Green.G, Color.Green.B));
+            ColorDescriptor red = doc.CreateColor(new RtfColor(Color.Red.R, Color.Red.G, Color.Red.B));
+            ColorDescriptor gold = doc.CreateColor(new RtfColor(Color.Gold.R, Color.Gold.G, Color.Gold.B));
+            ColorDescriptor cyan = doc.CreateColor(new RtfColor(Color.Cyan.R, Color.Cyan.G, Color.Cyan.B));
+            ColorDescriptor lightGreen = doc.CreateColor(new RtfColor(Color.LightGreen.R, Color.LightGreen.G, Color.LightGreen.B));
+
+            doc.DefaultCharFormat.Font = font;
+            doc.DefaultCharFormat.AnsiFont = font;
+            doc.DefaultCharFormat.FontSize = 10;
+            doc.DefaultCharFormat.BgColor = defaultBGColour;
+            doc.DefaultCharFormat.FgColor = defaultColour;
 
             if (TextDisplaying == button1.Text)//list
             {
@@ -235,39 +255,39 @@ namespace TwitchHelperBot
                     }
                 }
 
-                int count = 1;
+                //int count = 1;
                 IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
                 if (!checkBox1.Checked)
                     sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
                 else
                     sortedList = tmpWatchTimeList.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
-                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold | FontStyle.Underline);
-                richTextBox1.AppendText(
-                $"Viewer List:{Environment.NewLine}");
+
+                par = doc.AddParagraph();
+                string line = $"Viewer List:";
+                par.SetText(line);
+                fmt = par.AddCharFormat();
+                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+
                 foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
                 {
                     if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
                     {
-                        richTextBox1.SelectionColor = ViewersOnlineNames.Contains(kvp.Key) ? Color.Green : Color.Red;
-                        richTextBox1.AppendText("⚫ ");
-
-                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
-
+                        par = doc.AddParagraph();
+                        line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value)}";
+                        par.SetText(line);
+                        //format online indicator
+                        fmt = par.AddCharFormat(0,1);
+                        fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
+                        //format name
+                        fmt = par.AddCharFormat(2, kvp.Key.Length+1);
+                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
                         if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                            richTextBox1.SelectionColor = Color.Gold;
+                            fmt.FgColor = gold;
                         else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                            richTextBox1.SelectionColor = Color.Cyan;
+                            fmt.FgColor = cyan;
                         else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
-                            richTextBox1.SelectionColor = Color.LightGreen;
-                        else
-                            richTextBox1.SelectionColor = richTextBox1.ForeColor;
-
-                        richTextBox1.AppendText(kvp.Key);
-
-                        richTextBox1.SelectionFont = richTextBox1.Font;
-                        richTextBox1.SelectionColor = richTextBox1.ForeColor;
-                        richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value)}{Environment.NewLine}");
-                        count++;
+                            fmt.FgColor = lightGreen;
                     }
                 }
             }
@@ -307,50 +327,63 @@ namespace TwitchHelperBot
                         last30DaysTotalHours += session.WatchTimeData.Sum(x => x.Value.WatchTime.TotalHours);
                     }
                 }
-                richTextBox1.SelectionColor = Color.Gold;
-                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold | FontStyle.Underline);
-                richTextBox1.AppendText(
-                $"Overall Stats:{Environment.NewLine}");
-                richTextBox1.SelectionColor = Color.Gold;
-                richTextBox1.SelectionFont = richTextBox1.Font;
-                richTextBox1.AppendText(
-                    $"- Session Count: {Sessions.Count + 1}{Environment.NewLine}" +
+
+                par = doc.AddParagraph();
+                string line = $"Overall Stats:";
+                par.SetText(line);
+                fmt = par.AddCharFormat();
+                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                fmt.FgColor = gold;
+                par = doc.AddParagraph();
+                line = $"- Session Count: {Sessions.Count + 1}{Environment.NewLine}" +
                     $"- Total Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
                     $"- Average Viewers: {totalAverage / (Sessions.Count + 1):0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {peakViewers}{Environment.NewLine}" +
-                    $"- Unique Viewers: {Sessions.Max(x=> x.UniqueViewerCount)}{Environment.NewLine}" +
+                    $"- Unique Viewers: {Sessions.Max(x => x.UniqueViewerCount)}{Environment.NewLine}" +
                     $"- Combined Hours Watched: {totalHours:0.##}{Environment.NewLine}" +
                     $"- Subscriber Count: {Subscribers.Count}{Environment.NewLine}" +
-                    $"- Follower Count: {Globals.Followers.Count}{Environment.NewLine}{Environment.NewLine}"
-                    );
-                richTextBox1.SelectionColor = Color.Red;
-                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold | FontStyle.Underline);
-                richTextBox1.AppendText(
-                $"Last 30 Days Stats:{Environment.NewLine}");
-                richTextBox1.SelectionColor = Color.Red;
-                richTextBox1.SelectionFont = richTextBox1.Font;
-                richTextBox1.AppendText(
-                    $"- Session Count: {last30DaysSessionCount}{Environment.NewLine}" +
+                    $"- Follower Count: {Globals.Followers.Count}{Environment.NewLine}";
+                par.SetText(line);
+                fmt = par.AddCharFormat();
+                fmt.FgColor = gold;
+
+                par = doc.AddParagraph();
+                line = $"Last 30 Days Stats:";
+                par.SetText(line);
+                fmt = par.AddCharFormat();
+                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                fmt.FgColor = red;
+                par = doc.AddParagraph();
+                line = $"- Session Count: {last30DaysSessionCount}{Environment.NewLine}" +
                     $"- Total Duration: {Globals.getRelativeTimeSpan(last30DaysTotalDuration)}{Environment.NewLine}" +
                     $"- Average Viewers: {last30DaysTotalAverage / last30DaysSessionCount:0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {last30DaysPeakViewers}{Environment.NewLine}" +
                     $"- Unique Viewers: {last30DaysUniqueViewerCount}{Environment.NewLine}" +
                     $"- Combined Hours Watched: {last30DaysTotalHours:0.##}{Environment.NewLine}" +
-                    $"{(TwitchTrackerData.ContainsKey("rank")?$"- Estimated Twitch Rank: {TwitchTrackerData["rank"]}{Environment.NewLine}" : string.Empty)}{Environment.NewLine}"
-                    );
-                richTextBox1.SelectionColor = Color.Green;
-                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold | FontStyle.Underline);
-                richTextBox1.AppendText(
-                $"Session Stats:{Environment.NewLine}");
-                richTextBox1.SelectionColor = Color.Green;
-                richTextBox1.SelectionFont = richTextBox1.Font;
-                richTextBox1.AppendText(
-                    $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                    $"{(TwitchTrackerData.ContainsKey("rank") ? $"- Estimated Twitch Rank: {TwitchTrackerData["rank"]}" : string.Empty)}";
+                par.SetText(line);
+                fmt = par.AddCharFormat();
+                fmt.FgColor = red;
+
+                par = doc.AddParagraph();
+                line = $"Session Stats:";
+                par.SetText(line);
+                fmt = par.AddCharFormat();
+                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                fmt.FgColor = green;
+                par = doc.AddParagraph();
+                line = $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
                     $"- Current Viewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
                     $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
                     $"- Unique Viewers: {WatchTimeDictionary.Count}{Environment.NewLine}" +
-                    $"- Combined Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}");
+                    $"- Combined Hours Watched: {SessionHoursWatched:0.###}";
+                par.SetText(line);
+                fmt = par.AddCharFormat();
+                fmt.FgColor = green;
             }
             else//session
             {
@@ -358,60 +391,60 @@ namespace TwitchHelperBot
                 double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
                 double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours);
 
-                richTextBox1.SelectionColor = Color.Green;
-                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold|FontStyle.Underline);
-                richTextBox1.AppendText(
-                $"Session Stats:{Environment.NewLine}");
-                richTextBox1.SelectionColor = Color.Green;
-                richTextBox1.SelectionFont = richTextBox1.Font;
-                richTextBox1.AppendText(
-                    $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                par = doc.AddParagraph();
+                string line = $"Session Stats:";
+                par.SetText(line);
+                fmt = par.AddCharFormat();
+                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                fmt.FgColor = green;
+                par = doc.AddParagraph();
+                line = $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
                     $"- Current Vewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
                     $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
                     $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
-                    $"- Combined Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}" +
-                    $"{Environment.NewLine}");
+                    $"- Combined Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}";
+                par.SetText(line);
+                fmt = par.AddCharFormat();
+                fmt.FgColor = green;
 
-                richTextBox1.SelectionColor = richTextBox1.ForeColor;
-                richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold | FontStyle.Underline);
-                richTextBox1.AppendText(
-                $"Session Viewers:{Environment.NewLine}");
-                richTextBox1.SelectionFont = richTextBox1.Font;
+                par = doc.AddParagraph();
+                line = $"Session Viewer:";
+                par.SetText(line);
+                fmt = par.AddCharFormat();
+                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
 
-                int count = 1;
                 IOrderedEnumerable<KeyValuePair<string, SessionData.WatchData>> sortedList;
                 if (!checkBox1.Checked)
                     sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
                 else
                     sortedList = WatchTimeDictionary.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
+                
                 foreach (KeyValuePair<string, SessionData.WatchData> kvp in sortedList)
                 {
                     if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
                     {
-                        richTextBox1.SelectionColor = ViewersOnlineNames.Contains(kvp.Key) ? Color.Green : Color.Red;
-                        richTextBox1.AppendText("⚫ ");
-
-                        richTextBox1.SelectionFont = new Font(richTextBox1.Font, FontStyle.Bold);
-
+                        par = doc.AddParagraph();
+                        line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value.WatchTime)}";
+                        par.SetText(line);
+                        //format online indicator
+                        fmt = par.AddCharFormat(0, 1);
+                        fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
+                        //format name
+                        fmt = par.AddCharFormat(2, kvp.Key.Length + 1);
+                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
                         if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                            richTextBox1.SelectionColor = Color.Gold;
+                            fmt.FgColor = gold;
                         else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                            richTextBox1.SelectionColor = Color.Cyan;
+                            fmt.FgColor = cyan;
                         else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
-                            richTextBox1.SelectionColor = Color.LightGreen;
-                        else
-                            richTextBox1.SelectionColor = richTextBox1.ForeColor;
-
-                        richTextBox1.AppendText(kvp.Key);
-
-                        richTextBox1.SelectionFont = richTextBox1.Font;
-                        richTextBox1.SelectionColor = richTextBox1.ForeColor;
-                        richTextBox1.AppendText($" - {Globals.getRelativeTimeSpan(kvp.Value.WatchTime)}{Environment.NewLine}");
-                        count++;
+                            fmt.FgColor = lightGreen;
                     }
                 }
             }
 
+            richTextBox1.Rtf = doc.Render();
             richTextBox1.ResumePainting();
         }
 
@@ -436,8 +469,8 @@ namespace TwitchHelperBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            //request.AddQueryParameter("broadcaster_id", "526375465");
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -696,7 +729,7 @@ namespace TwitchHelperBot
                     pbxProfileImage.SizeMode = PictureBoxSizeMode.Zoom;
 
                     lblDisplayName.AutoSize = true;
-                    lblDisplayName.Font = new Font(lblDisplayName.Font, FontStyle.Bold);
+                    lblDisplayName.Font = new Font(lblDisplayName.Font, System.Drawing.FontStyle.Bold);
                     lblDisplayName.Location = new Point(160, 12);
 
                     lblDescription.AutoSize = true;

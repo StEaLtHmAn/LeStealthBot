@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
@@ -27,6 +29,48 @@ namespace TwitchHelperBot
         int _SuspendLength = 0;
 
         public bool Autoscroll = false;
+
+        public RichTextBoxEx()
+        {
+            //SetStyle(ControlStyles.DoubleBuffer, true);
+        }
+
+        //public const string RTFBold = "\\b";
+        //public const string RTFBoldEnd = "\\b0";
+        //public const string RTFUnderline = "\\ul";
+        //public const string RTFUnderlineEnd = "\\ulnone";
+        //public const string RTFParagraph = "\\par";
+        //public string RTFFontSize(int size)
+        //{
+        //    return $"\\fs{size}";
+        //}
+        //public string RTFColour(int index)
+        //{
+        //    return $"\\cf{index}";
+        //}
+        //public string RTFFont(int index)
+        //{
+        //    return $"\\f{index}";
+        //}
+        //public int RTFAddColour(Color colour)
+        //{
+        //    int coloursIndex = Rtf.IndexOf("{\\colortbl");
+        //    string coloursString = Rtf.Substring(coloursIndex+11, Rtf.IndexOf("}", coloursIndex) - coloursIndex - 11);
+        //    string newColoursString = $"{coloursString}\\red{colour.R}\\green{colour.G}\\blue{colour.B};";
+        //    Rtf = Rtf.Replace(coloursString, newColoursString);
+        //    return coloursString.Count(f => f == ';');
+        //}
+        //public string RTFBuffer = string.Empty;
+        //public void RTFApplyBuffer()
+        //{
+        //    Rtf = RTFBuffer;
+        //}
+        //public void RTFAppendBuffer(string text)
+        //{
+        //    if (string.IsNullOrEmpty(RTFBuffer))
+        //        RTFBuffer = Rtf;
+        //    RTFBuffer = RTFBuffer.Insert(RTFBuffer.LastIndexOf('}'), text);
+        //}
 
         public void SuspendPainting()
         {

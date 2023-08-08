@@ -270,6 +270,21 @@
     <Compile Include="Forms\TextInputForm.Designer.cs">
       <DependentUpon>TextInputForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Tools\RtfWriter\RtfAbstract.cs" />
+    <Compile Include="Tools\RtfWriter\RtfBasics.cs" />
+    <Compile Include="Tools\RtfWriter\RtfBlockList.cs" />
+    <Compile Include="Tools\RtfWriter\RtfCharFormat.cs" />
+    <Compile Include="Tools\RtfWriter\RtfDocument.cs" />
+    <Compile Include="Tools\RtfWriter\RtfFieldControlWord.cs" />
+    <Compile Include="Tools\RtfWriter\RtfFootnote.cs" />
+    <Compile Include="Tools\RtfWriter\RtfHeaderFooter.cs" />
+    <Compile Include="Tools\RtfWriter\RtfImage.cs" />
+    <Compile Include="Tools\RtfWriter\RtfParagraph.cs" />
+    <Compile Include="Tools\RtfWriter\RtfSection.cs" />
+    <Compile Include="Tools\RtfWriter\RtfSectionFooter.cs" />
+    <Compile Include="Tools\RtfWriter\RtfTable.cs" />
+    <Compile Include="Tools\RtfWriter\RtfTableCell.cs" />
+    <Compile Include="Tools\RtfWriter\RtfUtility.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
