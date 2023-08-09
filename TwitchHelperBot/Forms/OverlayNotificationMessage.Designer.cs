@@ -44,7 +44,7 @@
             // 
             // notificationText
             // 
-            this.notificationText.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.notificationText.Font = new System.Drawing.Font("Consolas", 9F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.notificationText.Location = new System.Drawing.Point(36, 0);
             this.notificationText.Margin = new System.Windows.Forms.Padding(3);
             this.notificationText.Name = "notificationText";

@@ -4,7 +4,6 @@ using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -153,9 +152,7 @@ namespace TwitchHelperBot
             {
                 try
                 {
-                    JArray botData = GetBotList();
-                    if (botData.Count > 0 && botData[0] is JArray)
-                        botNamesList = botData.Select(x => (x as JArray)[0].ToString()).ToArray();
+                    GetBotList();
 
                     if ((DateTime.UtcNow - lastSubscriberCheck).TotalMinutes >= SubscriberCheckCooldown)
                     {
@@ -454,7 +451,7 @@ namespace TwitchHelperBot
                     {
                         //DateTime before = DateTime.Now;
                         richTextBox1.SuspendPainting();
-                        richTextBox1.Clear();
+                        //richTextBox1.Clear();
                         richTextBox1.Rtf = doc.Render();
                         richTextBox1.ResumePainting();
                         //Debug.WriteLine("RTF Text Update: "+(DateTime.Now - before).TotalMilliseconds);
@@ -509,7 +506,7 @@ namespace TwitchHelperBot
             return Viewers;
         }
 
-        public JArray GetBotList()
+        public void GetBotList()
         {
             JArray bots = new JArray();
 
@@ -518,7 +515,11 @@ namespace TwitchHelperBot
             {
                 string[] lines = File.ReadAllLines("botList.data");
                 if (DateTime.UtcNow - DateTime.Parse(lines[0]) <= TimeSpan.FromDays(3))
-                    return JArray.Parse(string.Join("\n", lines.Skip(1)));
+                {
+                    bots = JArray.Parse(string.Join("\n", lines.Skip(1)));
+                    if (bots.Count > 0 && bots[0] is JArray)
+                        botNamesList = bots.Select(x => (x as JArray)[0].ToString()).ToArray();
+                }
                 else
                     bots = JArray.Parse(string.Join("\n", lines.Skip(1)));
             }
@@ -554,6 +555,9 @@ namespace TwitchHelperBot
                 }
             }
 
+            if (bots.Count > 0 && bots[0] is JArray)
+                botNamesList = bots.Select(x => (x as JArray)[0].ToString()).ToArray();
+
             //after getting a new bot list we clean past data
             foreach (var session in Sessions)
             {
@@ -561,8 +565,6 @@ namespace TwitchHelperBot
                 if (tmp.Count() < session.WatchTimeData.Count)
                     session.WatchTimeData = tmp.ToDictionary(t => t.Key, t => t.Value);
             }
-
-            return bots;
         }
 
         public new void Dispose()
@@ -687,13 +689,13 @@ namespace TwitchHelperBot
             if (e.Button == MouseButtons.Right)
             {
                 RightClickedWordPos = System.Windows.Forms.Cursor.Position;
-                int wordIndex = richTextBox1.Text.Substring(0, richTextBox1.GetCharIndexFromPosition(e.Location)).LastIndexOfAny(new char[] { ' ', '\r', '\n' }) + 1;
-                RightClickedWord = richTextBox1.Text.Substring(wordIndex, richTextBox1.Text.IndexOfAny(new char[] { ' ', '\r', '\n' }, wordIndex) - wordIndex);
+
+                richTextBox1.SelectionStart = richTextBox1.Text.Substring(0, richTextBox1.GetCharIndexFromPosition(e.Location)).LastIndexOfAny(new char[] { ' ', '\r', '\n' }) + 1;
+                RightClickedWord = richTextBox1.Text.Substring(richTextBox1.SelectionStart, richTextBox1.Text.IndexOfAny(new char[] { ' ', '\r', '\n' }, richTextBox1.SelectionStart) - richTextBox1.SelectionStart);
+                richTextBox1.SelectionLength = RightClickedWord.Length;
                 if (Sessions.Any(x => x.WatchTimeData.ContainsKey(RightClickedWord)) || WatchTimeDictionary.ContainsKey(RightClickedWord))
                 {
                     JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
-
-                    //todo merge users?
 
                     var checkFollowList = Globals.Followers.Where(x => x["user_id"].ToString() == userDetails["data"][0]["id"].ToString());
                     JObject followdata = checkFollowList.Count() > 0 ? checkFollowList.First() as JObject : null;

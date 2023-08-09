@@ -933,9 +933,13 @@ namespace TwitchHelperBot
                                     using (var simpleVolume = session.QueryInterface<SimpleAudioVolume>())
                                     {
                                         if (isUp)
-                                            AudioManager.SetVolumeForProcess(sessionControl.Process.Id, Math.Min(simpleVolume.MasterVolume + 0.01f, 1f));
+                                        {
+                                            simpleVolume.MasterVolume = Math.Min(simpleVolume.MasterVolume + 0.01f, 1f);
+                                        }
                                         else
-                                            AudioManager.SetVolumeForProcess(sessionControl.Process.Id, Math.Max(simpleVolume.MasterVolume - 0.01f, 0));
+                                        {
+                                            simpleVolume.MasterVolume = Math.Max(simpleVolume.MasterVolume - 0.01f, 0f);
+                                        }
 
                                         if (int.Parse(Database.ReadSettingCell("VolumeNotificationDuration") ?? "3000") > 0)
                                         {
@@ -961,7 +965,6 @@ namespace TwitchHelperBot
                                             {
                                                 icon = Bitmap.FromHicon(SystemIcons.WinLogo.Handle);
                                             }
-                                            if(int.Parse(Database.ReadSettingCell("VolumeNotificationDuration") ?? "3000") > 0)
                                             Invoke(new Action(() =>
                                             {
                                                 var forms = Application.OpenForms.OfType<OverlayNotificationVolume>();
@@ -977,6 +980,7 @@ namespace TwitchHelperBot
                                             }));
                                         }
                                     }
+                                    break;
                                 }
                             }
                         }
