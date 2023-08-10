@@ -29,8 +29,7 @@ namespace TwitchHelperBot
 
         public SpotifyPreviewForm()
         {
-            InitializeComponent();
-            //Region = Region.FromHrgn(CreateRoundRectRgn(0, 0, Width, Height, 15, 15));
+            InitializeComponent();;
 
             if (Application.OpenForms.OfType<SpotifyPreviewForm>().Count() > 0)
             {
@@ -53,7 +52,6 @@ namespace TwitchHelperBot
                 if (string.IsNullOrEmpty(SpotifyToken))
                 {
                     SpotifyAuth();
-                    timer1.Enabled = true;
                     return;
                 }
 
@@ -61,31 +59,38 @@ namespace TwitchHelperBot
                 RestRequest request = new RestRequest("https://api.spotify.com/v1/me/player/currently-playing", Method.Get);
                 request.AddHeader("Authorization", "Bearer " + SpotifyToken);
                 RestResponse response = client.Execute(request);
-
-                if (string.IsNullOrEmpty(response.Content) || response.Content.Contains("The access token expired") || !response.Content.StartsWith("{"))
+                if (response.Content.Contains("The access token expired"))
                 {
                     if (!string.IsNullOrEmpty(SpotifyRefreshToken))
                         SpotifyReLog();
                     else
                         SpotifyToken = string.Empty;
 
-                    timer1.Enabled = true;
                     return;
                 }
-
-            
+                if (!response.Content.StartsWith("{"))
+                {
+                    is_playing = false;
+                    return;
+                }
                 JObject trackData = JObject.Parse(response.Content);
+                if (!trackData.ContainsKey("progress_ms") ||
+                    !trackData.ContainsKey("is_playing") ||
+                    !trackData.ContainsKey("item"))
+                {
+                    SpotifyToken = string.Empty;
+                    return;
+                }
+            
                 stamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-                if (trackData.ContainsKey("progress_ms"))
-                    progress_ms = int.Parse(trackData["progress_ms"].ToString());
-                if (trackData.ContainsKey("is_playing"))
-                    is_playing = trackData.Value<bool>("is_playing");
+                progress_ms = int.Parse(trackData["progress_ms"].ToString());
+                is_playing = trackData.Value<bool>("is_playing");
                 string id = string.Empty;
                 string name = string.Empty;
                 string imageURL = string.Empty;
                 string Artists = string.Empty;
                 duration_ms = 0;
-                if (trackData.ContainsKey("item") && trackData["item"] is JObject)
+                if (trackData["item"] is JObject)
                 {
                     if ((trackData["item"] as JObject).ContainsKey("duration_ms"))
                         duration_ms = int.Parse(trackData["item"]["duration_ms"].ToString());
@@ -131,7 +136,10 @@ namespace TwitchHelperBot
             {
                 SpotifyToken = string.Empty;
             }
-            timer1.Enabled = true;
+            finally
+            {
+                timer1.Enabled = true;
+            }
         }
 
         private void SpotifyReLog()

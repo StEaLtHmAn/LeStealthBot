@@ -49,83 +49,15 @@ namespace TwitchHelperBot
             //get session data from file
             if (File.Exists("WatchTimeSessions.json"))
             {
-                string sessionDataString = File.ReadAllText("WatchTimeSessions.json");
-                //if (sessionDataString.Contains("UserID"))
-                    Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(sessionDataString));
-                //else
-                //{
-                //    var oldData = JsonConvert.DeserializeObject<List<SessionDataOLD>>(sessionDataString);
-                //    string newName = string.Empty;
-                //    string oldNames = string.Empty;
-                //    Dictionary<string, string> namesCompleted = new Dictionary<string, string>();
-                //    foreach (var item in oldData)
-                //    {
-                //        var tmp = new SessionData()
-                //        {
-                //            DateTimeStarted = item.DateTimeStarted,
-                //            DateTimeEnded = item.DateTimeEnded,
-                //            AverageViewerCount = item.AverageViewerCount,
-                //            PeakViewerCount = item.PeakViewerCount,
-                //            UniqueViewerCount = item.UniqueViewerCount,
-                //            CombinedHoursWatched = item.CombinedHoursWatched,
-                //            WatchTimeData = new Dictionary<string, SessionData.WatchData>()
-                //        };
-                //        foreach (var item2 in item.WatchTimeData)
-                //        {
-                //            if (namesCompleted.ContainsKey(item2.Key))
-                //            {
-                //                if(tmp.WatchTimeData.ContainsKey(item2.Key))
-                //                    tmp.WatchTimeData[item2.Key].WatchTime += item2.Value;
-                //                else
-                //                    tmp.WatchTimeData.Add(item2.Key, new SessionData.WatchData() { WatchTime = item2.Value, UserID = namesCompleted[item2.Key] });
-                //            }
-                //            else
-                //            {
-                //                switch (item2.Key)
-                //                {
-                //                    case "tiaan_kemp":
-                //                        newName = "happadoodle";
-                //                        break;
-                //                    case "TattedUpTeacher1988":
-                //                        newName = "tattedtani";
-                //                        break;
-                //                    case "kid_blazed":
-                //                        newName = "Regal_D";
-                //                        break;
-                //                    default:
-                //                        newName = item2.Key;
-                //                        break;
-                //                }
-                //                if (newName != "")
-                //                {
-                //                    if (namesCompleted.ContainsKey(newName))
-                //                    {
-                //                        if (tmp.WatchTimeData.ContainsKey(newName))
-                //                            tmp.WatchTimeData[newName].WatchTime += item2.Value;
-                //                        else
-                //                            tmp.WatchTimeData.Add(newName, new SessionData.WatchData() { WatchTime = item2.Value, UserID = namesCompleted[newName] });
-                //                    }
-                //                    else
-                //                    {
-                //                        JObject userDetails = JObject.Parse(Globals.GetUserDetails(newName));
-                //                        if (userDetails.ContainsKey("data") && (userDetails["data"] as JArray).Count > 0)
-                //                        {
-                //                            namesCompleted.Add(newName, userDetails["data"][0]["id"].ToString());
-                //                            tmp.WatchTimeData.Add(newName, new SessionData.WatchData() { WatchTime = item2.Value, UserID = userDetails["data"][0]["id"].ToString() });
-                //                        }
-                //                        else if(!oldNames.Contains(newName))
-                //                        {
-                //                            oldNames += $"{newName}\n";
-                //                        }
-                //                    }
-                //                }
-                //            }
-                //        }
-                //        Sessions.Add(tmp);
-                //    }
-                //    File.WriteAllText("WatchTimeSessions.json", JsonConvert.SerializeObject(Sessions));
-                //}
+                Sessions.AddRange(JsonConvert.DeserializeObject<List<SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
             }
+            //Dictionary<string, string> namesCompleted = new Dictionary<string, string>();
+            //foreach (var session in Sessions)
+            //{
+            //    foreach (var watchtime in session.WatchTimeData)
+            //    {
+            //    }
+            //}
 
             if (string.IsNullOrEmpty(Database.ReadSettingCell("SubscriberCheckCooldown")))
                 Database.UpsertRecord(x => x["Key"] == "SubscriberCheckCooldown", new BsonDocument() { { "Key", "SubscriberCheckCooldown" }, { "Value", "5" } });
@@ -212,249 +144,283 @@ namespace TwitchHelperBot
         private ColorDescriptor gold = null;
         private ColorDescriptor cyan = null;
         private ColorDescriptor lightGreen = null;
+        private bool isUpdating = false;
         private void UpdateText()
         {
             if (TextDisplaying == button3.Text || TextDisplaying == button6.Text || TextDisplaying == button1.Text)
             {
                 Task.Run(() =>
                 {
-                    doc = new RtfDocument(PaperSize.A4, PaperOrientation.Landscape, Lcid.English);
-                    if (!initializedRTF)
+                    if (!isUpdating)
                     {
-                        font = doc.CreateFont("Cascadia Mono");
-                        defaultColour = doc.CreateColor(new RtfColor(richTextBox1.ForeColor.R, richTextBox1.ForeColor.G, richTextBox1.ForeColor.B));
-                        defaultBGColour = doc.CreateColor(new RtfColor(richTextBox1.BackColor.R, richTextBox1.BackColor.G, richTextBox1.BackColor.B));
-                        green = doc.CreateColor(new RtfColor(Color.Green.R, Color.Green.G, Color.Green.B));
-                        red = doc.CreateColor(new RtfColor(Color.Red.R, Color.Red.G, Color.Red.B));
-                        gold = doc.CreateColor(new RtfColor(Color.Gold.R, Color.Gold.G, Color.Gold.B));
-                        cyan = doc.CreateColor(new RtfColor(Color.Cyan.R, Color.Cyan.G, Color.Cyan.B));
-                        lightGreen = doc.CreateColor(new RtfColor(Color.LightGreen.R, Color.LightGreen.G, Color.LightGreen.B));
-
-                        doc.DefaultCharFormat.Font = font;
-                        doc.DefaultCharFormat.AnsiFont = font;
-                        doc.DefaultCharFormat.FontSize = 10.25f;
-                        doc.DefaultCharFormat.BgColor = defaultBGColour;
-                        doc.DefaultCharFormat.FgColor = defaultColour;
-                    }
-
-                    if (TextDisplaying == button1.Text)//list
-                    {
-                        Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
-                        List<SessionData> SessionsListClone = new List<SessionData>();
-                        SessionsListClone.AddRange(Sessions);
-                        SessionsListClone.Add(new SessionData()
+                        try
                         {
-                            DateTimeStarted = sessionStart,
-                            DateTimeEnded = DateTime.UtcNow,
-                            AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
-                            PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
-                            CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours),
-                            WatchTimeData = WatchTimeDictionary
-                        });
-                        foreach (var sessionData in SessionsListClone)
-                        {
-                            foreach (var viewerData in sessionData.WatchTimeData)
+                            isUpdating = true;
+                            doc = new RtfDocument(PaperSize.A4, PaperOrientation.Landscape, Lcid.English);
+                            if (!initializedRTF)
                             {
-                                if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
+                                font = doc.CreateFont("Cascadia Mono");
+                                defaultColour = doc.CreateColor(new RtfColor(richTextBox1.ForeColor.R, richTextBox1.ForeColor.G, richTextBox1.ForeColor.B));
+                                defaultBGColour = doc.CreateColor(new RtfColor(richTextBox1.BackColor.R, richTextBox1.BackColor.G, richTextBox1.BackColor.B));
+                                green = doc.CreateColor(new RtfColor(Color.Green.R, Color.Green.G, Color.Green.B));
+                                red = doc.CreateColor(new RtfColor(Color.Red.R, Color.Red.G, Color.Red.B));
+                                gold = doc.CreateColor(new RtfColor(Color.Gold.R, Color.Gold.G, Color.Gold.B));
+                                cyan = doc.CreateColor(new RtfColor(Color.Cyan.R, Color.Cyan.G, Color.Cyan.B));
+                                lightGreen = doc.CreateColor(new RtfColor(Color.LightGreen.R, Color.LightGreen.G, Color.LightGreen.B));
+
+                                doc.DefaultCharFormat.Font = font;
+                                doc.DefaultCharFormat.AnsiFont = font;
+                                doc.DefaultCharFormat.FontSize = 10.25f;
+                                doc.DefaultCharFormat.BgColor = defaultBGColour;
+                                doc.DefaultCharFormat.FgColor = defaultColour;
+                            }
+
+                            if (TextDisplaying == button1.Text)//list
+                            {
+                                Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
+                                List<SessionData> SessionsListClone = new List<SessionData>();
+                                SessionsListClone.AddRange(Sessions);
+                                SessionsListClone.Add(new SessionData()
                                 {
-                                    tmpWatchTimeList.Add(viewerData.Key, viewerData.Value.WatchTime);
+                                    DateTimeStarted = sessionStart,
+                                    DateTimeEnded = DateTime.UtcNow,
+                                    AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
+                                    PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
+                                    CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours),
+                                    WatchTimeData = WatchTimeDictionary
+                                });
+                                foreach (var sessionData in SessionsListClone)
+                                {
+                                    foreach (var viewerData in sessionData.WatchTimeData)
+                                    {
+                                        if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
+                                        {
+                                            tmpWatchTimeList.Add(viewerData.Key, viewerData.Value.WatchTime);
+                                        }
+                                        else
+                                        {
+                                            tmpWatchTimeList[viewerData.Key] += viewerData.Value.WatchTime;
+                                        }
+                                    }
                                 }
+
+                                IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
+                                if (!checkBox1.Checked)
+                                    sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
                                 else
+                                    sortedList = tmpWatchTimeList.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
+                                string line = string.Empty;
+                                foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
                                 {
-                                    tmpWatchTimeList[viewerData.Key] += viewerData.Value.WatchTime;
+                                    if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
+                                    {
+                                        par = doc.AddParagraph();
+                                        line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value)}";
+                                        par.SetText(line);
+                                        //format online indicator
+                                        fmt = par.AddCharFormat(0, 1);
+                                        fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
+                                        //format name
+                                        fmt = par.AddCharFormat(2, kvp.Key.Length + 1);
+                                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                                        if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                                            fmt.FgColor = gold;
+                                        else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                                            fmt.FgColor = cyan;
+                                        else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
+                                            fmt.FgColor = lightGreen;
+                                    }
+                                }
+                            }
+                            else if (TextDisplaying == button3.Text)//stats
+                            {
+                                TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
+                                TimeSpan totalDuration = SessionDuration;
+                                double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours);
+                                double totalHours = SessionHoursWatched;
+                                double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
+                                double totalAverage = currentAverage;
+                                int peakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
+                                List<string> userIDList = new List<string>();
+
+                                int last30DaysSessionCount = 1;
+                                TimeSpan last30DaysTotalDuration = SessionDuration;
+                                double last30DaysTotalAverage = currentAverage;
+                                int last30DaysPeakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
+                                List<string> last30DaysuserIDList = new List<string>();
+                                double last30DaysTotalHours = SessionHoursWatched;
+
+                                foreach (SessionData session in Sessions)
+                                {
+                                    totalDuration += session.DateTimeEnded - session.DateTimeStarted;
+                                    totalAverage += session.AverageViewerCount;
+                                    totalHours += session.WatchTimeData.Sum(x => x.Value.WatchTime.TotalHours);
+                                    if (session.PeakViewerCount > peakViewers)
+                                        peakViewers = session.PeakViewerCount;
+                                    bool within30Days = (DateTime.UtcNow - session.DateTimeStarted).TotalDays <= 30;
+                                    if (within30Days)
+                                    {
+                                        last30DaysSessionCount++;
+                                        last30DaysTotalDuration += session.DateTimeEnded - session.DateTimeStarted;
+                                        last30DaysTotalAverage += session.AverageViewerCount;
+                                        if (session.PeakViewerCount > last30DaysPeakViewers)
+                                            last30DaysPeakViewers = session.PeakViewerCount;
+                                        last30DaysTotalHours += session.WatchTimeData.Sum(x => x.Value.WatchTime.TotalHours);
+                                    }
+                                    foreach (var watchtime in session.WatchTimeData)
+                                    {
+                                        if (!userIDList.Contains(watchtime.Value.UserID))
+                                        {
+                                            userIDList.Add(watchtime.Value.UserID);
+                                            if (within30Days && !last30DaysuserIDList.Contains(watchtime.Value.UserID))
+                                                last30DaysuserIDList.Add(watchtime.Value.UserID);
+                                        }
+                                    }
+                                }
+
+                                par = doc.AddParagraph();
+                                string line = $"Overall Stats:";
+                                par.SetText(line);
+                                fmt = par.AddCharFormat();
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                                fmt.FgColor = gold;
+                                par = doc.AddParagraph();
+                                line = $"- Session Count: {Sessions.Count + 1}{Environment.NewLine}" +
+                                    $"- Total Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
+                                    $"- Average Viewers: {totalAverage / (Sessions.Count + 1):0.##}{Environment.NewLine}" +
+                                    $"- Peak Viewers: {peakViewers}{Environment.NewLine}" +
+                                    $"- Unique Viewers: {userIDList.Count}{Environment.NewLine}" +
+                                    $"- Combined Hours Watched: {totalHours:0.##}{Environment.NewLine}" +
+                                    $"- Subscriber Count: {Subscribers.Count}{Environment.NewLine}" +
+                                    $"- Follower Count: {Globals.Followers.Count}{Environment.NewLine}";
+                                par.SetText(line);
+                                fmt = par.AddCharFormat();
+                                fmt.FgColor = gold;
+
+                                par = doc.AddParagraph();
+                                line = $"Last 30 Days Stats:";
+                                par.SetText(line);
+                                fmt = par.AddCharFormat();
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                                fmt.FgColor = red;
+                                par = doc.AddParagraph();
+                                line = $"- Session Count: {last30DaysSessionCount}{Environment.NewLine}" +
+                                    $"- Total Duration: {Globals.getRelativeTimeSpan(last30DaysTotalDuration)}{Environment.NewLine}" +
+                                    $"- Average Viewers: {last30DaysTotalAverage / last30DaysSessionCount:0.##}{Environment.NewLine}" +
+                                    $"- Peak Viewers: {last30DaysPeakViewers}{Environment.NewLine}" +
+                                    $"- Unique Viewers: {last30DaysuserIDList.Count}{Environment.NewLine}" +
+                                    $"- Combined Hours Watched: {last30DaysTotalHours:0.##}{Environment.NewLine}" +
+                                    $"{(TwitchTrackerData.ContainsKey("rank") ? $"- Estimated Twitch Rank: {TwitchTrackerData["rank"]}" : string.Empty)}";
+                                par.SetText(line);
+                                fmt = par.AddCharFormat();
+                                fmt.FgColor = red;
+
+                                par = doc.AddParagraph();
+                                line = $"Session Stats:";
+                                par.SetText(line);
+                                fmt = par.AddCharFormat();
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                                fmt.FgColor = green;
+                                par = doc.AddParagraph();
+                                line = $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                                    $"- Current Viewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
+                                    $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
+                                    $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
+                                    $"- Unique Viewers: {WatchTimeDictionary.Count}{Environment.NewLine}" +
+                                    $"- Combined Hours Watched: {SessionHoursWatched:0.###}";
+                                par.SetText(line);
+                                fmt = par.AddCharFormat();
+                                fmt.FgColor = green;
+                            }
+                            else//session
+                            {
+                                TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
+                                double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
+                                double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours);
+
+                                par = doc.AddParagraph();
+                                string line = $"Session Stats:";
+                                par.SetText(line);
+                                fmt = par.AddCharFormat();
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+                                fmt.FgColor = green;
+                                par = doc.AddParagraph();
+                                line = $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
+                                    $"- Current Vewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
+                                    $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
+                                    $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
+                                    $"- Combined Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}";
+                                par.SetText(line);
+                                fmt = par.AddCharFormat();
+                                fmt.FgColor = green;
+
+                                par = doc.AddParagraph();
+                                line = $"Session Viewer:";
+                                par.SetText(line);
+                                fmt = par.AddCharFormat();
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                                fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
+
+                                IOrderedEnumerable<KeyValuePair<string, SessionData.WatchData>> sortedList;
+                                if (!checkBox1.Checked)
+                                    sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
+                                else
+                                    sortedList = WatchTimeDictionary.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
+
+                                foreach (KeyValuePair<string, SessionData.WatchData> kvp in sortedList)
+                                {
+                                    if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
+                                    {
+                                        par = doc.AddParagraph();
+                                        line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value.WatchTime)}";
+                                        par.SetText(line);
+                                        //format online indicator
+                                        fmt = par.AddCharFormat(0, 1);
+                                        fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
+                                        //format name
+                                        fmt = par.AddCharFormat(2, kvp.Key.Length + 1);
+                                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                                        if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                                            fmt.FgColor = gold;
+                                        else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                                            fmt.FgColor = cyan;
+                                        else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
+                                            fmt.FgColor = lightGreen;
+                                    }
                                 }
                             }
                         }
-
-                        IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
-                        if (!checkBox1.Checked)
-                            sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
-                        else
-                            sortedList = tmpWatchTimeList.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
-                        string line = string.Empty;
-                        foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
+                        catch (Exception ex)
                         {
-                            if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
-                            {
-                                par = doc.AddParagraph();
-                                line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value)}";
-                                par.SetText(line);
-                                //format online indicator
-                                fmt = par.AddCharFormat(0, 1);
-                                fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
-                                //format name
-                                fmt = par.AddCharFormat(2, kvp.Key.Length + 1);
-                                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                                if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                                    fmt.FgColor = gold;
-                                else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                                    fmt.FgColor = cyan;
-                                else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
-                                    fmt.FgColor = lightGreen;
-                            }
+                            Globals.LogMessage("ViewerListForm.UpdateText() " + ex.ToString());
                         }
                     }
-                    else if (TextDisplaying == button3.Text)//stats
-                    {
-                        TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
-                        TimeSpan totalDuration = SessionDuration;
-                        double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours);
-                        double totalHours = SessionHoursWatched;
-                        double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
-                        double totalAverage = currentAverage;
-                        int peakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
-
-                        int last30DaysSessionCount = 1;
-                        TimeSpan last30DaysTotalDuration = SessionDuration;
-                        double last30DaysTotalAverage = currentAverage;
-                        int last30DaysPeakViewers = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0;
-                        int last30DaysUniqueViewerCount = 0;
-                        double last30DaysTotalHours = SessionHoursWatched;
-
-                        foreach (SessionData session in Sessions)
-                        {
-                            totalDuration += session.DateTimeEnded - session.DateTimeStarted;
-                            totalAverage += session.AverageViewerCount;
-                            totalHours += session.WatchTimeData.Sum(x => x.Value.WatchTime.TotalHours);
-                            if (session.PeakViewerCount > peakViewers)
-                                peakViewers = session.PeakViewerCount;
-                            if ((DateTime.UtcNow - session.DateTimeStarted).TotalDays <= 30)
-                            {
-                                last30DaysSessionCount++;
-                                last30DaysTotalDuration += session.DateTimeEnded - session.DateTimeStarted;
-                                last30DaysTotalAverage += session.AverageViewerCount;
-                                if (session.PeakViewerCount > last30DaysPeakViewers)
-                                    last30DaysPeakViewers = session.PeakViewerCount;
-                                if (session.UniqueViewerCount > last30DaysUniqueViewerCount)
-                                    last30DaysUniqueViewerCount = session.UniqueViewerCount;
-                                last30DaysTotalHours += session.WatchTimeData.Sum(x => x.Value.WatchTime.TotalHours);
-                            }
-                        }
-
-                        par = doc.AddParagraph();
-                        string line = $"Overall Stats:";
-                        par.SetText(line);
-                        fmt = par.AddCharFormat();
-                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                        fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
-                        fmt.FgColor = gold;
-                        par = doc.AddParagraph();
-                        line = $"- Session Count: {Sessions.Count + 1}{Environment.NewLine}" +
-                            $"- Total Duration: {Globals.getRelativeTimeSpan(totalDuration)}{Environment.NewLine}" +
-                            $"- Average Viewers: {totalAverage / (Sessions.Count + 1):0.##}{Environment.NewLine}" +
-                            $"- Peak Viewers: {peakViewers}{Environment.NewLine}" +
-                            $"- Unique Viewers: {Sessions.Max(x => x.UniqueViewerCount)}{Environment.NewLine}" +
-                            $"- Combined Hours Watched: {totalHours:0.##}{Environment.NewLine}" +
-                            $"- Subscriber Count: {Subscribers.Count}{Environment.NewLine}" +
-                            $"- Follower Count: {Globals.Followers.Count}{Environment.NewLine}";
-                        par.SetText(line);
-                        fmt = par.AddCharFormat();
-                        fmt.FgColor = gold;
-
-                        par = doc.AddParagraph();
-                        line = $"Last 30 Days Stats:";
-                        par.SetText(line);
-                        fmt = par.AddCharFormat();
-                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                        fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
-                        fmt.FgColor = red;
-                        par = doc.AddParagraph();
-                        line = $"- Session Count: {last30DaysSessionCount}{Environment.NewLine}" +
-                            $"- Total Duration: {Globals.getRelativeTimeSpan(last30DaysTotalDuration)}{Environment.NewLine}" +
-                            $"- Average Viewers: {last30DaysTotalAverage / last30DaysSessionCount:0.##}{Environment.NewLine}" +
-                            $"- Peak Viewers: {last30DaysPeakViewers}{Environment.NewLine}" +
-                            $"- Unique Viewers: {last30DaysUniqueViewerCount}{Environment.NewLine}" +
-                            $"- Combined Hours Watched: {last30DaysTotalHours:0.##}{Environment.NewLine}" +
-                            $"{(TwitchTrackerData.ContainsKey("rank") ? $"- Estimated Twitch Rank: {TwitchTrackerData["rank"]}" : string.Empty)}";
-                        par.SetText(line);
-                        fmt = par.AddCharFormat();
-                        fmt.FgColor = red;
-
-                        par = doc.AddParagraph();
-                        line = $"Session Stats:";
-                        par.SetText(line);
-                        fmt = par.AddCharFormat();
-                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                        fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
-                        fmt.FgColor = green;
-                        par = doc.AddParagraph();
-                        line = $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
-                            $"- Current Viewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
-                            $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
-                            $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
-                            $"- Unique Viewers: {WatchTimeDictionary.Count}{Environment.NewLine}" +
-                            $"- Combined Hours Watched: {SessionHoursWatched:0.###}";
-                        par.SetText(line);
-                        fmt = par.AddCharFormat();
-                        fmt.FgColor = green;
-                    }
-                    else//session
-                    {
-                        TimeSpan SessionDuration = DateTime.UtcNow - sessionStart;
-                        double currentAverage = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0;
-                        double SessionHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours);
-
-                        par = doc.AddParagraph();
-                        string line = $"Session Stats:";
-                        par.SetText(line);
-                        fmt = par.AddCharFormat();
-                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                        fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
-                        fmt.FgColor = green;
-                        par = doc.AddParagraph();
-                        line = $"- Duration: {SessionDuration:hh':'mm':'ss}{Environment.NewLine}" +
-                            $"- Current Vewers: {ViewersOnlineNames.Length}{Environment.NewLine}" +
-                            $"- Average Viewers: {currentAverage:0.##}{Environment.NewLine}" +
-                            $"- Peak Viewers: {(ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0)}{Environment.NewLine}" +
-                            $"- Combined Hours Watched: {SessionHoursWatched:0.###}{Environment.NewLine}";
-                        par.SetText(line);
-                        fmt = par.AddCharFormat();
-                        fmt.FgColor = green;
-
-                        par = doc.AddParagraph();
-                        line = $"Session Viewer:";
-                        par.SetText(line);
-                        fmt = par.AddCharFormat();
-                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                        fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
-
-                        IOrderedEnumerable<KeyValuePair<string, SessionData.WatchData>> sortedList;
-                        if (!checkBox1.Checked)
-                            sortedList = WatchTimeDictionary.OrderByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
-                        else
-                            sortedList = WatchTimeDictionary.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value.WatchTime).ThenBy(x => x.Key);
-
-                        foreach (KeyValuePair<string, SessionData.WatchData> kvp in sortedList)
-                        {
-                            if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
-                            {
-                                par = doc.AddParagraph();
-                                line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value.WatchTime)}";
-                                par.SetText(line);
-                                //format online indicator
-                                fmt = par.AddCharFormat(0, 1);
-                                fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
-                                //format name
-                                fmt = par.AddCharFormat(2, kvp.Key.Length + 1);
-                                fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                                if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                                    fmt.FgColor = gold;
-                                else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                                    fmt.FgColor = cyan;
-                                else if (!Sessions.Any(x => x.WatchTimeData.ContainsKey(kvp.Key)))
-                                    fmt.FgColor = lightGreen;
-                            }
-                        }
-                    }
-
                 }).ContinueWith((t) =>
                     {
-                        //DateTime before = DateTime.Now;
-                        richTextBox1.SuspendPainting();
-                        //richTextBox1.Clear();
-                        richTextBox1.Rtf = doc.Render();
-                        richTextBox1.ResumePainting();
-                        //Debug.WriteLine("RTF Text Update: "+(DateTime.Now - before).TotalMilliseconds);
+                        if (isUpdating)
+                        {
+                            try
+                            {
+                                //DateTime before = DateTime.Now;
+                                richTextBox1.SuspendPainting();
+                                //richTextBox1.Clear();
+                                richTextBox1.Rtf = doc.Render();
+                                richTextBox1.ResumePainting();
+                                //Debug.WriteLine("RTF Text Update: "+(DateTime.Now - before).TotalMilliseconds);
+                            }
+                            catch (Exception ex)
+                            {
+                                Globals.LogMessage("ViewerListForm.UpdateText() " + ex.ToString());
+                            }
+                            finally
+                            {
+                                isUpdating = false;
+                            }
+                        }
                     }, TaskScheduler.FromCurrentSynchronizationContext());
             }
         }
@@ -978,15 +944,126 @@ namespace TwitchHelperBot
             }
         }
 
+        private int chartCount = 2;
         private void RefreshGraphUI()
         {
+            List<SessionData> SessionsListClone = new List<SessionData>();
+            SessionsListClone.AddRange(Sessions);
+            SessionsListClone.Add(new SessionData()
+            {
+                DateTimeStarted = sessionStart,
+                DateTimeEnded = DateTime.UtcNow,
+                AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
+                PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
+                CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours),
+                WatchTimeData = WatchTimeDictionary
+            });
+            Dictionary<int, double> graphAverageViewersData = new Dictionary<int, double>();
+            Dictionary<int, double> graphPeakViewersData = new Dictionary<int, double>();
+            Dictionary<int, double> graph30DaysAverageViewersData = new Dictionary<int, double>();
+            Dictionary<int, double> graph30DaysPeakViewersData = new Dictionary<int, double>();
+            //Dictionary<int, double> graph7DaysAverageViewersData = new Dictionary<int, double>();
+            //Dictionary<int, double> graph7DaysPeakViewersData = new Dictionary<int, double>();
+            foreach (var sessionData in SessionsListClone)
+            {
+                int daysAgo = (int)(DateTime.UtcNow - sessionData.DateTimeStarted).TotalDays;
+
+                if (!graphAverageViewersData.ContainsKey(daysAgo))
+                {
+                    graphAverageViewersData.Add(daysAgo, sessionData.AverageViewerCount);
+                }
+                else
+                {
+                    graphAverageViewersData[daysAgo] = (graphAverageViewersData[daysAgo] + sessionData.AverageViewerCount) / 2;
+                }
+                if (!graphPeakViewersData.ContainsKey(daysAgo))
+                {
+                    graphPeakViewersData.Add(daysAgo, sessionData.PeakViewerCount);
+                }
+                else if (graphPeakViewersData[daysAgo] < sessionData.PeakViewerCount)
+                {
+                    graphPeakViewersData[daysAgo] = sessionData.PeakViewerCount;
+                }
+                if ((DateTime.UtcNow - sessionData.DateTimeStarted).TotalDays <= 30.242)
+                {
+                    if (!graph30DaysAverageViewersData.ContainsKey(daysAgo))
+                    {
+                        graph30DaysAverageViewersData.Add(daysAgo, sessionData.AverageViewerCount);
+                    }
+                    else
+                    {
+                        graph30DaysAverageViewersData[daysAgo] = (graph30DaysAverageViewersData[daysAgo] + sessionData.AverageViewerCount) / 2;
+                    }
+                    if (!graph30DaysPeakViewersData.ContainsKey(daysAgo))
+                    {
+                        graph30DaysPeakViewersData.Add(daysAgo, sessionData.PeakViewerCount);
+                    }
+                    else if (graph30DaysPeakViewersData[daysAgo] < sessionData.PeakViewerCount)
+                    {
+                        graph30DaysPeakViewersData[daysAgo] = sessionData.PeakViewerCount;
+                    }
+                }
+
+                //if ((DateTime.UtcNow - sessionData.DateTimeStarted).TotalDays <= 7)
+                //{
+                //    if (!graph7DaysAverageViewersData.ContainsKey(daysAgo))
+                //    {
+                //        graph7DaysAverageViewersData.Add(daysAgo, sessionData.AverageViewerCount);
+                //    }
+                //    else
+                //    {
+                //        graph7DaysAverageViewersData[daysAgo] = (graph7DaysAverageViewersData[daysAgo] + sessionData.AverageViewerCount) / 2;
+                //    }
+                //    if (!graph7DaysPeakViewersData.ContainsKey(daysAgo))
+                //    {
+                //        graph7DaysPeakViewersData.Add(daysAgo, sessionData.PeakViewerCount);
+                //    }
+                //    else if (graph7DaysPeakViewersData[daysAgo] < sessionData.PeakViewerCount)
+                //    {
+                //        graph7DaysPeakViewersData[daysAgo] = sessionData.PeakViewerCount;
+                //    }
+                //}
+            }
+
             void generateViewerCountChart()
             {
                 Chart chart1 = new Chart();
+                chart1.Titles.Add(new Title($"Last {graphPeakViewersData.Keys.Max()} Days") { ForeColor = SystemColors.ControlLightLight });
                 chart1.Width = flowLayoutPanel1.Width - 7;
-                chart1.Height = flowLayoutPanel1.Height - 7;
+                chart1.Height = flowLayoutPanel1.Height / chartCount - 7;
                 chart1.Anchor = AnchorStyles.Left | AnchorStyles.Top;
                 chart1.BackColor = Globals.DarkColour;
+                chart1.MouseWheel += delegate (object sender, MouseEventArgs e)
+                {
+                    Axis ax = chart1.ChartAreas[0].AxisX;
+                    Axis ay = chart1.ChartAreas[0].AxisY;
+                    if (e.Delta > 0)
+                    {
+                        ax.ScaleView.Size = double.IsNaN(ax.ScaleView.Size) ?
+                                            (ax.Maximum - ax.Minimum) / 2 : ax.ScaleView.Size /= 2;
+
+                        ay.ScaleView.Size = double.IsNaN(ay.ScaleView.Size) ?
+                                            (ay.Maximum - ay.Minimum) / 2 : ay.ScaleView.Size /= 2;
+                    }
+                    else
+                    {
+                        ax.ScaleView.Size = double.IsNaN(ax.ScaleView.Size) ?
+                                            ax.Maximum : ax.ScaleView.Size *= 2;
+                        if (ax.ScaleView.Size > ax.Maximum - ax.Minimum)
+                        {
+                            ax.ScaleView.Size = ax.Maximum;
+                            ax.ScaleView.Position = 0;
+                        }
+
+                        ay.ScaleView.Size = double.IsNaN(ay.ScaleView.Size) ?
+                                            ay.Maximum : ay.ScaleView.Size *= 2;
+                        if (ay.ScaleView.Size > ay.Maximum - ay.Minimum)
+                        {
+                            ay.ScaleView.Size = ay.Maximum;
+                            ay.ScaleView.Position = 0;
+                        }
+                    }
+                };
                 flowLayoutPanel1.Controls.Add(chart1);
 
                 // chartArea
@@ -995,22 +1072,141 @@ namespace TwitchHelperBot
                 chartArea.BackColor = Globals.DarkColour;
 
                 chartArea.CursorX.IsUserEnabled = true;
-                chartArea.CursorX.AxisType = AxisType.Primary;//act on primary x axis
                 chartArea.CursorX.Interval = 1;
-                chartArea.CursorX.LineDashStyle = ChartDashStyle.Dash;
-                chartArea.CursorX.IsUserSelectionEnabled = true;
-                chartArea.CursorX.SelectionColor = Color.Blue;
                 chartArea.CursorX.AutoScroll = true;
+
+                
+                chartArea.CursorY.AutoScroll = true;
 
                 // Y
                 chartArea.AxisY.Title = "Viewers";
-                chartArea.AxisX.LabelStyle.Enabled = false;
+                chartArea.AxisY.LabelStyle.Enabled = true;
                 chartArea.AxisY.MajorGrid.Enabled = true;
                 chartArea.AxisY.TitleForeColor = SystemColors.ControlLightLight;
                 chartArea.AxisY.LabelStyle.ForeColor = SystemColors.ControlLightLight;
                 chartArea.AxisY.MajorGrid.LineColor = SystemColors.ControlLightLight;
                 chartArea.AxisY.LineColor = SystemColors.ControlLightLight;
+                chartArea.AxisY.MajorTickMark.LineColor = SystemColors.ControlLightLight;
+                chartArea.AxisY.Minimum = 0;
+                chartArea.AxisY.ScaleView.Zoomable = true;
+                // X
+                chartArea.AxisX.Title = "Days ago";
+                chartArea.AxisX.ScaleView.Zoomable = true;
+                chartArea.AxisX.LabelStyle.IsEndLabelVisible = true;
+                chartArea.AxisX.MajorGrid.Enabled = false;
+                chartArea.AxisX.MinorGrid.Enabled = false;
+                chartArea.AxisX.LabelStyle.Enabled = true;
+                chartArea.AxisX.IsReversed = true;
+                chartArea.AxisX.ScrollBar = new AxisScrollBar();
+                chartArea.AxisX.TitleForeColor = SystemColors.ControlLightLight;
+                chartArea.AxisX.LabelStyle.ForeColor = SystemColors.ControlLightLight;
+                chartArea.AxisX.LineColor = SystemColors.ControlLightLight;
                 chartArea.AxisX.MajorTickMark.LineColor = SystemColors.ControlLightLight;
+                chartArea.AxisX.Minimum = 0;
+
+                // 1
+                Series series1 = new Series("Peak Viewers");
+                chart1.Series.Add(series1);
+                series1.ChartType = SeriesChartType.Area;
+                series1.Color = Color.FromArgb(165, 85, 0, 255);
+                series1.XValueType = ChartValueType.Int32;
+                series1.YValueType = ChartValueType.Double;
+
+                // 2
+                Series series2 = new Series("Average Viewers");
+                chart1.Series.Add(series2);
+                series2.ChartType = SeriesChartType.Area;
+                series2.Color = Color.FromArgb(165, 135, 0, 255);
+                series2.XValueType = ChartValueType.Int32;
+                series2.YValueType = ChartValueType.Double;
+
+                // Legend
+                Legend legend1 = new Legend("Legend");
+                legend1.BackColor = Globals.DarkColour;
+                legend1.ForeColor = SystemColors.ControlLightLight;
+                legend1.Docking = Docking.Bottom;
+                chart1.Legends.Add(legend1);
+                series1.Legend = "Legend";
+                series1.IsVisibleInLegend = true;
+                series2.Legend = "Legend";
+                series2.IsVisibleInLegend = true;
+
+                //chartArea.AxisX.Maximum = graphPeakViewersData.Keys.Max();
+                foreach (var kvp in graphPeakViewersData)
+                {
+                    int index = series1.Points.AddXY(kvp.Key, kvp.Value);
+                    series1.Points[index].ToolTip = $"Days ago: {kvp.Key}, Peak viewers: {kvp.Value}";
+                }
+                foreach (var kvp in graphAverageViewersData)
+                {
+                    int index = series2.Points.AddXY(kvp.Key, kvp.Value);
+                    series2.Points[index].ToolTip = $"Days ago: {kvp.Key}, Average viewers: {kvp.Value}";
+                }
+            }
+
+            void generate30DayViewerCountChart()
+            {
+                Chart chart1 = new Chart();
+                chart1.Titles.Add(new Title($"Last {graph30DaysPeakViewersData.Keys.Max()} Days") { ForeColor = SystemColors.ControlLightLight });
+                chart1.Width = flowLayoutPanel1.Width - 7;
+                chart1.Height = flowLayoutPanel1.Height / chartCount - 7;
+                chart1.Anchor = AnchorStyles.Left | AnchorStyles.Top;
+                chart1.BackColor = Globals.DarkColour;
+                chart1.MouseWheel += delegate (object sender, MouseEventArgs e)
+                {
+                    Axis ax = chart1.ChartAreas[0].AxisX;
+                    Axis ay = chart1.ChartAreas[0].AxisY;
+                    if (e.Delta > 0)
+                    {
+                        ax.ScaleView.Size = double.IsNaN(ax.ScaleView.Size) ?
+                                            (ax.Maximum - ax.Minimum) / 2 : ax.ScaleView.Size /= 2;
+
+                        ay.ScaleView.Size = double.IsNaN(ay.ScaleView.Size) ?
+                                            (ay.Maximum - ay.Minimum) / 2 : ay.ScaleView.Size /= 2;
+                    }
+                    else
+                    {
+                        ax.ScaleView.Size = double.IsNaN(ax.ScaleView.Size) ?
+                                            ax.Maximum : ax.ScaleView.Size *= 2;
+                        if (ax.ScaleView.Size > ax.Maximum - ax.Minimum)
+                        {
+                            ax.ScaleView.Size = ax.Maximum;
+                            ax.ScaleView.Position = 0;
+                        }
+
+                        ay.ScaleView.Size = double.IsNaN(ay.ScaleView.Size) ?
+                                            ay.Maximum : ay.ScaleView.Size *= 2;
+                        if (ay.ScaleView.Size > ay.Maximum - ay.Minimum)
+                        {
+                            ay.ScaleView.Size = ay.Maximum;
+                            ay.ScaleView.Position = 0;
+                        }
+                    }
+                };
+                flowLayoutPanel1.Controls.Add(chart1);
+
+                // chartArea
+                ChartArea chartArea = new ChartArea("Average Viewers");
+                chart1.ChartAreas.Add(chartArea);
+                chartArea.BackColor = Globals.DarkColour;
+
+                chartArea.CursorX.IsUserEnabled = true;
+                chartArea.CursorX.Interval = 1;
+                chartArea.CursorX.AutoScroll = true;
+
+
+                chartArea.CursorY.AutoScroll = true;
+
+                // Y
+                chartArea.AxisY.Title = "Viewers";
+                chartArea.AxisY.LabelStyle.Enabled = true;
+                chartArea.AxisY.MajorGrid.Enabled = true;
+                chartArea.AxisY.TitleForeColor = SystemColors.ControlLightLight;
+                chartArea.AxisY.LabelStyle.ForeColor = SystemColors.ControlLightLight;
+                chartArea.AxisY.MajorGrid.LineColor = SystemColors.ControlLightLight;
+                chartArea.AxisY.LineColor = SystemColors.ControlLightLight;
+                chartArea.AxisY.MajorTickMark.LineColor = SystemColors.ControlLightLight;
+                chartArea.AxisY.Minimum = 0;
                 // X
                 chartArea.AxisX.Title = "Days ago";
                 chartArea.AxisX.LabelStyle.IsEndLabelVisible = true;
@@ -1028,16 +1224,16 @@ namespace TwitchHelperBot
                 // 1
                 Series series1 = new Series("Peak Viewers");
                 chart1.Series.Add(series1);
-                series1.ChartType = SeriesChartType.SplineArea;
-                series1.Color = Color.FromArgb(165, 85, 0, 255);
+                series1.ChartType = SeriesChartType.Area;
+                series1.Color = Color.FromArgb(165, 0, 255, 85);
                 series1.XValueType = ChartValueType.Int32;
                 series1.YValueType = ChartValueType.Double;
 
                 // 2
                 Series series2 = new Series("Average Viewers");
                 chart1.Series.Add(series2);
-                series2.ChartType = SeriesChartType.SplineArea;
-                series2.Color = Color.FromArgb(165, 135, 0, 255);
+                series2.ChartType = SeriesChartType.Area;
+                series2.Color = Color.FromArgb(165, 0, 255, 135);
                 series2.XValueType = ChartValueType.Int32;
                 series2.YValueType = ChartValueType.Double;
 
@@ -1052,57 +1248,110 @@ namespace TwitchHelperBot
                 series2.Legend = "Legend";
                 series2.IsVisibleInLegend = true;
 
-                List<SessionData> SessionsListClone = new List<SessionData>();
-                SessionsListClone.AddRange(Sessions);
-                SessionsListClone.Add(new SessionData()
-                {
-                    DateTimeStarted = sessionStart,
-                    DateTimeEnded = DateTime.UtcNow,
-                    AverageViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Average() : 0,
-                    PeakViewerCount = ViewerCountPerMinute.Count > 0 ? ViewerCountPerMinute.Max() : 0,
-                    CombinedHoursWatched = WatchTimeDictionary.Sum(x => x.Value.WatchTime.TotalHours),
-                    WatchTimeData = WatchTimeDictionary
-                });
-
-                Dictionary<int, double> graphAverageViewersData = new Dictionary<int, double>();
-                Dictionary<int, double> graphPeakViewersData = new Dictionary<int, double>();
-                foreach (var sessionData in SessionsListClone)
-                {
-                    int daysAgo = (int)(DateTime.UtcNow - sessionData.DateTimeStarted).TotalDays;
-
-                    if (!graphAverageViewersData.ContainsKey(daysAgo))
-                    {
-                        graphAverageViewersData.Add(daysAgo, sessionData.AverageViewerCount);
-                    }
-                    else
-                    {
-                        graphAverageViewersData[daysAgo] = (graphAverageViewersData[daysAgo] + sessionData.AverageViewerCount) / 2;
-                    }
-                    if (!graphPeakViewersData.ContainsKey(daysAgo))
-                    {
-                        graphPeakViewersData.Add(daysAgo, sessionData.PeakViewerCount);
-                    }
-                    else if (graphPeakViewersData[daysAgo] < sessionData.PeakViewerCount)
-                    {
-                        graphPeakViewersData[daysAgo] = sessionData.PeakViewerCount;
-                    }
-                }
-                chartArea.AxisX.Maximum = graphPeakViewersData.Keys.Max();
-                foreach (var kvp in graphPeakViewersData)
+                chartArea.AxisX.Maximum = graph30DaysPeakViewersData.Keys.Max();
+                foreach (var kvp in graph30DaysPeakViewersData)
                 {
                     int index = series1.Points.AddXY(kvp.Key, kvp.Value);
                     series1.Points[index].ToolTip = $"Days ago: {kvp.Key}, Peak viewers: {kvp.Value}";
                 }
-                foreach (var kvp in graphAverageViewersData)
+                foreach (var kvp in graph30DaysAverageViewersData)
                 {
                     int index = series2.Points.AddXY(kvp.Key, kvp.Value);
                     series2.Points[index].ToolTip = $"Days ago: {kvp.Key}, Average viewers: {kvp.Value}";
                 }
             }
 
-            flowLayoutPanel1.Controls.Clear();
+            //void generate7DayViewerCountChart()
+            //{
+            //    Chart chart1 = new Chart();
+            //    chart1.Titles.Add(new Title($"Last {graph7DaysPeakViewersData.Keys.Max()} Days") { ForeColor = SystemColors.ControlLightLight });
+            //    chart1.Width = flowLayoutPanel1.Width - 7;
+            //    chart1.Height = flowLayoutPanel1.Height / chartCount - 7;
+            //    chart1.Anchor = AnchorStyles.Left | AnchorStyles.Top;
+            //    chart1.BackColor = Globals.DarkColour;
+            //    flowLayoutPanel1.Controls.Add(chart1);
 
+            //    // chartArea
+            //    ChartArea chartArea = new ChartArea("Average Viewers");
+            //    chart1.ChartAreas.Add(chartArea);
+            //    chartArea.BackColor = Globals.DarkColour;
+
+            //    chartArea.CursorX.IsUserEnabled = true;
+            //    chartArea.CursorX.AxisType = AxisType.Primary;//act on primary x axis
+            //    chartArea.CursorX.Interval = 1;
+            //    chartArea.CursorX.LineDashStyle = ChartDashStyle.Dash;
+            //    chartArea.CursorX.IsUserSelectionEnabled = true;
+            //    chartArea.CursorX.SelectionColor = Color.Blue;
+            //    chartArea.CursorX.AutoScroll = true;
+
+            //    // Y
+            //    chartArea.AxisY.Title = "Viewers";
+            //    chartArea.AxisY.LabelStyle.Enabled = true;
+            //    chartArea.AxisY.MajorGrid.Enabled = true;
+            //    chartArea.AxisY.TitleForeColor = SystemColors.ControlLightLight;
+            //    chartArea.AxisY.LabelStyle.ForeColor = SystemColors.ControlLightLight;
+            //    chartArea.AxisY.MajorGrid.LineColor = SystemColors.ControlLightLight;
+            //    chartArea.AxisY.LineColor = SystemColors.ControlLightLight;
+            //    chartArea.AxisY.MajorTickMark.LineColor = SystemColors.ControlLightLight;
+            //    chartArea.AxisY.Minimum = 0;
+            //    // X
+            //    chartArea.AxisX.Title = "Days ago";
+            //    chartArea.AxisX.LabelStyle.IsEndLabelVisible = true;
+            //    chartArea.AxisX.MajorGrid.Enabled = false;
+            //    chartArea.AxisX.MinorGrid.Enabled = false;
+            //    chartArea.AxisX.LabelStyle.Enabled = true;
+            //    chartArea.AxisX.IsReversed = true;
+            //    chartArea.AxisX.ScrollBar = new AxisScrollBar();
+            //    chartArea.AxisX.TitleForeColor = SystemColors.ControlLightLight;
+            //    chartArea.AxisX.LabelStyle.ForeColor = SystemColors.ControlLightLight;
+            //    chartArea.AxisX.LineColor = SystemColors.ControlLightLight;
+            //    chartArea.AxisX.MajorTickMark.LineColor = SystemColors.ControlLightLight;
+            //    chartArea.AxisX.Minimum = 0;
+
+            //    // 1
+            //    Series series1 = new Series("Peak Viewers");
+            //    chart1.Series.Add(series1);
+            //    series1.ChartType = SeriesChartType.Area;
+            //    series1.Color = Color.FromArgb(165, 255, 0, 85);
+            //    series1.XValueType = ChartValueType.Int32;
+            //    series1.YValueType = ChartValueType.Double;
+
+            //    // 2
+            //    Series series2 = new Series("Average Viewers");
+            //    chart1.Series.Add(series2);
+            //    series2.ChartType = SeriesChartType.Area;
+            //    series2.Color = Color.FromArgb(165, 255, 0, 135);
+            //    series2.XValueType = ChartValueType.Int32;
+            //    series2.YValueType = ChartValueType.Double;
+
+            //    // Legend
+            //    Legend legend1 = new Legend("Legend");
+            //    legend1.BackColor = Globals.DarkColour;
+            //    legend1.ForeColor = SystemColors.ControlLightLight;
+            //    legend1.Docking = Docking.Bottom;
+            //    chart1.Legends.Add(legend1);
+            //    series1.Legend = "Legend";
+            //    series1.IsVisibleInLegend = true;
+            //    series2.Legend = "Legend";
+            //    series2.IsVisibleInLegend = true;
+
+            //    chartArea.AxisX.Maximum = graph7DaysPeakViewersData.Keys.Max();
+            //    foreach (var kvp in graph7DaysPeakViewersData)
+            //    {
+            //        int index = series1.Points.AddXY(kvp.Key, kvp.Value);
+            //        series1.Points[index].ToolTip = $"Days ago: {kvp.Key}, Peak viewers: {kvp.Value}";
+            //    }
+            //    foreach (var kvp in graph7DaysAverageViewersData)
+            //    {
+            //        int index = series2.Points.AddXY(kvp.Key, kvp.Value);
+            //        series2.Points[index].ToolTip = $"Days ago: {kvp.Key}, Average viewers: {kvp.Value}";
+            //    }
+            //}
+
+            flowLayoutPanel1.Controls.Clear();
             generateViewerCountChart();
+            generate30DayViewerCountChart();
+            //generate7DayViewerCountChart();
         }
 
         private void flowLayoutPanel1_SizeChanged(object sender, EventArgs e)
@@ -1114,7 +1363,7 @@ namespace TwitchHelperBot
                     if (ctrl is Chart)
                     {
                         ctrl.Width = flowLayoutPanel1.Width - 7;
-                        ctrl.Height = flowLayoutPanel1.Height - 7;
+                        ctrl.Height = flowLayoutPanel1.Height/ chartCount - 7;
                     }
                     else if (ctrl is SessionHistoryItem)
                     {
