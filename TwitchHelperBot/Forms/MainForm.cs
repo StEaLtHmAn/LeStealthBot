@@ -640,59 +640,35 @@ namespace TwitchHelperBot
                                     {
                                         try
                                         {
-                                            List<ViewerListForm.SessionData> Sessions = new List<ViewerListForm.SessionData>();
-                                            //read x amount of archive data
-                                            int SessionsArchiveReadCount = int.Parse(Database.ReadSettingCell("SessionsArchiveReadCount"));
-                                            for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
-                                            {
-                                                if (File.Exists($"SessionsArchive{i}.json"))
-                                                    Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
-                                                else
-                                                    break;
-                                            }
-                                            //get session data from file
-                                            if (File.Exists("WatchTimeSessions.json"))
-                                                Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
+                                            var userToSearch = (string.IsNullOrEmpty(e.Command.ArgumentsAsString) ? e.Command.ChatMessage.DisplayName : e.Command.ArgumentsAsString.Replace("@", string.Empty)).Trim();
+                                            List<ViewerListForm.SessionData> Sessions = Database.ReadAllData<ViewerListForm.SessionData>("Sessions");
 
+                                            ViewerListForm viewerListForm = null;
                                             Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
                                             var OpenForms = Application.OpenForms.OfType<ViewerListForm>();
-                                            ViewerListForm viewerListForm = null;
                                             if (OpenForms.Count() > 0)
                                             {
                                                 viewerListForm = OpenForms.First();
-                                                foreach (var viewerData in viewerListForm.WatchTimeDictionary)
-                                                {
-                                                    if (viewerData.Key.ToLower() == Globals.loginName.ToLower())
-                                                        continue;
-                                                    if (e.Command.ArgumentsAsString.ToLower().Contains("online") && !viewerListForm.ViewersOnlineNames.Contains(viewerData.Key))
-                                                        continue;
-                                                    if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
-                                                    {
-                                                        tmpWatchTimeList.Add(viewerData.Key, viewerData.Value.WatchTime);
-                                                    }
-                                                    else
-                                                    {
-                                                        tmpWatchTimeList[viewerData.Key] += viewerData.Value.WatchTime;
-                                                    }
-                                                }
+                                                Sessions.Add(new ViewerListForm.SessionData { Viewers = viewerListForm.WatchTimeList });
                                             }
+
                                             foreach (var sessionData in Sessions)
                                             {
-                                                foreach (var viewerData in sessionData.WatchTimeData)
+                                                foreach (var viewerData in sessionData.Viewers)
                                                 {
-                                                    if (viewerData.Key.ToLower() == Globals.loginName.ToLower())
+                                                    if (viewerData.UserName.ToLower() == Globals.loginName.ToLower())
                                                         continue;
                                                     if (e.Command.ArgumentsAsString.ToLower().Contains("online") &&
                                                     viewerListForm != null &&
-                                                    !viewerListForm.ViewersOnlineNames.Contains(viewerData.Key))
+                                                    !viewerListForm.ViewersOnlineNames.Contains(viewerData.UserName))
                                                         continue;
-                                                    if (!tmpWatchTimeList.ContainsKey(viewerData.Key))
+                                                    if (!tmpWatchTimeList.ContainsKey(viewerData.UserName))
                                                     {
-                                                        tmpWatchTimeList.Add(viewerData.Key, viewerData.Value.WatchTime);
+                                                        tmpWatchTimeList.Add(viewerData.UserName, viewerData.WatchTime);
                                                     }
                                                     else
                                                     {
-                                                        tmpWatchTimeList[viewerData.Key] += viewerData.Value.WatchTime;
+                                                        tmpWatchTimeList[viewerData.UserName] += viewerData.WatchTime;
                                                     }
                                                 }
                                             }
@@ -706,7 +682,7 @@ namespace TwitchHelperBot
                                                 .Replace("##Count##", count.ToString())
                                                 .Replace("##Name##", kvp.Key)
                                                 .Replace("##Watchtime##", Globals.getShortRelativeTimeSpan(kvp.Value));
-                                                if (messageToSend.Length + newPart.Length <= 500)
+                                                if (messageToSend.Length + newPart.Length <= 486)
                                                     messageToSend += newPart;
                                                 else
                                                     break;
@@ -749,32 +725,20 @@ namespace TwitchHelperBot
                                     {
                                         try
                                         {
-                                            var userToSearch = string.IsNullOrEmpty(e.Command.ArgumentsAsString) ? e.Command.ChatMessage.DisplayName : e.Command.ArgumentsAsString.Replace("@", string.Empty);
-                                            List<ViewerListForm.SessionData> Sessions = new List<ViewerListForm.SessionData>();
-                                            //read x amount of archive data
-                                            int SessionsArchiveReadCount = int.Parse(Database.ReadSettingCell("SessionsArchiveReadCount"));
-                                            for (int i = DateTime.UtcNow.Year; i <= DateTime.UtcNow.Year - SessionsArchiveReadCount; i--)
-                                            {
-                                                if (File.Exists($"SessionsArchive{i}.json"))
-                                                    Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText($"SessionsArchive{i}.json")));
-                                                else
-                                                    break;
-                                            }
-                                            //get session data from file
-                                            if (File.Exists("WatchTimeSessions.json"))
-                                                Sessions.AddRange(JsonConvert.DeserializeObject<List<ViewerListForm.SessionData>>(File.ReadAllText("WatchTimeSessions.json")));
+                                            var userToSearch = (string.IsNullOrEmpty(e.Command.ArgumentsAsString) ? e.Command.ChatMessage.DisplayName : e.Command.ArgumentsAsString.Replace("@", string.Empty)).Trim();
+                                            List<ViewerListForm.SessionData> Sessions = Database.ReadAllData<ViewerListForm.SessionData>("Sessions");
 
-                                            TimeSpan tmpWatchTime = new TimeSpan();
                                             if (Application.OpenForms.OfType<ViewerListForm>().Count() > 0)
                                             {
-                                                Dictionary<string, ViewerListForm.SessionData.WatchData> tmpWatchTimeList = Application.OpenForms.OfType<ViewerListForm>().First().WatchTimeDictionary;
-                                                if (tmpWatchTimeList.ContainsKey(userToSearch))
-                                                    tmpWatchTime += tmpWatchTimeList[userToSearch].WatchTime;
+                                                Sessions.Add(new ViewerListForm.SessionData { Viewers = Application.OpenForms.OfType<ViewerListForm>().First().WatchTimeList });
                                             }
-                                            foreach (var sessionData in Sessions)
+                                            TimeSpan tmpWatchTime = new TimeSpan();
+                                            foreach (var s in Sessions)
                                             {
-                                                if (sessionData.WatchTimeData.ContainsKey(userToSearch))
-                                                    tmpWatchTime += sessionData.WatchTimeData[userToSearch].WatchTime;
+                                                foreach (var v in s.Viewers.Where(y => y.UserName == userToSearch))
+                                                {
+                                                    tmpWatchTime += v.WatchTime;
+                                                }
                                             }
 
                                             if (userToSearch == e.Command.ChatMessage.DisplayName)

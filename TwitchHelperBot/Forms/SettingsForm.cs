@@ -331,8 +331,6 @@ namespace TwitchHelperBot
             Globals.ChatBotSettings = tmpChatBotSettings;
             Database.UpsertRecord(x => x["Key"] == "ChatBotSettings", new BsonDocument() { { "Key", "ChatBotSettings" }, { "Value", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None) } });
 
-            //todo reset commands
-
             resetChatBotTimers();
 
             Dispose();

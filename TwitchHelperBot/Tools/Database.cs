@@ -151,7 +151,7 @@ namespace TwitchHelperBot
                     var document = col.FindOne(predicate);
                     if (document == null)
                     {
-                        if (col.Insert(newDocument) != null && attempts < 5)
+                        if (col.Insert(newDocument) == null && attempts < 5)
                         {
                             Thread.Sleep(1);
                             attempts++;
@@ -174,6 +174,70 @@ namespace TwitchHelperBot
                         }
                         return true;
                     }
+                }
+            }
+            catch
+            {
+                if (attempts < 5)
+                {
+                    Thread.Sleep(1);
+                    attempts++;
+                    goto retry;
+                }
+            }
+            return false;
+        }
+
+        public static bool UpdateSession(Expression<Func<ViewerListForm.SessionData, bool>> predicate, ViewerListForm.SessionData newDocument)
+        {
+            int attempts = 0;
+        retry:
+            try
+            {
+                using (var db = new LiteDatabase($"{exe}Settings.db"))
+                {
+                    var col = db.GetCollection<ViewerListForm.SessionData>("Sessions");
+                    var document = col.FindOne(predicate);
+                    if (document != null)
+                    {
+                        if (!col.Update((ObjectId)document._id, newDocument) && attempts < 5)
+                        {
+                            Thread.Sleep(1);
+                            attempts++;
+                            goto retry;
+                        }
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                if (attempts < 5)
+                {
+                    Thread.Sleep(1);
+                    attempts++;
+                    goto retry;
+                }
+            }
+            return false;
+        }
+
+        public static bool InsertRecord<T>(T data, string collection = null)
+        {
+            int attempts = 0;
+        retry:
+            try
+            {
+                using (var db = new LiteDatabase($"{exe}Settings.db"))
+                {
+                    var col = db.GetCollection<T>(collection ?? exe);
+                    if (col.Insert(data) == null && attempts < 5)
+                    {
+                        Thread.Sleep(1);
+                        attempts++;
+                        goto retry;
+                    }
+                    return true;
                 }
             }
             catch
@@ -212,6 +276,30 @@ namespace TwitchHelperBot
             return 0;
         }
 
+        public static int DeleteRecords<T>(Expression<Func<T, bool>> predicate, string collection = null)
+        {
+            int attempts = 0;
+        retry:
+            try
+            {
+                using (var db = new LiteDatabase($"{exe}Settings.db"))
+                {
+                    var col = db.GetCollection<T>(collection ?? exe);
+                    return col.DeleteMany(predicate);
+                }
+            }
+            catch
+            {
+                if (attempts < 5)
+                {
+                    Thread.Sleep(1);
+                    attempts++;
+                    goto retry;
+                }
+            }
+            return 0;
+        }
+
         public static List<BsonDocument> ReadAllData(string collection)
         {
             int attempts = 0;
@@ -234,6 +322,30 @@ namespace TwitchHelperBot
                 }
             }
             return new List<BsonDocument>();
+        }
+
+        public static List<T> ReadAllData<T>(string collection)
+        {
+            int attempts = 0;
+        retry:
+            try
+            {
+                using (var db = new LiteDatabase($"{exe}Settings.db"))
+                {
+                    var col = db.GetCollection<T>(collection);
+                    return col.FindAll().ToList();
+                }
+            }
+            catch
+            {
+                if (attempts < 5)
+                {
+                    Thread.Sleep(1);
+                    attempts++;
+                    goto retry;
+                }
+            }
+            return new List<T>();
         }
     }
 }

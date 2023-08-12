@@ -60,10 +60,10 @@ namespace TwitchHelperBot
                 return ts.TotalDays.ToString("0.##") + " Days";
             if (ts.TotalDays < 30.436875)//weeks ago
                 return (ts.TotalDays / 7).ToString("0.##") + " Weeks";
-            if (ts.TotalDays < 365.242)//months ago
-                return (ts.TotalDays / 30.4368).ToString("0.##") + " Months";
+            if (ts.TotalDays < 365.2425)//months ago
+                return (ts.TotalDays / 30.436875).ToString("0.##") + " Months";
             //years ago
-            return (ts.TotalDays / 365.242).ToString("0.##") + " Years";
+            return (ts.TotalDays / 365.2425).ToString("0.##") + " Years";
         }
 
         public static string getShortRelativeTimeSpan(TimeSpan ts)
@@ -76,12 +76,12 @@ namespace TwitchHelperBot
                 return ts.Hours + "h";
             if (ts.TotalDays < 7)//days ago
                 return ts.TotalDays.ToString("0.##") + "D";
-            if (ts.TotalDays < 30.4368)//weeks ago
+            if (ts.TotalDays < 30.436875)//weeks ago
                 return (ts.TotalDays / 7).ToString("0.##") + "W";
-            if (ts.TotalDays < 365.242)//months ago
-                return (ts.TotalDays / 30.4368).ToString("0.##") + "M";
+            if (ts.TotalDays < 365.2425)//months ago
+                return (ts.TotalDays / 30.436875).ToString("0.##") + "M";
             //years ago
-            return (ts.TotalDays / 365.242).ToString("0.##") + "Y";
+            return (ts.TotalDays / 365.2425).ToString("0.##") + "Y";
         }
 
         public static void registerAudioMixerHotkeys()
@@ -206,9 +206,9 @@ namespace TwitchHelperBot
 
         public static void sendChatBotMessage(string channel, string message, string replyID = "")
         {
-            if (message.Length > 500)
+            if (message.Length > 486)
             {
-                message = message.Substring(0, 500);
+                message = message.Substring(0, 486);
             }
 
             if (string.IsNullOrEmpty(replyID))

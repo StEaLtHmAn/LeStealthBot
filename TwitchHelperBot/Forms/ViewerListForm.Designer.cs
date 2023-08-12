@@ -254,9 +254,7 @@
             this.Controls.Add(this.richTextBox1);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.textBox2);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.SizableToolWindow;
             this.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
-            this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "ViewerListForm";
             this.Padding = new System.Windows.Forms.Padding(1, 3, 1, 3);
@@ -267,6 +265,7 @@
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ViewerListForm_FormClosing);
             this.Shown += new System.EventHandler(this.ViewerListForm_Shown);
             this.Move += new System.EventHandler(this.ViewerListForm_Move);
+            this.Resize += new System.EventHandler(this.ViewerListForm_Resize);
             this.contextMenuStrip1.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
