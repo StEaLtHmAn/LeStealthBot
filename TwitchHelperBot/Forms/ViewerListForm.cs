@@ -12,7 +12,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using TwitchHelperBot.RtfWriter;
-using static TwitchHelperBot.ViewerListForm;
 
 namespace TwitchHelperBot
 {
