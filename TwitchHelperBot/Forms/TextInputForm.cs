@@ -2,15 +2,15 @@
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public partial class TextInputForm : Form
     {
         public TextInputForm(string title, string message)
         {
             InitializeComponent();
-
-            Text = title;
+            Icon = Properties.Resources.LeStealthBot;
+            Text = "LeStealthBot - " + title;
 
             if (!string.IsNullOrEmpty(message))
             {

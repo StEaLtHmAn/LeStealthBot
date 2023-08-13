@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Windows.Threading;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public class SpinningLabel : Label
     {

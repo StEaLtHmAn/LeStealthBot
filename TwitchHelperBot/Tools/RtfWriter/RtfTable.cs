@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace TwitchHelperBot.RtfWriter
+namespace LeStealthBot.RtfWriter
 {
     /// <summary>
     /// Summary description for RtfTable

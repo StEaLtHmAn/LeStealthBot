@@ -1,4 +1,4 @@
-﻿namespace TwitchHelperBot
+﻿namespace LeStealthBot
 {
     partial class SettingsForm
     {
@@ -30,7 +30,7 @@
         {
             this.button3 = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
-            this.tabControl1 = new TwitchHelperBot.CustomTabControl();
+            this.tabControl1 = new LeStealthBot.CustomTabControl();
             this.tabPage4 = new System.Windows.Forms.TabPage();
             this.textBox1 = new System.Windows.Forms.TextBox();
             this.numericUpDown1 = new System.Windows.Forms.NumericUpDown();
@@ -428,9 +428,8 @@
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "SettingsForm";
-            this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Settings";
+            this.Text = "LeStealthBot - Settings";
             this.tabControl1.ResumeLayout(false);
             this.tabPage4.ResumeLayout(false);
             this.tabPage4.PerformLayout();

@@ -3,7 +3,7 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 
-namespace TwitchHelperBot.RtfWriter
+namespace LeStealthBot.RtfWriter
 {
     /// <summary>
     /// Summary description for RtfDocument

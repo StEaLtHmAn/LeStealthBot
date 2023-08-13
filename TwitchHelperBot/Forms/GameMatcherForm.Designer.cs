@@ -1,4 +1,4 @@
-﻿namespace TwitchHelperBot
+﻿namespace LeStealthBot
 {
     partial class GameMatcherForm
     {
@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GameMatcherForm));
             this.button1 = new System.Windows.Forms.Button();
             this.txtPresetTitle = new System.Windows.Forms.TextBox();
             this.button2 = new System.Windows.Forms.Button();
@@ -245,13 +246,13 @@
             this.ClientSize = new System.Drawing.Size(784, 561);
             this.Controls.Add(this.presetsListView);
             this.Controls.Add(this.panel1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.MinimumSize = new System.Drawing.Size(414, 307);
             this.Name = "GameMatcherForm";
-            this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Preset Manager";
+            this.Text = "LeStealthBot - Preset Manager";
             ((System.ComponentModel.ISupportInitialize)(this.presetCategoryPictureBox)).EndInit();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();

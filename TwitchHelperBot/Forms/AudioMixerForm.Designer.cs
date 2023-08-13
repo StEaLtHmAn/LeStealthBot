@@ -1,4 +1,4 @@
-﻿namespace TwitchHelperBot
+﻿namespace LeStealthBot
 {
     partial class AudioMixerForm
     {
@@ -79,9 +79,8 @@
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "AudioMixerForm";
-            this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
-            this.Text = "Audio Mixer";
+            this.Text = "LeStealthBot - Audio Mixer";
             this.ResumeLayout(false);
             this.PerformLayout();
 

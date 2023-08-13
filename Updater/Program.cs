@@ -40,8 +40,8 @@ namespace Updater
                 File.Delete(args[0]);
                 Console.WriteLine("Done");
                 Console.WriteLine();
-                Console.WriteLine("- Lauching TwitchHelperBot...");
-                Process.Start("TwitchHelperBot.exe");
+                Console.WriteLine("- Lauching LeStealthBot...");
+                Process.Start("LeStealthBot.exe");
                 Console.WriteLine("Done");
             }
             else

@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public partial class SessionHistoryItem : UserControl
     {

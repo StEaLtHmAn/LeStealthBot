@@ -1,6 +1,6 @@
 ﻿using CSCore.CoreAudioAPI;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public static class AudioManager
     {

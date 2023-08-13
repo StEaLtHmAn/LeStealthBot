@@ -13,7 +13,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using LiteDB;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public partial class SpotifyPreviewForm : Form
     {
@@ -30,7 +30,7 @@ namespace TwitchHelperBot
         public SpotifyPreviewForm()
         {
             InitializeComponent();;
-
+            Icon = Properties.Resources.LeStealthBot;
             if (Application.OpenForms.OfType<SpotifyPreviewForm>().Count() > 0)
             {
                 Globals.DelayAction(0, new Action(() => { Dispose(); }));
@@ -43,6 +43,9 @@ namespace TwitchHelperBot
         private int progress_ms = 0;
         private int duration_ms = 0;
         private bool is_playing = false;
+        public string name = string.Empty;
+        public string Artists = string.Empty;
+        public string songURL = string.Empty;
         private void GetSpotifyCurrentTrack()
         {
             timer1.Enabled = false;
@@ -86,9 +89,9 @@ namespace TwitchHelperBot
                 progress_ms = int.Parse(trackData["progress_ms"].ToString());
                 is_playing = trackData.Value<bool>("is_playing");
                 string id = string.Empty;
-                string name = string.Empty;
+                name = string.Empty;
                 string imageURL = string.Empty;
-                string Artists = string.Empty;
+                Artists = string.Empty;
                 duration_ms = 0;
                 if (trackData["item"] is JObject)
                 {
@@ -115,6 +118,8 @@ namespace TwitchHelperBot
                                 Artists += ", ";
                             Artists += artistItem["name"].ToString();
                         }
+                    if ((trackData["item"] as JObject).ContainsKey("external_urls") && (trackData["item"]["external_urls"] as JObject).ContainsKey("spotify"))
+                        songURL = trackData["item"]["external_urls"]["spotify"].ToString();
                 }
 
                 if (!string.IsNullOrEmpty(imageURL))

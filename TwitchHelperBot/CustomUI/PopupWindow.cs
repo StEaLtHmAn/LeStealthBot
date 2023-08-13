@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 using System.Windows.Forms;
-using TwitchHelperBot;
+using LeStealthBot;
 
 public class PopupWindow : ToolStripDropDown
 {

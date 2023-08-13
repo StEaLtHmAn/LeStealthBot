@@ -1,4 +1,4 @@
-﻿namespace TwitchHelperBot
+﻿namespace LeStealthBot
 {
     partial class BrowserForm
     {
@@ -54,7 +54,6 @@
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "BrowserForm";
-            this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Loading...";
             ((System.ComponentModel.ISupportInitialize)(this.webView2)).EndInit();

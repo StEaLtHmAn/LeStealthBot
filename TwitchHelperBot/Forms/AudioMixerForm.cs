@@ -7,14 +7,14 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public partial class AudioMixerForm : Form
     {
         public AudioMixerForm()
         {
             InitializeComponent();
-
+            Icon = Properties.Resources.LeStealthBot;
             Globals.ToggleDarkMode(this, bool.Parse(Database.ReadSettingCell("DarkModeEnabled")));
 
             Task.Run(() => InitForm());

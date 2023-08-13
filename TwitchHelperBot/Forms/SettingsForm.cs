@@ -9,7 +9,7 @@ using System.Net;
 using System.Windows.Forms;
 using System.Windows.Threading;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public partial class SettingsForm : Form
     {
@@ -17,6 +17,7 @@ namespace TwitchHelperBot
         public SettingsForm()
         {
             InitializeComponent();
+            Icon = Properties.Resources.LeStealthBot;
 
             textBox1.Text = Database.ReadSettingCell("LoginName");
             textBox2.Text = Database.ReadSettingCell("ClientId");

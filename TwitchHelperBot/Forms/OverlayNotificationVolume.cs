@@ -6,7 +6,7 @@ using System.Net;
 using System.Windows.Forms;
 using System.Windows.Threading;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public partial class OverlayNotificationVolume : Form
     {

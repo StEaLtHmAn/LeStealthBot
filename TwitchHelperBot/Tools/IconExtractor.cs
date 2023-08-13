@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using System.Drawing;
 using System.Drawing.Imaging;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     //Working example as of 2017/05/19 on windows 10 x64
     //example found here.

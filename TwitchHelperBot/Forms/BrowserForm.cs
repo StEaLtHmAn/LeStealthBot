@@ -8,13 +8,14 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public partial class BrowserForm : Form
     {
         public BrowserForm(string url)
         {
             InitializeComponent();
+            Icon = Properties.Resources.LeStealthBot;
             Globals.ToggleDarkMode(this, bool.Parse(Database.ReadSettingCell("DarkModeEnabled")));
 
             Text = url;

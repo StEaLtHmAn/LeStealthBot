@@ -11,9 +11,9 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
-using TwitchHelperBot.RtfWriter;
+using LeStealthBot.RtfWriter;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public partial class ViewerListForm : Form
     {
@@ -31,7 +31,7 @@ namespace TwitchHelperBot
         public ViewerListForm()
         {
             InitializeComponent();
-
+            Icon = Properties.Resources.LeStealthBot;
             Globals.ToggleDarkMode(this, bool.Parse(Database.ReadSettingCell("DarkModeEnabled")));
 
             if (File.Exists("WatchTimeSessions.json"))
@@ -1400,7 +1400,7 @@ namespace TwitchHelperBot
             UpdateText();
         }
 
-        FormWindowState LastWindowState = FormWindowState.Minimized;
+        private FormWindowState LastWindowState = FormWindowState.Minimized;
         private void ViewerListForm_Resize(object sender, EventArgs e)
         {
             if (WindowState != LastWindowState)

@@ -1,4 +1,4 @@
-﻿namespace TwitchHelperBot
+﻿namespace LeStealthBot
 {
     partial class SpotifyPreviewForm
     {
@@ -36,8 +36,8 @@
             this.panel2 = new System.Windows.Forms.Panel();
             this.timer2 = new System.Windows.Forms.Timer(this.components);
             this.label3 = new System.Windows.Forms.Label();
-            this.label2 = new TwitchHelperBot.SpinningLabel();
-            this.label1 = new TwitchHelperBot.SpinningLabel();
+            this.label2 = new LeStealthBot.SpinningLabel();
+            this.label1 = new LeStealthBot.SpinningLabel();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
@@ -132,12 +132,11 @@
             this.Controls.Add(this.pictureBox1);
             this.ForeColor = System.Drawing.SystemColors.Control;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "SpotifyPreviewForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-            this.Text = "Spotify Preview";
+            this.Text = "LeStealthBot - Spotify Preview";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.SpotifyPreviewForm_FormClosing);
             this.Shown += new System.EventHandler(this.SpotifyPreviewForm_Shown);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Form1_MouseDown);

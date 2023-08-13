@@ -1,6 +1,6 @@
 using System;
 
-namespace TwitchHelperBot.RtfWriter
+namespace LeStealthBot.RtfWriter
 {
     public class RtfFieldControlWord : RtfRenderable
     {

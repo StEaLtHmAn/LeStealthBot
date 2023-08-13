@@ -11,13 +11,14 @@ using System.Net;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public partial class GameMatcherForm : Form
     {
         public GameMatcherForm()
         {
             InitializeComponent();
+            Icon = Properties.Resources.LeStealthBot;
             bool DarkModeEnabled = bool.Parse(Database.ReadSettingCell("DarkModeEnabled"));
             if (DarkModeEnabled)
             {

@@ -24,7 +24,7 @@ using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
 using WebView2 = Microsoft.Web.WebView2.WinForms.WebView2;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public partial class MainForm : Form
     {
@@ -41,6 +41,8 @@ namespace TwitchHelperBot
         public MainForm()
         {
             InitializeComponent();
+            Icon = Properties.Resources.LeStealthBot;
+            notifyIcon1.Icon = Properties.Resources.LeStealthBot;
 
             ((ToolStripDropDownMenu)toolsToolStripMenuItem.DropDown).ShowImageMargin = false;
 
@@ -58,49 +60,66 @@ namespace TwitchHelperBot
 
         private bool checkForUpdates()
         {
-            using (WebClient client = new WebClient())
+            string githubLatestReleaseJsonString;
+            try
             {
-                client.Headers.Add("User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
-                string githubLatestReleaseJsonString = client.DownloadString("https://api.github.com/repos/StEaLtHmAn/TwitchHelperBot/releases/latest");
-                JObject githubLatestReleaseJson = JObject.Parse(githubLatestReleaseJsonString);
-
-                Version CurrentVersion = Assembly.GetEntryAssembly().GetName().Version;
-                string[] githubVersionNumbersSplit = Regex.Replace(githubLatestReleaseJson["tag_name"].ToString().ToLower(), "^[\\D]", string.Empty).Split('.');
-
-                Version GithubVersion;
-                if (githubVersionNumbersSplit.Length == 2)
-                    GithubVersion = new Version(int.Parse(githubVersionNumbersSplit[0]), int.Parse(githubVersionNumbersSplit[1]));
-                else if (githubVersionNumbersSplit.Length == 3)
-                    GithubVersion = new Version(int.Parse(githubVersionNumbersSplit[0]), int.Parse(githubVersionNumbersSplit[1]), int.Parse(githubVersionNumbersSplit[2]));
-                else if (githubVersionNumbersSplit.Length == 4)
-                    GithubVersion = new Version(int.Parse(githubVersionNumbersSplit[0]), int.Parse(githubVersionNumbersSplit[1]), int.Parse(githubVersionNumbersSplit[2]), int.Parse(githubVersionNumbersSplit[3]));
-                else
-                    GithubVersion = new Version();
-
-                if (GithubVersion > CurrentVersion)
+                using (WebClient client = new WebClient())
                 {
-                    foreach (JObject asset in githubLatestReleaseJson["assets"] as JArray)
-                    {
-                        if (asset["content_type"].ToString() == "application/x-zip-compressed")
-                        {
-                            MessageBox.Show(githubLatestReleaseJson["name"].ToString() + "\r\n\r\n" + githubLatestReleaseJson["body"].ToString(),
-                            "New Updates - Released " + Globals.getRelativeTimeSpan(DateTime.Now - DateTime.Parse(githubLatestReleaseJson["published_at"].ToString()).Add(DateTimeOffset.Now.Offset)) +" ago", MessageBoxButtons.OK);
+                    client.Headers.Add("User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
+                    githubLatestReleaseJsonString = client.DownloadString("https://api.github.com/repos/StEaLtHmAn/LeStealthBot/releases/latest");
+                }
+            }
+            catch
+            {
+                using (WebClient client = new WebClient())
+                {
+                    client.Headers.Add("User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
+                    githubLatestReleaseJsonString = client.DownloadString("https://api.github.com/repos/StEaLtHmAn/TwitchHelperBot/releases/latest");
+                }
+            }
 
-                            //download latest zip
+            JObject githubLatestReleaseJson = JObject.Parse(githubLatestReleaseJsonString);
+
+            Version CurrentVersion = Assembly.GetEntryAssembly().GetName().Version;
+            string[] githubVersionNumbersSplit = Regex.Replace(githubLatestReleaseJson["tag_name"].ToString().ToLower(), "^[\\D]", string.Empty).Split('.');
+
+            Version GithubVersion;
+            if (githubVersionNumbersSplit.Length == 2)
+                GithubVersion = new Version(int.Parse(githubVersionNumbersSplit[0]), int.Parse(githubVersionNumbersSplit[1]));
+            else if (githubVersionNumbersSplit.Length == 3)
+                GithubVersion = new Version(int.Parse(githubVersionNumbersSplit[0]), int.Parse(githubVersionNumbersSplit[1]), int.Parse(githubVersionNumbersSplit[2]));
+            else if (githubVersionNumbersSplit.Length == 4)
+                GithubVersion = new Version(int.Parse(githubVersionNumbersSplit[0]), int.Parse(githubVersionNumbersSplit[1]), int.Parse(githubVersionNumbersSplit[2]), int.Parse(githubVersionNumbersSplit[3]));
+            else
+                GithubVersion = new Version();
+
+            if (GithubVersion > CurrentVersion)
+            {
+                foreach (JObject asset in githubLatestReleaseJson["assets"] as JArray)
+                {
+                    if (asset["content_type"].ToString() == "application/x-zip-compressed")
+                    {
+                        MessageBox.Show(githubLatestReleaseJson["name"].ToString() + "\r\n\r\n" + githubLatestReleaseJson["body"].ToString(),
+                        "New Updates - Released " + Globals.getRelativeTimeSpan(DateTime.Now - DateTime.Parse(githubLatestReleaseJson["published_at"].ToString()).Add(DateTimeOffset.Now.Offset)) + " ago", MessageBoxButtons.OK);
+
+                        //download latest zip
+                        using (WebClient client = new WebClient())
+                        {
+                            client.Headers.Add("User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.2; .NET CLR 1.0.3705;)");
                             client.DownloadFile(asset["browser_download_url"].ToString(), asset["name"].ToString());
-                            //extract latest updater
-                            using (ZipArchive archive = ZipFile.OpenRead(asset["name"].ToString()))
-                            {
-                                foreach (ZipArchiveEntry entry in archive.Entries)
-                                {
-                                    if (entry.FullName.Contains("Updater.exe"))
-                                        entry.ExtractToFile(entry.FullName, true);
-                                }
-                            }
-                            //run the updater
-                            Process.Start("Updater.exe", asset["name"].ToString());
-                            return true;
                         }
+                        //extract latest updater
+                        using (ZipArchive archive = ZipFile.OpenRead(asset["name"].ToString()))
+                        {
+                            foreach (ZipArchiveEntry entry in archive.Entries)
+                            {
+                                if (entry.FullName.Contains("Updater.exe"))
+                                    entry.ExtractToFile(entry.FullName, true);
+                            }
+                        }
+                        //run the updater
+                        Process.Start("Updater.exe", asset["name"].ToString());
+                        return true;
                     }
                 }
             }
@@ -109,6 +128,22 @@ namespace TwitchHelperBot
 
         private void startupApp()
         {
+            if (File.Exists("TwitchHelperBotSettings.db"))
+            {
+                File.Copy("TwitchHelperBotSettings.db", "LeStealthBotSettings.db");
+                File.Delete("TwitchHelperBotSettings.db");
+                using (var db = new LiteDatabase("LeStealthBotSettings.db"))
+                {
+                    if (db.CollectionExists("TwitchHelperBot"))
+                        db.RenameCollection("TwitchHelperBot", "LeStealthBot");
+                }
+            }
+            if (File.Exists("TwitchHelperBot.exe"))
+                File.Delete("TwitchHelperBot.exe");
+            if (File.Exists("TwitchHelperBot.pdb"))
+                File.Delete("TwitchHelperBot.pdb");
+            if (File.Exists("TwitchHelperBot.exe.config"))
+                File.Delete("TwitchHelperBot.exe.config");
             Database.ConvertOldIniIntoDB();
 
 
@@ -779,6 +814,18 @@ namespace TwitchHelperBot
                                                 messageToSend = messageToSend.Replace("##Argument1##", e.Command.ArgumentsAsList[1]);
                                             if (messageToSend.Contains("##Argument2##") && e.Command.ArgumentsAsList.Count > 2)
                                                 messageToSend = messageToSend.Replace("##Argument2##", e.Command.ArgumentsAsList[2]);
+                                            
+                                            var OpenViewerListForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
+                                            if (OpenViewerListForms.Count() > 0)
+                                            {
+                                                var form = OpenViewerListForms.First();
+                                                if (messageToSend.Contains("##SpotifySong##"))
+                                                    messageToSend = messageToSend.Replace("##SpotifySong##", form.name);
+                                                if (messageToSend.Contains("##SpotifyArtist##"))
+                                                    messageToSend = messageToSend.Replace("##SpotifyArtist##", form.Artists);
+                                                if (messageToSend.Contains("##SpotifyURL##"))
+                                                    messageToSend = messageToSend.Replace("##SpotifyURL##", form.songURL);
+                                            }
 
                                             Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
                                         }
@@ -848,8 +895,27 @@ namespace TwitchHelperBot
                             if (!Globals.ChatBotSettings.ContainsKey(setting.Name) || !bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
                                 timer.Stop();
 
-                            Globals.sendChatBotMessage(Globals.loginName, Globals.ChatBotSettings[setting.Name]["message"].ToString()
-                                .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()));
+                            string messageToSend = Globals.ChatBotSettings[setting.Name]["message"].ToString();
+                            if (messageToSend.Contains("##YourName##"))
+                                messageToSend = messageToSend.Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString());
+                            if (messageToSend.Contains("##Time##"))
+                                messageToSend = messageToSend.Replace("##Time##", DateTime.Now.ToShortTimeString());
+                            if (messageToSend.Contains("##TimeZone##"))
+                                messageToSend = messageToSend.Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName);
+
+                            var OpenViewerListForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
+                            if (OpenViewerListForms.Count() > 0)
+                            {
+                                var form = OpenViewerListForms.First();
+                                if (messageToSend.Contains("##SpotifySong##"))
+                                    messageToSend = messageToSend.Replace("##SpotifySong##", form.name);
+                                if (messageToSend.Contains("##SpotifyArtist##"))
+                                    messageToSend = messageToSend.Replace("##SpotifyArtist##", form.Artists);
+                                if (messageToSend.Contains("##SpotifyURL##"))
+                                    messageToSend = messageToSend.Replace("##SpotifyURL##", form.songURL);
+                            }
+
+                            Globals.sendChatBotMessage(Globals.loginName, messageToSend);
                         };
                         timer.Start();
                         Globals.ChatbotTimers.Add(setting.Name, timer);
@@ -1147,7 +1213,7 @@ namespace TwitchHelperBot
             if (Application.OpenForms.OfType<AudioMixerForm>().Count() == 0)
             {
                 AudioMixerForm form = new AudioMixerForm();
-                form.ShowDialog();
+                form.Show();
             }
         }
 

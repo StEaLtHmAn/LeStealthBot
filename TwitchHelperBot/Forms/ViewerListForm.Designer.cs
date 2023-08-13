@@ -1,4 +1,4 @@
-﻿namespace TwitchHelperBot
+﻿namespace LeStealthBot
 {
     partial class ViewerListForm
     {
@@ -42,7 +42,7 @@
             this.button6 = new System.Windows.Forms.Button();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.button2 = new System.Windows.Forms.Button();
-            this.richTextBox1 = new TwitchHelperBot.RichTextBoxEx();
+            this.richTextBox1 = new LeStealthBot.RichTextBoxEx();
             this.contextMenuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -258,9 +258,8 @@
             this.MinimizeBox = false;
             this.Name = "ViewerListForm";
             this.Padding = new System.Windows.Forms.Padding(1, 3, 1, 3);
-            this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-            this.Text = "Viewer List";
+            this.Text = "LeStealthBot - Viewer List";
             this.TopMost = true;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.ViewerListForm_FormClosing);
             this.Shown += new System.EventHandler(this.ViewerListForm_Shown);

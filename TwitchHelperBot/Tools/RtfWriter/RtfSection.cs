@@ -1,7 +1,7 @@
 using System;
 using System.Text;
 
-namespace TwitchHelperBot.RtfWriter
+namespace LeStealthBot.RtfWriter
 {
     public class RtfSection : RtfBlock
     {

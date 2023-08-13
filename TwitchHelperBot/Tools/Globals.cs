@@ -10,7 +10,7 @@ using System.Windows.Forms;
 using System.Windows.Threading;
 using TwitchLib.Client;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public static class Globals
     {

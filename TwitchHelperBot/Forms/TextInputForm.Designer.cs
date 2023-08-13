@@ -1,4 +1,4 @@
-﻿namespace TwitchHelperBot
+﻿namespace LeStealthBot
 {
     partial class TextInputForm
     {
@@ -88,7 +88,6 @@
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "TextInputForm";
-            this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Input";
             this.flowLayoutPanel1.ResumeLayout(false);

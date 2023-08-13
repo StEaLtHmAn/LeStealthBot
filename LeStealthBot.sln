@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwitchHelperBot", "TwitchHelperBot\TwitchHelperBot.csproj", "{2ECF23E5-5D1F-4F41-A82C-1EA1EC4C0AB4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LeStealthBot", "TwitchHelperBot\LeStealthBot.csproj", "{2ECF23E5-5D1F-4F41-A82C-1EA1EC4C0AB4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Updater", "Updater\Updater.csproj", "{9BADEE91-9E74-4B87-B952-D6B430A78DBC}"
 EndProject

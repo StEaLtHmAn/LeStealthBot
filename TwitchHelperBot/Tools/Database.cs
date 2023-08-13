@@ -7,7 +7,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public static class Database
     {

@@ -1,4 +1,4 @@
-﻿namespace TwitchHelperBot
+﻿namespace LeStealthBot
 {
     partial class MainForm
     {
@@ -58,8 +58,7 @@
             this.notifyIcon1.BalloonTipIcon = System.Windows.Forms.ToolTipIcon.Info;
             this.notifyIcon1.BalloonTipTitle = "Channel Info Updated";
             this.notifyIcon1.ContextMenuStrip = this.NotificationMenuStrip;
-            this.notifyIcon1.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon1.Icon")));
-            this.notifyIcon1.Text = "Twitch Bot Helper";
+            this.notifyIcon1.Text = "LeStealthBot";
             this.notifyIcon1.Visible = true;
             // 
             // NotificationMenuStrip
@@ -75,7 +74,7 @@
             this.quitToolStripMenuItem});
             this.NotificationMenuStrip.Name = "contextMenuStrip1";
             this.NotificationMenuStrip.ShowImageMargin = false;
-            this.NotificationMenuStrip.Size = new System.Drawing.Size(167, 170);
+            this.NotificationMenuStrip.Size = new System.Drawing.Size(167, 148);
             this.NotificationMenuStrip.Opened += new System.EventHandler(this.NotificationMenuStrip_Opened);
             // 
             // setupPresetsToolStripMenuItem
@@ -173,10 +172,9 @@
             this.ClientSize = new System.Drawing.Size(134, 111);
             this.Name = "MainForm";
             this.Opacity = 0D;
-            this.ShowIcon = false;
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
-            this.Text = "Main";
+            this.Text = "LeStealthBot";
             this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
             this.NotificationMenuStrip.ResumeLayout(false);

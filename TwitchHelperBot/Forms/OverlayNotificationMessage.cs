@@ -5,7 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Windows.Forms;
 
-namespace TwitchHelperBot
+namespace LeStealthBot
 {
     public partial class OverlayNotificationMessage : Form
     {
