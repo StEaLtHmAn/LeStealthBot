@@ -77,25 +77,30 @@ namespace LeStealthBot
                 lblHeading = new TextBox();
                 lblHeading.Text = settingName;
                 lblHeading.Location = new Point(10, yValue);
-                lblHeading.Size = new Size(200, 30);
+                lblHeading.Size = new Size(180, 30);
                 lblHeading.LostFocus += delegate
                 {
                     if (lblHeading.Text != settingName)
                     {
-                        if ((settingName.Contains("ChatCommand - ") && !lblHeading.Text.Contains("ChatCommand - ")) ||
-                        (settingName.Contains("Timer - ") && !lblHeading.Text.Contains("Timer - ")))
+                        if (settingName.StartsWith("ChatCommand - "))
                         {
-                            lblHeading.Text = settingName;
+                            string namePart = lblHeading.Text.Replace("ChatCommand - ", string.Empty);
+                            lblHeading.Text = "ChatCommand - " + namePart.ToLower();
                         }
-                        else
+                        if (settingName.StartsWith("Timer - "))
                         {
-                            var tmp = tmpChatBotSettings[settingName].DeepClone();
-                            tmpChatBotSettings.Remove(settingName);
-                            settingName = lblHeading.Text;
-                            tmpChatBotSettings.Add(lblHeading.Text, tmp);
-                            loadChatBotSettingsOuterUI();
-                            flowLayoutPanel1.ScrollControlIntoView(ChatBotSettingsTabButtons[settingName]);
+                            string namePart = lblHeading.Text.Replace("Timer - ", string.Empty);
+                            lblHeading.Text = "Timer - " + namePart.ToLower();
                         }
+
+                        lblHeading.Text = lblHeading.Text.Replace("  ", " ").Replace("  ", " ").Trim();
+
+                        var tmp = tmpChatBotSettings[settingName].DeepClone();
+                        tmpChatBotSettings.Remove(settingName);
+                        settingName = lblHeading.Text;
+                        tmpChatBotSettings.Add(lblHeading.Text, tmp);
+                        loadChatBotSettingsOuterUI();
+                        flowLayoutPanel1.ScrollControlIntoView(ChatBotSettingsTabButtons[settingName]);
                     }
                 };
             }
@@ -112,7 +117,7 @@ namespace LeStealthBot
             CheckBox cbxEnabled = new CheckBox();
             cbxEnabled.Font = new Font(lblHeading.Font.FontFamily, 9);
             cbxEnabled.Text = "Enabled";
-            cbxEnabled.Location = new Point(lblHeading.Location.X + lblHeading.Width + 10, yValue + 2);
+            cbxEnabled.Location = new Point(lblHeading.Location.X + lblHeading.Width + 5, yValue + 2);
             cbxEnabled.Checked = bool.Parse(tmpChatBotSettings[settingName]["enabled"].ToString());
             cbxEnabled.AutoSize = true;
             cbxEnabled.CheckedChanged += delegate
@@ -121,13 +126,52 @@ namespace LeStealthBot
             };
             panel1.Controls.Add(cbxEnabled);
 
+            int xValue = cbxEnabled.Location.X + cbxEnabled.Width;
+            if (settingName.StartsWith("ChatCommand - "))
+            {
+                ComboBox cbxPermissions = new ComboBox();
+                cbxPermissions.Location = new Point(xValue, yValue);
+                cbxPermissions.FlatStyle = FlatStyle.Flat;
+                cbxPermissions.DropDownStyle = ComboBoxStyle.DropDownList;
+                cbxPermissions.Size = new Size(83, 28);
+                cbxPermissions.Items.AddRange(new string[] { "Any", "Moderator", "Broadcaster" });
+                switch (tmpChatBotSettings?[settingName]?["permissions"]?.ToString() ?? "Any")
+                {
+                    case "Any":
+                        cbxPermissions.SelectedIndex = 0;
+                        break;
+                    case "Moderator":
+                        cbxPermissions.SelectedIndex = 1;
+                        break;
+                    case "Broadcaster":
+                        cbxPermissions.SelectedIndex = 2;
+                        break;
+                }
+                cbxPermissions.SelectedIndexChanged += delegate
+                {
+                    switch (cbxPermissions.SelectedIndex)
+                    {
+                        case 0:
+                            tmpChatBotSettings[settingName]["permissions"] = "Any";
+                            break;
+                        case 1:
+                            tmpChatBotSettings[settingName]["permissions"] = "Moderator";
+                            break;
+                        case 2:
+                            tmpChatBotSettings[settingName]["permissions"] = "Broadcaster";
+                            break;
+                    }
+                };
+                panel1.Controls.Add(cbxPermissions);
+                xValue = cbxPermissions.Location.X + cbxPermissions.Width + 3;
+            }
+
             if (!isDefaultSetting)
             {
                 Button btnDelete = new Button();
-                btnDelete.Location = new Point(cbxEnabled.Location.X + cbxEnabled.Width, yValue-3);
+                btnDelete.Location = new Point(xValue, yValue-3);
                 btnDelete.FlatStyle = FlatStyle.Flat;
                 btnDelete.ForeColor = Color.Red;
-                btnDelete.AutoSize = true;
                 btnDelete.Text = "Delete";
                 btnDelete.Size = new Size(60, 28);
                 btnDelete.Click += delegate

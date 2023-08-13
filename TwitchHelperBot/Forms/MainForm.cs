@@ -142,6 +142,8 @@ namespace LeStealthBot
                 File.Delete("TwitchHelperBot.exe");
             if (File.Exists("TwitchHelperBot.pdb"))
                 File.Delete("TwitchHelperBot.pdb");
+            if (File.Exists("TwitchHelperBot.log"))
+                File.Delete("TwitchHelperBot.log");
             if (File.Exists("TwitchHelperBot.exe.config"))
                 File.Delete("TwitchHelperBot.exe.config");
             Database.ConvertOldIniIntoDB();
@@ -150,7 +152,7 @@ namespace LeStealthBot
 
             //get LoginName, if we dont have LoginName in the config then we ask the user for his LoginName with a popup textbox
             //without a LoginName we cannot continue so not entering it closes the app
-            Globals.loginName = Database.ReadOneRecord(x => x["Key"] == "LoginName")["Value"].AsString;
+            Globals.loginName = Database.ReadOneRecord(x => x["Key"] == "LoginName")?["Value"]?.AsString ?? string.Empty;
             if (string.IsNullOrEmpty(Globals.loginName))
             {
                 using (TextInputForm testDialog = new TextInputForm("Setup LoginName", "Please enter your twitch LoginName to continue."))
@@ -177,7 +179,7 @@ namespace LeStealthBot
 
             //get ClientId, if we dont have ClientId in the config then we ask the user for his ClientId with a popup textbox
             //without a ClientId we cannot continue so not entering it closes the app
-            Globals.clientId = Database.ReadOneRecord(x => x["Key"] == "ClientId")["Value"].AsString;
+            Globals.clientId = Database.ReadOneRecord(x => x["Key"] == "ClientId")?["Value"]?.AsString ?? string.Empty;
             if (string.IsNullOrEmpty(Globals.clientId))
             {
                 using (TextInputForm testDialog = new TextInputForm("Setup ClientID", "We need your application ClientID.\r\n\r\n- Browse here: https://dev.twitch.tv/console/apps/create \r\n- Set OAuthRedirectURL to http://localhost (or something else if you know what you doing)\r\n- Set Category to Broadcaster Suite\r\n- Click Create and copy-paste the ClientID into the box below."))
@@ -345,54 +347,30 @@ namespace LeStealthBot
                 { "ChatCommand - eskont", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
+                    { "permissions", "Any" },
                     { "suburb", "nelson-mandela-bay/lorraine?block=13" },
                     { "message", "MrDestructoid @##YourName##'s next loadshedding is scheduled for: ##ScheduledMonth## @ ##ScheduledTime##. @##YourName##'s current local time is ##Time##" }
                 } },
                 { "ChatCommand - topviewers", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
+                    { "permissions", "Any" },
                     { "message", "MrDestructoid " },
                     { "messagePart", "##Count##. @##Name## - ##Watchtime## | " }
                 } },
                 { "ChatCommand - watchtime", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
+                    { "permissions", "Any" },
                     { "message", "MrDestructoid You have watched @##YourName## for ##Watchtime##." },
                     { "messageWithUser", "MrDestructoid @##Name## has watched @##YourName## for ##Watchtime##." }
                 } },
                 { "ChatCommand - commands", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
+                    { "permissions", "Any" },
                     { "message", "MrDestructoid Available commands: ##EnabledCommandList##." }
                 } },
-                { "ChatCommand - time", new JObject{
-                    { "enabled", "false" },
-                    { "default", "false" },//
-                    { "message", "MrDestructoid @##YourName##'s current local time is: ##Time## ##TimeZone##" }
-                } },
-                { "ChatCommand - discord", new JObject{
-                    { "enabled", "false" },
-                    { "default", "false" },//
-                    { "message", "MrDestructoid Join our community Discord server using this link :) https://discord.gg/DbC55YXeh4" }
-                } },
-                { "ChatCommand - tip", new JObject{
-                    { "enabled", "false" },
-                    { "default", "false" },//
-                    { "message", "MrDestructoid You can Tip to @##YourName## using this link https://StreamElements.com/##YourName##/tip" }
-                } },
-                { "Timer - Prime Reminder", new JObject{
-                    { "enabled", "false" },
-                    { "default", "false" },//
-                    { "interval", "90" },
-                    { "message", "MrDestructoid Hey! Just a friendly reminder that if you have Amazon Prime, you also have Twitch Prime! This means you can use your free monthly subscription to support your favourite streamers. <3" },
-                } },
-                //"##YourName##"
-                //"##Time##"
-                //"##Name##"
-                //"##TimeZone##"
-                //"##Argument0##"
-                //"##Argument1##"
-                //"##Argument2##"
             };
             //chatbot settings validation/correction
             bool needSave = false;
@@ -635,207 +613,235 @@ namespace LeStealthBot
                 {
                     try
                     {
-                        if (Globals.ChatBotSettings.ContainsKey($"ChatCommand - {e.Command.CommandText.ToLower()}")
-                        && (Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"] as JObject).ContainsKey("enabled")
-                        && bool.Parse(Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["enabled"].ToString()))
+                        //check if command exists
+                        if (!Globals.ChatBotSettings.ContainsKey($"ChatCommand - {e.Command.CommandText.ToLower()}"))
+                            return;
+                        //check if enabled
+                        if ((Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"] as JObject).ContainsKey("enabled")
+                        && !bool.Parse(Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["enabled"].ToString()))
+                            return;
+                        //check permissions
+                        if ((Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"] as JObject).ContainsKey("permissions"))
                         {
-                            switch (e.Command.CommandText.ToLower())
+                            switch (Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["permissions"].ToString().ToLower())
                             {
-                                case "eskont":
-                                    {
-                                        try
-                                        {
-                                            using (WebClient webClient = new WebClient())
-                                            {
-                                                string htmlSchedule = webClient.DownloadString($"https://www.ourpower.co.za/areas/{Globals.ChatBotSettings["ChatCommand - eskont"]["suburb"]}");
-                                                int i1 = htmlSchedule.IndexOf("time dateTime=");
-                                                int i2 = htmlSchedule.IndexOf("</section>");
-                                                htmlSchedule = "<xml><section><h3><" + htmlSchedule.Substring(i1, htmlSchedule.IndexOf("</section>", i2 + 1) - i1) + "</section></xml>";
-
-                                                XmlDocument document = new XmlDocument();
-                                                document.LoadXml(htmlSchedule);
-                                                XmlNode nextScheduledTime = document.SelectSingleNode("//span[@style='color:red']");
-                                                XmlNode nextScheduledDate = nextScheduledTime.SelectSingleNode("../../h3/time");
-
-                                                Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - eskont"]["message"].ToString()
-                                                .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
-                                                .Replace("##ScheduledMonth##", nextScheduledDate.InnerText)
-                                                .Replace("##ScheduledTime##", nextScheduledTime.InnerText)
-                                                .Replace("##Time##", DateTime.Now.ToShortTimeString()),
-                                                e.Command.ChatMessage.Id);
-                                            }
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
-                                        }
-                                        break;
-                                    }
-                                case "topviewers":
-                                    {
-                                        try
-                                        {
-                                            var userToSearch = (string.IsNullOrEmpty(e.Command.ArgumentsAsString) ? e.Command.ChatMessage.DisplayName : e.Command.ArgumentsAsString.Replace("@", string.Empty)).Trim();
-                                            List<ViewerListForm.SessionData> Sessions = Database.ReadAllData<ViewerListForm.SessionData>("Sessions");
-
-                                            ViewerListForm viewerListForm = null;
-                                            Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
-                                            var OpenForms = Application.OpenForms.OfType<ViewerListForm>();
-                                            if (OpenForms.Count() > 0)
-                                            {
-                                                viewerListForm = OpenForms.First();
-                                                Sessions.Add(new ViewerListForm.SessionData { Viewers = viewerListForm.WatchTimeList });
-                                            }
-
-                                            foreach (var sessionData in Sessions)
-                                            {
-                                                foreach (var viewerData in sessionData.Viewers)
-                                                {
-                                                    if (viewerData.UserName.ToLower() == Globals.loginName.ToLower())
-                                                        continue;
-                                                    if (e.Command.ArgumentsAsString.ToLower().Contains("online") &&
-                                                    viewerListForm != null &&
-                                                    !viewerListForm.ViewersOnlineNames.Contains(viewerData.UserName))
-                                                        continue;
-                                                    if (!tmpWatchTimeList.ContainsKey(viewerData.UserName))
-                                                    {
-                                                        tmpWatchTimeList.Add(viewerData.UserName, viewerData.WatchTime);
-                                                    }
-                                                    else
-                                                    {
-                                                        tmpWatchTimeList[viewerData.UserName] += viewerData.WatchTime;
-                                                    }
-                                                }
-                                            }
-
-                                            int count = 1;
-                                            IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value.TotalHours).ThenBy(x => x.Key);
-                                            string messageToSend = Globals.ChatBotSettings["ChatCommand - topviewers"]["message"].ToString();
-                                            foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
-                                            {
-                                                string newPart = Globals.ChatBotSettings["ChatCommand - topviewers"]["messagePart"].ToString()
-                                                .Replace("##Count##", count.ToString())
-                                                .Replace("##Name##", kvp.Key)
-                                                .Replace("##Watchtime##", Globals.getShortRelativeTimeSpan(kvp.Value));
-                                                if (messageToSend.Length + newPart.Length <= 486)
-                                                    messageToSend += newPart;
-                                                else
-                                                    break;
-                                                count++;
-                                            }
-
-                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
-                                        }
-                                        break;
-                                    }
-                                case "commands":
-                                    {
-                                        try
-                                        {
-                                            string messageToSend = string.Empty;
-                                            foreach (string setting in Globals.ChatBotSettings.Properties().Select(p => p.Name))
-                                            {
-                                                if (setting.StartsWith("ChatCommand - ") && bool.Parse(Globals.ChatBotSettings[setting]["enabled"].ToString()))
-                                                {
-                                                    messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
-                                                }
-                                            }
-                                            messageToSend = messageToSend.Substring(0, messageToSend.Length - 2);
-
-                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - commands"]["message"].ToString()
-                                                .Replace("##EnabledCommandList##", messageToSend),
-                                                e.Command.ChatMessage.Id);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
-                                        }
-                                        break;
-                                    }
-                                case "watchtime":
-                                    {
-                                        try
-                                        {
-                                            var userToSearch = (string.IsNullOrEmpty(e.Command.ArgumentsAsString) ? e.Command.ChatMessage.DisplayName : e.Command.ArgumentsAsString.Replace("@", string.Empty)).Trim();
-                                            List<ViewerListForm.SessionData> Sessions = Database.ReadAllData<ViewerListForm.SessionData>("Sessions");
-
-                                            if (Application.OpenForms.OfType<ViewerListForm>().Count() > 0)
-                                            {
-                                                Sessions.Add(new ViewerListForm.SessionData { Viewers = Application.OpenForms.OfType<ViewerListForm>().First().WatchTimeList });
-                                            }
-                                            TimeSpan tmpWatchTime = new TimeSpan();
-                                            foreach (var s in Sessions)
-                                            {
-                                                foreach (var v in s.Viewers.Where(y => y.UserName == userToSearch))
-                                                {
-                                                    tmpWatchTime += v.WatchTime;
-                                                }
-                                            }
-
-                                            if (userToSearch == e.Command.ChatMessage.DisplayName)
-                                                Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - watchtime"]["message"].ToString()
-                                                .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
-                                                .Replace("##Name##", userToSearch)
-                                                .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
-                                                e.Command.ChatMessage.Id);
-                                            else
-                                                Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - watchtime"]["messageWithUser"].ToString()
-                                                .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
-                                                .Replace("##Name##", userToSearch)
-                                                .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
-                                                e.Command.ChatMessage.Id);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
-                                        }
-                                        break;
-                                    }
-                                default:
-                                    {
-                                        try
-                                        {
-                                            string messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["message"].ToString();
-                                            if (messageToSend.Contains("##YourName##"))
-                                                messageToSend = messageToSend.Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString());
-                                            if (messageToSend.Contains("##Time##"))
-                                                messageToSend = messageToSend.Replace("##Time##", DateTime.Now.ToShortTimeString());
-                                            if (messageToSend.Contains("##Name##"))
-                                                messageToSend = messageToSend.Replace("##Name##", e.Command.ChatMessage.DisplayName);
-                                            if (messageToSend.Contains("##TimeZone##"))
-                                                messageToSend = messageToSend.Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName);
-                                            if (messageToSend.Contains("##Argument0##") && e.Command.ArgumentsAsList.Count > 0)
-                                                messageToSend = messageToSend.Replace("##Argument0##", e.Command.ArgumentsAsList[0]);
-                                            if (messageToSend.Contains("##Argument1##") && e.Command.ArgumentsAsList.Count > 1)
-                                                messageToSend = messageToSend.Replace("##Argument1##", e.Command.ArgumentsAsList[1]);
-                                            if (messageToSend.Contains("##Argument2##") && e.Command.ArgumentsAsList.Count > 2)
-                                                messageToSend = messageToSend.Replace("##Argument2##", e.Command.ArgumentsAsList[2]);
-                                            
-                                            var OpenViewerListForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
-                                            if (OpenViewerListForms.Count() > 0)
-                                            {
-                                                var form = OpenViewerListForms.First();
-                                                if (messageToSend.Contains("##SpotifySong##"))
-                                                    messageToSend = messageToSend.Replace("##SpotifySong##", form.name);
-                                                if (messageToSend.Contains("##SpotifyArtist##"))
-                                                    messageToSend = messageToSend.Replace("##SpotifyArtist##", form.Artists);
-                                                if (messageToSend.Contains("##SpotifyURL##"))
-                                                    messageToSend = messageToSend.Replace("##SpotifyURL##", form.songURL);
-                                            }
-
-                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
-                                        }
-                                        break;
-                                    }
+                                case "moderator":
+                                    if(!(e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster))
+                                        return;
+                                    break;
+                                case "broadcaster":
+                                    if (!e.Command.ChatMessage.IsBroadcaster)
+                                        return;
+                                    break;
                             }
+                        }
+                        switch (e.Command.CommandText.ToLower())
+                        {
+                            case "eskont":
+                                {
+                                    try
+                                    {
+                                        using (WebClient webClient = new WebClient())
+                                        {
+                                            string htmlSchedule = webClient.DownloadString($"https://www.ourpower.co.za/areas/{Globals.ChatBotSettings["ChatCommand - eskont"]["suburb"]}");
+                                            int i1 = htmlSchedule.IndexOf("time dateTime=");
+                                            int i2 = htmlSchedule.IndexOf("</section>");
+                                            htmlSchedule = "<xml><section><h3><" + htmlSchedule.Substring(i1, htmlSchedule.IndexOf("</section>", i2 + 1) - i1) + "</section></xml>";
+
+                                            XmlDocument document = new XmlDocument();
+                                            document.LoadXml(htmlSchedule);
+                                            XmlNode nextScheduledTime = document.SelectSingleNode("//span[@style='color:red']");
+                                            XmlNode nextScheduledDate = nextScheduledTime.SelectSingleNode("../../h3/time");
+
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - eskont"]["message"].ToString()
+                                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
+                                            .Replace("##ScheduledMonth##", nextScheduledDate.InnerText)
+                                            .Replace("##ScheduledTime##", nextScheduledTime.InnerText)
+                                            .Replace("##Time##", DateTime.Now.ToShortTimeString()),
+                                            e.Command.ChatMessage.Id);
+                                        }
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
+                                    }
+                                    break;
+                                }
+                            case "topviewers":
+                                {
+                                    try
+                                    {
+                                        var userToSearch = (string.IsNullOrEmpty(e.Command.ArgumentsAsString) ? e.Command.ChatMessage.DisplayName : e.Command.ArgumentsAsString.Replace("@", string.Empty)).Trim();
+                                        List<ViewerListForm.SessionData> Sessions = Database.ReadAllData<ViewerListForm.SessionData>("Sessions");
+
+                                        ViewerListForm viewerListForm = null;
+                                        Dictionary<string, TimeSpan> tmpWatchTimeList = new Dictionary<string, TimeSpan>();
+                                        var OpenForms = Application.OpenForms.OfType<ViewerListForm>();
+                                        if (OpenForms.Count() > 0)
+                                        {
+                                            viewerListForm = OpenForms.First();
+                                            Sessions.Add(new ViewerListForm.SessionData { Viewers = viewerListForm.WatchTimeList });
+                                        }
+
+                                        foreach (var sessionData in Sessions)
+                                        {
+                                            foreach (var viewerData in sessionData.Viewers)
+                                            {
+                                                if (viewerData.UserName.ToLower() == Globals.loginName.ToLower())
+                                                    continue;
+                                                if (e.Command.ArgumentsAsString.ToLower().Contains("online") &&
+                                                viewerListForm != null &&
+                                                !viewerListForm.ViewersOnlineNames.Contains(viewerData.UserName))
+                                                    continue;
+                                                if (!tmpWatchTimeList.ContainsKey(viewerData.UserName))
+                                                {
+                                                    tmpWatchTimeList.Add(viewerData.UserName, viewerData.WatchTime);
+                                                }
+                                                else
+                                                {
+                                                    tmpWatchTimeList[viewerData.UserName] += viewerData.WatchTime;
+                                                }
+                                            }
+                                        }
+
+                                        int count = 1;
+                                        IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value.TotalHours).ThenBy(x => x.Key);
+                                        string messageToSend = Globals.ChatBotSettings["ChatCommand - topviewers"]["message"].ToString();
+                                        foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
+                                        {
+                                            string newPart = Globals.ChatBotSettings["ChatCommand - topviewers"]["messagePart"].ToString()
+                                            .Replace("##Count##", count.ToString())
+                                            .Replace("##Name##", kvp.Key)
+                                            .Replace("##Watchtime##", Globals.getShortRelativeTimeSpan(kvp.Value));
+                                            if (messageToSend.Length + newPart.Length <= 486)
+                                                messageToSend += newPart;
+                                            else
+                                                break;
+                                            count++;
+                                        }
+
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
+                                    }
+                                    break;
+                                }
+                            case "commands":
+                                {
+                                    try
+                                    {
+                                        string messageToSend = string.Empty;
+                                        foreach (string setting in Globals.ChatBotSettings.Properties().Select(p => p.Name))
+                                        {
+                                            if (setting.StartsWith("ChatCommand - ") && bool.Parse(Globals.ChatBotSettings[setting]["enabled"].ToString()))
+                                            {
+                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                            }
+                                        }
+                                        messageToSend = messageToSend.Substring(0, messageToSend.Length - 2);
+
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - commands"]["message"].ToString()
+                                            .Replace("##EnabledCommandList##", messageToSend),
+                                            e.Command.ChatMessage.Id);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
+                                    }
+                                    break;
+                                }
+                            case "watchtime":
+                                {
+                                    try
+                                    {
+                                        var userToSearch = (string.IsNullOrEmpty(e.Command.ArgumentsAsString) ? e.Command.ChatMessage.DisplayName : e.Command.ArgumentsAsString.Replace("@", string.Empty)).Trim();
+                                        List<ViewerListForm.SessionData> Sessions = Database.ReadAllData<ViewerListForm.SessionData>("Sessions");
+
+                                        if (Application.OpenForms.OfType<ViewerListForm>().Count() > 0)
+                                        {
+                                            Sessions.Add(new ViewerListForm.SessionData { Viewers = Application.OpenForms.OfType<ViewerListForm>().First().WatchTimeList });
+                                        }
+                                        TimeSpan tmpWatchTime = new TimeSpan();
+                                        foreach (var s in Sessions)
+                                        {
+                                            foreach (var v in s.Viewers.Where(y => y.UserName == userToSearch))
+                                            {
+                                                tmpWatchTime += v.WatchTime;
+                                            }
+                                        }
+
+                                        if (userToSearch == e.Command.ChatMessage.DisplayName)
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - watchtime"]["message"].ToString()
+                                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
+                                            .Replace("##Name##", userToSearch)
+                                            .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
+                                            e.Command.ChatMessage.Id);
+                                        else
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - watchtime"]["messageWithUser"].ToString()
+                                            .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
+                                            .Replace("##Name##", userToSearch)
+                                            .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
+                                            e.Command.ChatMessage.Id);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
+                                    }
+                                    break;
+                                }
+                            default:
+                                {
+                                    try
+                                    {
+                                        string messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["message"].ToString();
+                                        if (messageToSend.Contains("##YourName##"))
+                                            messageToSend = messageToSend.Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString());
+                                        if (messageToSend.Contains("##Time##"))
+                                            messageToSend = messageToSend.Replace("##Time##", DateTime.Now.ToShortTimeString());
+                                        if (messageToSend.Contains("##Name##"))
+                                            messageToSend = messageToSend.Replace("##Name##", e.Command.ChatMessage.DisplayName);
+                                        if (messageToSend.Contains("##TimeZone##"))
+                                            messageToSend = messageToSend.Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName);
+                                        if (messageToSend.Contains("##Argument0##") && e.Command.ArgumentsAsList.Count > 0)
+                                            messageToSend = messageToSend.Replace("##Argument0##", e.Command.ArgumentsAsList[0].Replace("@",string.Empty));
+                                        if (messageToSend.Contains("##Argument1##") && e.Command.ArgumentsAsList.Count > 1)
+                                            messageToSend = messageToSend.Replace("##Argument1##", e.Command.ArgumentsAsList[1].Replace("@", string.Empty));
+                                        if (messageToSend.Contains("##Argument2##") && e.Command.ArgumentsAsList.Count > 2)
+                                            messageToSend = messageToSend.Replace("##Argument2##", e.Command.ArgumentsAsList[2].Replace("@", string.Empty));
+
+                                        var OpenViewerListForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
+                                        if (OpenViewerListForms.Count() > 0)
+                                        {
+                                            var form = OpenViewerListForms.First();
+                                            if(string.IsNullOrEmpty(form.name + form.Artists + form.songURL))
+                                                break;
+                                            if (messageToSend.Contains("##SpotifySong##"))
+                                                messageToSend = messageToSend.Replace("##SpotifySong##", form.name);
+                                            if (messageToSend.Contains("##SpotifyArtist##"))
+                                                messageToSend = messageToSend.Replace("##SpotifyArtist##", form.Artists);
+                                            if (messageToSend.Contains("##SpotifyURL##"))
+                                                messageToSend = messageToSend.Replace("##SpotifyURL##", form.songURL);
+                                        }
+                                        else
+                                        {
+                                            if (messageToSend.Contains("##SpotifySong##"))
+                                                break;
+                                            if (messageToSend.Contains("##SpotifyArtist##"))
+                                                break;
+                                            if (messageToSend.Contains("##SpotifyURL##"))
+                                                break;
+                                        }
+
+                                        Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
+                                    }
+                                    break;
+                                }
                         }
                     }
                     catch { }

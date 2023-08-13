@@ -109,7 +109,7 @@
             this.tabControl1.Multiline = true;
             this.tabControl1.Name = "tabControl1";
             this.tabControl1.SelectedIndex = 0;
-            this.tabControl1.Size = new System.Drawing.Size(763, 525);
+            this.tabControl1.Size = new System.Drawing.Size(779, 525);
             this.tabControl1.SizeMode = System.Windows.Forms.TabSizeMode.Fixed;
             this.tabControl1.TabIndex = 108;
             // 
@@ -128,7 +128,7 @@
             this.tabPage4.Controls.Add(this.label5);
             this.tabPage4.Location = new System.Drawing.Point(104, 4);
             this.tabPage4.Name = "tabPage4";
-            this.tabPage4.Size = new System.Drawing.Size(655, 517);
+            this.tabPage4.Size = new System.Drawing.Size(671, 517);
             this.tabPage4.TabIndex = 3;
             this.tabPage4.Text = "Channel Update";
             // 
@@ -239,7 +239,7 @@
             this.tabPage2.Controls.Add(this.panel2);
             this.tabPage2.Location = new System.Drawing.Point(104, 4);
             this.tabPage2.Name = "tabPage2";
-            this.tabPage2.Size = new System.Drawing.Size(655, 517);
+            this.tabPage2.Size = new System.Drawing.Size(671, 517);
             this.tabPage2.TabIndex = 4;
             this.tabPage2.Text = "Chat Bot";
             // 
@@ -250,7 +250,7 @@
             this.panel3.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel3.Location = new System.Drawing.Point(0, 32);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(655, 485);
+            this.panel3.Size = new System.Drawing.Size(671, 485);
             this.panel3.TabIndex = 3;
             // 
             // panel1
@@ -258,7 +258,7 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(20, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(635, 485);
+            this.panel1.Size = new System.Drawing.Size(651, 485);
             this.panel1.TabIndex = 1;
             // 
             // flowLayoutPanel1
@@ -286,7 +286,7 @@
             this.panel2.Dock = System.Windows.Forms.DockStyle.Top;
             this.panel2.Location = new System.Drawing.Point(0, 0);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(655, 32);
+            this.panel2.Size = new System.Drawing.Size(671, 32);
             this.panel2.TabIndex = 2;
             // 
             // button4
@@ -420,7 +420,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(763, 563);
+            this.ClientSize = new System.Drawing.Size(779, 563);
             this.Controls.Add(this.tabControl1);
             this.Controls.Add(this.button3);
             this.Controls.Add(this.button1);
