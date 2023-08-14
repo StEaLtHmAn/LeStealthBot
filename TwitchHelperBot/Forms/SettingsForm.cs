@@ -195,7 +195,7 @@ namespace LeStealthBot
                 TextBox txtMessage = new TextBox();
                 txtMessage.Text = tmpChatBotSettings[settingName]["message"].ToString();
                 txtMessage.Location = new Point(lblMessage.Width + 10, yValue);
-                txtMessage.Size = new Size(panel1.Width - lblMessage.Width - 20, 50);
+                txtMessage.Size = new Size(panel1.Width - lblMessage.Width - 20, 60);
                 txtMessage.Multiline = true;
                 txtMessage.ScrollBars = ScrollBars.Vertical;
                 txtMessage.TextChanged += delegate
@@ -204,6 +204,37 @@ namespace LeStealthBot
                 };
                 panel1.Controls.Add(txtMessage);
                 yValue += txtMessage.Height + 10;
+            }
+
+            if (settingName.StartsWith("ChatCommand - "))
+            {
+                TextBox lblMessage = new TextBox();
+                lblMessage.Text = "Chat command fill points: \r\n" +
+                    "##YourName## | ##Time## | ##Name## | ##TimeZone## | ##Argument0## | ##Argument1## | ##Argument2## | ##SpotifySong## | ##SpotifyArtist## | ##SpotifyURL## | ##SessionUpTime##";
+                lblMessage.Location = new Point(10, yValue);
+                lblMessage.Multiline = true;
+                lblMessage.ReadOnly = true;
+                lblMessage.BorderStyle = BorderStyle.None;
+                panel1.Controls.Add(lblMessage);
+                lblMessage.BackColor = BackColor;
+                lblMessage.ForeColor = ForeColor;
+                lblMessage.Size = TextRenderer.MeasureText(lblMessage.Text, lblMessage.Font, new Size(panel1.Width - 20, 20), TextFormatFlags.WordBreak);
+                yValue += lblMessage.Height + 10;
+            }
+            else if (settingName.StartsWith("Timer - "))
+            {
+                TextBox lblMessage = new TextBox();
+                lblMessage.Text = "Timer fill points: \r\n" +
+                    "##YourName## | ##Time## | ##Name## | ##TimeZone## | ##SpotifySong## | ##SpotifyArtist## | ##SpotifyURL## | ##SessionUpTime##";
+                lblMessage.Location = new Point(10, yValue);
+                lblMessage.Multiline = true;
+                lblMessage.ReadOnly = true;
+                lblMessage.BorderStyle = BorderStyle.None;
+                panel1.Controls.Add(lblMessage);
+                lblMessage.BackColor = BackColor;
+                lblMessage.ForeColor = ForeColor;
+                lblMessage.Size = TextRenderer.MeasureText(lblMessage.Text, lblMessage.Font, new Size(panel1.Width - 20, 20), TextFormatFlags.WordBreak);
+                yValue += lblMessage.Height + 10;
             }
 
             if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("messagePart"))
@@ -374,63 +405,9 @@ namespace LeStealthBot
             Globals.ChatBotSettings = tmpChatBotSettings;
             Database.UpsertRecord(x => x["Key"] == "ChatBotSettings", new BsonDocument() { { "Key", "ChatBotSettings" }, { "Value", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None) } });
 
-            resetChatBotTimers();
+            Globals.resetChatBotTimers();
 
             Dispose();
-        }
-
-        public void resetChatBotTimers()
-        {
-            ArrayList listTodelete = new ArrayList();
-            foreach (var timer in Globals.ChatbotTimers)
-            {
-                if (!Globals.ChatBotSettings.ContainsKey(timer.Key))
-                {
-                    timer.Value.Stop();
-                    listTodelete.Add(timer.Key);
-                }
-            }
-            for (int i = 0; i < listTodelete.Count; i++)
-            {
-                Globals.ChatBotSettings.Remove(listTodelete[0].ToString());
-            }
-
-            foreach (var setting in Globals.ChatBotSettings.Properties())
-            {
-                if (setting.Name.StartsWith("Timer - "))
-                {
-                    if (Globals.ChatbotTimers.ContainsKey(setting.Name))
-                    {
-                        if (Globals.ChatbotTimers[setting.Name].Interval.TotalMinutes != double.Parse(Globals.ChatBotSettings[setting.Name]["interval"].ToString()))
-                        {
-                            Globals.ChatbotTimers[setting.Name].Interval = TimeSpan.FromMinutes(double.Parse(Globals.ChatBotSettings[setting.Name]["interval"].ToString()));
-                        }
-                        if (Globals.ChatbotTimers[setting.Name].IsEnabled != bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
-                        {
-                            if (bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
-                                Globals.ChatbotTimers[setting.Name].Start();
-                            else
-                                Globals.ChatbotTimers[setting.Name].Stop();
-                        }
-                    }
-                    else
-                    {
-                        DispatcherTimer timer = new DispatcherTimer();
-                        timer.Interval = TimeSpan.FromMinutes(double.Parse(Globals.ChatBotSettings[setting.Name]["interval"].ToString()));
-                        timer.Tick += delegate
-                        {
-                            if (!Globals.ChatBotSettings.ContainsKey(setting.Name) || !bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
-                                timer.Stop();
-
-                            Globals.sendChatBotMessage(Globals.loginName, Globals.ChatBotSettings[setting.Name]["message"].ToString()
-                                .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString()));
-                        };
-                        if (bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
-                            timer.Start();
-                        Globals.ChatbotTimers.Add(setting.Name, timer);
-                    }
-                }
-            }
         }
 
         private void button2_Click(object sender, EventArgs e)

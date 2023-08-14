@@ -1,14 +1,17 @@
 ﻿using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Windows.Threading;
 using TwitchLib.Client;
+using TwitchLib.Client.Models;
 
 namespace LeStealthBot
 {
@@ -206,6 +209,8 @@ namespace LeStealthBot
 
         public static void sendChatBotMessage(string channel, string message, string replyID = "")
         {
+            if (twitchChatClient.JoinedChannels.Count == 0)
+                return;
             if (message.Length > 486)
             {
                 message = message.Substring(0, 486);
@@ -218,6 +223,73 @@ namespace LeStealthBot
             else
             {
                 twitchChatClient.SendReply(channel, replyID, message);
+            }
+        }
+
+        public static void resetChatBotTimers()
+        {
+            ArrayList listTodelete = new ArrayList();
+            foreach (var timer in Globals.ChatbotTimers)
+            {
+                if (!Globals.ChatBotSettings.ContainsKey(timer.Key))
+                {
+                    timer.Value.Stop();
+                    listTodelete.Add(timer.Key);
+                }
+            }
+            for (int i = 0; i < listTodelete.Count; i++)
+            {
+                Globals.ChatBotSettings.Remove(listTodelete[0].ToString());
+            }
+            foreach (var setting in Globals.ChatBotSettings.Properties())
+            {
+                if (setting.Name.StartsWith("Timer - "))
+                {
+                    DispatcherTimer timer = new DispatcherTimer();
+                    timer.Interval = TimeSpan.FromMinutes(double.Parse(Globals.ChatBotSettings[setting.Name]["interval"].ToString()));
+                    timer.Tick += delegate
+                    {
+                        if (!Globals.ChatBotSettings.ContainsKey(setting.Name) || !bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
+                            timer.Stop();
+
+                        string messageToSend = Globals.ChatBotSettings[setting.Name]["message"].ToString();
+                        if (messageToSend.Contains("##YourName##"))
+                            messageToSend = messageToSend.Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString());
+                        if (messageToSend.Contains("##Time##"))
+                            messageToSend = messageToSend.Replace("##Time##", DateTime.Now.ToShortTimeString());
+                        if (messageToSend.Contains("##TimeZone##"))
+                            messageToSend = messageToSend.Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName);
+
+                        var OpenSpotifyPreviewForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
+                        if (OpenSpotifyPreviewForms.Count() > 0)
+                        {
+                            var form = OpenSpotifyPreviewForms.First();
+                            if (messageToSend.Contains("##SpotifySong##"))
+                                messageToSend = messageToSend.Replace("##SpotifySong##", form.name);
+                            if (messageToSend.Contains("##SpotifyArtist##"))
+                                messageToSend = messageToSend.Replace("##SpotifyArtist##", form.Artists);
+                            if (messageToSend.Contains("##SpotifyURL##"))
+                                messageToSend = messageToSend.Replace("##SpotifyURL##", form.songURL);
+                        }
+
+                        var OpenViewerListForms = Application.OpenForms.OfType<ViewerListForm>();
+                        if (OpenViewerListForms.Count() > 0)
+                        {
+                            var form = OpenViewerListForms.First();
+                            if (messageToSend.Contains("##SessionUpTime##"))
+                                messageToSend = messageToSend.Replace("##SessionUpTime##", Globals.getRelativeTimeSpan(DateTime.UtcNow - form.sessionStart));
+                        }
+
+                        Globals.sendChatBotMessage(Globals.loginName, messageToSend);
+                    };
+                    if (bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
+                    {
+                        if(!timer.IsEnabled)
+                            timer.Start();
+                        if (!Globals.ChatbotTimers.ContainsKey(setting.Name))
+                            Globals.ChatbotTimers.Add(setting.Name, timer);
+                    }
+                }
             }
         }
     }

@@ -1,7 +1,6 @@
 ﻿using CSCore.CoreAudioAPI;
 using LiteDB;
 using Microsoft.Web.WebView2.Core;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
@@ -15,6 +14,7 @@ using System.Net;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Threading;
@@ -22,6 +22,7 @@ using System.Xml;
 using TwitchLib.Client;
 using TwitchLib.Client.Models;
 using TwitchLib.Communication.Clients;
+using TwitchLib.Communication.Models;
 using WebView2 = Microsoft.Web.WebView2.WinForms.WebView2;
 
 namespace LeStealthBot
@@ -49,12 +50,6 @@ namespace LeStealthBot
             if (!checkForUpdates())
             {
                 startupApp();
-                Globals.registerAudioMixerHotkeys();
-                Globals.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
-            }
-            else
-            {
-                Globals.DelayAction(0, new Action(() => { Dispose(); }));
             }
         }
 
@@ -119,6 +114,7 @@ namespace LeStealthBot
                         }
                         //run the updater
                         Process.Start("Updater.exe", asset["name"].ToString());
+                        Globals.DelayAction(0, new Action(() => { Dispose(); }));
                         return true;
                     }
                 }
@@ -128,25 +124,25 @@ namespace LeStealthBot
 
         private void startupApp()
         {
-            if (File.Exists("TwitchHelperBotSettings.db"))
-            {
-                File.Copy("TwitchHelperBotSettings.db", "LeStealthBotSettings.db");
-                File.Delete("TwitchHelperBotSettings.db");
-                using (var db = new LiteDatabase("LeStealthBotSettings.db"))
-                {
-                    if (db.CollectionExists("TwitchHelperBot"))
-                        db.RenameCollection("TwitchHelperBot", "LeStealthBot");
-                }
-            }
-            if (File.Exists("TwitchHelperBot.exe"))
-                File.Delete("TwitchHelperBot.exe");
-            if (File.Exists("TwitchHelperBot.pdb"))
-                File.Delete("TwitchHelperBot.pdb");
-            if (File.Exists("TwitchHelperBot.log"))
-                File.Delete("TwitchHelperBot.log");
-            if (File.Exists("TwitchHelperBot.exe.config"))
-                File.Delete("TwitchHelperBot.exe.config");
-            Database.ConvertOldIniIntoDB();
+            //if (File.Exists("TwitchHelperBotSettings.db"))
+            //{
+            //    File.Copy("TwitchHelperBotSettings.db", "LeStealthBotSettings.db");
+            //    File.Delete("TwitchHelperBotSettings.db");
+            //    using (var db = new LiteDatabase("LeStealthBotSettings.db"))
+            //    {
+            //        if (db.CollectionExists("TwitchHelperBot"))
+            //            db.RenameCollection("TwitchHelperBot", "LeStealthBot");
+            //    }
+            //}
+            //if (File.Exists("TwitchHelperBot.exe"))
+            //    File.Delete("TwitchHelperBot.exe");
+            //if (File.Exists("TwitchHelperBot.pdb"))
+            //    File.Delete("TwitchHelperBot.pdb");
+            //if (File.Exists("TwitchHelperBot.log"))
+            //    File.Delete("TwitchHelperBot.log");
+            //if (File.Exists("TwitchHelperBot.exe.config"))
+            //    File.Delete("TwitchHelperBot.exe.config");
+            //Database.ConvertOldIniIntoDB();
 
             //get LoginName, if we dont have LoginName in the config then we ask the user for his LoginName with a popup textbox
             //without a LoginName we cannot continue so not entering it closes the app
@@ -258,9 +254,8 @@ namespace LeStealthBot
             {
                 Database.UpsertRecord(x => x["Key"] == "VolumeNotificationDuration", new BsonDocument() { { "Key", "VolumeNotificationDuration" }, { "Value", "5000" } });
             }
-
             tmp = Database.ReadSettingCell("SubscriberCheckCooldown");
-            if (string.IsNullOrEmpty(tmp) || !bool.TryParse(tmp, out _))
+            if (string.IsNullOrEmpty(tmp) || !int.TryParse(tmp, out _))
                 Database.UpsertRecord(x => x["Key"] == "SubscriberCheckCooldown", new BsonDocument() { { "Key", "SubscriberCheckCooldown" }, { "Value", 5 } });
 
             //Login
@@ -498,19 +493,28 @@ namespace LeStealthBot
                 ViewerListForm sForm = new ViewerListForm();
                 sForm.Show();
             }
+
+            Globals.registerAudioMixerHotkeys();
+            Globals.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
         }
 
         DispatcherTimer followerTimer;
         private void setupChatBot()
         {
+            int attempts = 0;
+            retry:
             try
             {
                 ConnectionCredentials credentials = new ConnectionCredentials(Globals.loginName, Globals.access_token);
-                WebSocketClient customClient = new WebSocketClient();
+                WebSocketClient customClient = new WebSocketClient(new ClientOptions { ReconnectionPolicy = new ReconnectionPolicy(3000) });
                 Globals.twitchChatClient = new TwitchClient(customClient);
                 Globals.twitchChatClient.Initialize(credentials, Globals.loginName);
-                Globals.twitchChatClient.Connect();
-
+                if (!Globals.twitchChatClient.Connect() && attempts < 5)
+                {
+                    Thread.Sleep(50);
+                    attempts++;
+                    goto retry;
+                }
                 //setup events
                 Globals.twitchChatClient.OnUserBanned += (sender, e) =>
                 {
@@ -813,10 +817,10 @@ namespace LeStealthBot
                                         if (messageToSend.Contains("##Argument2##") && e.Command.ArgumentsAsList.Count > 2)
                                             messageToSend = messageToSend.Replace("##Argument2##", e.Command.ArgumentsAsList[2].Replace("@", string.Empty));
 
-                                        var OpenViewerListForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
-                                        if (OpenViewerListForms.Count() > 0)
+                                        var OpenSpotifyPreviewForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
+                                        if (OpenSpotifyPreviewForms.Count() > 0)
                                         {
-                                            var form = OpenViewerListForms.First();
+                                            var form = OpenSpotifyPreviewForms.First();
                                             if(string.IsNullOrEmpty(form.name + form.Artists + form.songURL))
                                                 break;
                                             if (messageToSend.Contains("##SpotifySong##"))
@@ -834,6 +838,14 @@ namespace LeStealthBot
                                                 break;
                                             if (messageToSend.Contains("##SpotifyURL##"))
                                                 break;
+                                        }
+
+                                        var OpenViewerListForms = Application.OpenForms.OfType<ViewerListForm>();
+                                        if (OpenViewerListForms.Count() > 0)
+                                        {
+                                            var form = OpenViewerListForms.First();
+                                            if (messageToSend.Contains("##SessionUpTime##"))
+                                                messageToSend = messageToSend.Replace("##SessionUpTime##", Globals.getRelativeTimeSpan(DateTime.UtcNow - form.sessionStart));
                                         }
 
                                         Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
@@ -861,6 +873,10 @@ namespace LeStealthBot
                         if (!Globals.twitchChatClient.IsInitialized && !Globals.twitchChatClient.IsConnected)
                         {
                             Globals.twitchChatClient.Reconnect();
+                        }
+                        else if (Globals.twitchChatClient.JoinedChannels.Count == 0)
+                        {
+                            Globals.twitchChatClient.JoinChannel(Globals.loginName);
                         }
 
                         List<string> followerNamesBefore = new List<string>();
@@ -892,47 +908,17 @@ namespace LeStealthBot
                 followerTimer.Start();
 
                 //setup ChatBot Timers
-                foreach (var setting in Globals.ChatBotSettings.Properties())
-                {
-                    if (setting.Name.StartsWith("Timer - "))
-                    {
-                        DispatcherTimer timer = new DispatcherTimer();
-                        timer.Interval = TimeSpan.FromMinutes(double.Parse(Globals.ChatBotSettings[setting.Name]["interval"].ToString()));
-                        timer.Tick += delegate
-                        {
-                            if (!Globals.ChatBotSettings.ContainsKey(setting.Name) || !bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
-                                timer.Stop();
-
-                            string messageToSend = Globals.ChatBotSettings[setting.Name]["message"].ToString();
-                            if (messageToSend.Contains("##YourName##"))
-                                messageToSend = messageToSend.Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString());
-                            if (messageToSend.Contains("##Time##"))
-                                messageToSend = messageToSend.Replace("##Time##", DateTime.Now.ToShortTimeString());
-                            if (messageToSend.Contains("##TimeZone##"))
-                                messageToSend = messageToSend.Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName);
-
-                            var OpenViewerListForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
-                            if (OpenViewerListForms.Count() > 0)
-                            {
-                                var form = OpenViewerListForms.First();
-                                if (messageToSend.Contains("##SpotifySong##"))
-                                    messageToSend = messageToSend.Replace("##SpotifySong##", form.name);
-                                if (messageToSend.Contains("##SpotifyArtist##"))
-                                    messageToSend = messageToSend.Replace("##SpotifyArtist##", form.Artists);
-                                if (messageToSend.Contains("##SpotifyURL##"))
-                                    messageToSend = messageToSend.Replace("##SpotifyURL##", form.songURL);
-                            }
-
-                            Globals.sendChatBotMessage(Globals.loginName, messageToSend);
-                        };
-                        timer.Start();
-                        Globals.ChatbotTimers.Add(setting.Name, timer);
-                    }
-                }
+                Globals.resetChatBotTimers();
             }
             catch (Exception ex)
             {
                 Globals.LogMessage("setupChatBot " + ex.ToString());
+                if (attempts < 5)
+                {
+                    Thread.Sleep(50);
+                    attempts++;
+                    goto retry;
+                }
             }
         }
 

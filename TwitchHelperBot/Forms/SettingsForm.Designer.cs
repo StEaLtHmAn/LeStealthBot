@@ -335,6 +335,11 @@
             0,
             0,
             0});
+            this.numericUpDown5.Minimum = new decimal(new int[] {
+            4,
+            0,
+            0,
+            0});
             this.numericUpDown5.Name = "numericUpDown5";
             this.numericUpDown5.Size = new System.Drawing.Size(140, 20);
             this.numericUpDown5.TabIndex = 108;

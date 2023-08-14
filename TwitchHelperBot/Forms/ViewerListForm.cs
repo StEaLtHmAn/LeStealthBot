@@ -24,7 +24,7 @@ namespace LeStealthBot
         private DateTime lastViewerCountCheck = DateTime.UtcNow;
         private DateTime lastSubscriberCheck = DateTime.UtcNow;
         private DateTime lastCheck = DateTime.UtcNow;
-        private DateTime sessionStart = DateTime.UtcNow;
+        public DateTime sessionStart = DateTime.UtcNow;
         private string[] botNamesList = new string[0];
         private int SubscriberCheckCooldown;
         private JObject TwitchTrackerData = new JObject();
@@ -77,8 +77,6 @@ namespace LeStealthBot
             //get sessions data from DB
             Sessions = Database.ReadAllData<SessionData>("Sessions");
 
-            if (string.IsNullOrEmpty(Database.ReadSettingCell("SubscriberCheckCooldown")))
-                Database.UpsertRecord(x => x["Key"] == "SubscriberCheckCooldown", new BsonDocument() { { "Key", "SubscriberCheckCooldown" }, { "Value", "5" } });
             SubscriberCheckCooldown = int.Parse(Database.ReadSettingCell("SubscriberCheckCooldown"));
 
             Subscribers = GetSubscribedData();
