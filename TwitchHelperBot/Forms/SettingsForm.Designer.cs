@@ -53,10 +53,8 @@
             this.numericUpDown5 = new System.Windows.Forms.NumericUpDown();
             this.label8 = new System.Windows.Forms.Label();
             this.label6 = new System.Windows.Forms.Label();
-            this.numericUpDown4 = new System.Windows.Forms.NumericUpDown();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.numericUpDown3 = new System.Windows.Forms.NumericUpDown();
-            this.label7 = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tabPage4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
@@ -66,7 +64,6 @@
             this.panel2.SuspendLayout();
             this.tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown5)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown4)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).BeginInit();
             this.SuspendLayout();
             // 
@@ -321,20 +318,18 @@
             this.tabPage1.Controls.Add(this.numericUpDown5);
             this.tabPage1.Controls.Add(this.label8);
             this.tabPage1.Controls.Add(this.label6);
-            this.tabPage1.Controls.Add(this.numericUpDown4);
             this.tabPage1.Controls.Add(this.checkBox1);
             this.tabPage1.Controls.Add(this.numericUpDown3);
-            this.tabPage1.Controls.Add(this.label7);
             this.tabPage1.Location = new System.Drawing.Point(104, 4);
             this.tabPage1.Name = "tabPage1";
             this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
-            this.tabPage1.Size = new System.Drawing.Size(655, 517);
+            this.tabPage1.Size = new System.Drawing.Size(671, 517);
             this.tabPage1.TabIndex = 0;
             this.tabPage1.Text = "Other";
             // 
             // numericUpDown5
             // 
-            this.numericUpDown5.Location = new System.Drawing.Point(211, 84);
+            this.numericUpDown5.Location = new System.Drawing.Point(211, 57);
             this.numericUpDown5.Maximum = new decimal(new int[] {
             696969,
             0,
@@ -352,7 +347,7 @@
             // label8
             // 
             this.label8.AutoSize = true;
-            this.label8.Location = new System.Drawing.Point(4, 86);
+            this.label8.Location = new System.Drawing.Point(4, 59);
             this.label8.Name = "label8";
             this.label8.Size = new System.Drawing.Size(201, 13);
             this.label8.TabIndex = 109;
@@ -366,18 +361,6 @@
             this.label6.Size = new System.Drawing.Size(144, 13);
             this.label6.TabIndex = 104;
             this.label6.Text = "Volume Notification Duration:";
-            // 
-            // numericUpDown4
-            // 
-            this.numericUpDown4.Location = new System.Drawing.Point(211, 58);
-            this.numericUpDown4.Name = "numericUpDown4";
-            this.numericUpDown4.Size = new System.Drawing.Size(140, 20);
-            this.numericUpDown4.TabIndex = 107;
-            this.numericUpDown4.Value = new decimal(new int[] {
-            5,
-            0,
-            0,
-            0});
             // 
             // checkBox1
             // 
@@ -407,15 +390,6 @@
             0,
             0});
             // 
-            // label7
-            // 
-            this.label7.AutoSize = true;
-            this.label7.Location = new System.Drawing.Point(9, 60);
-            this.label7.Name = "label7";
-            this.label7.Size = new System.Drawing.Size(196, 13);
-            this.label7.TabIndex = 106;
-            this.label7.Text = "Number of years of Viewer Data to read:";
-            // 
             // SettingsForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -442,7 +416,6 @@
             this.tabPage1.ResumeLayout(false);
             this.tabPage1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown5)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown4)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).EndInit();
             this.ResumeLayout(false);
 
@@ -465,8 +438,6 @@
         private System.Windows.Forms.CheckBox checkBox1;
         private System.Windows.Forms.NumericUpDown numericUpDown3;
         private System.Windows.Forms.Label label6;
-        private System.Windows.Forms.NumericUpDown numericUpDown4;
-        private System.Windows.Forms.Label label7;
         private CustomTabControl tabControl1;
         private System.Windows.Forms.TabPage tabPage4;
         private System.Windows.Forms.TabPage tabPage1;

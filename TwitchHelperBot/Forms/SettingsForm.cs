@@ -25,7 +25,6 @@ namespace LeStealthBot
             numericUpDown1.Value = decimal.Parse(Database.ReadSettingCell("ModifyChannelCooldown"));
             numericUpDown2.Value = decimal.Parse(Database.ReadSettingCell("NotificationDuration"));
             numericUpDown3.Value = decimal.Parse(Database.ReadSettingCell("VolumeNotificationDuration"));
-            numericUpDown4.Value = decimal.Parse(Database.ReadSettingCell("SessionsArchiveReadCount"));
             numericUpDown5.Value = decimal.Parse(Database.ReadSettingCell("SubscriberCheckCooldown"));
 
             tmpChatBotSettings = Globals.ChatBotSettings.DeepClone() as JObject;
@@ -370,7 +369,6 @@ namespace LeStealthBot
             Database.UpsertRecord(x => x["Key"] == "NotificationDuration", new BsonDocument() { { "Key", "NotificationDuration" }, { "Value", ((int)numericUpDown2.Value).ToString() } });
             Database.UpsertRecord(x => x["Key"] == "VolumeNotificationDuration", new BsonDocument() { { "Key", "VolumeNotificationDuration" }, { "Value", ((int)numericUpDown3.Value).ToString() } });
             Database.UpsertRecord(x => x["Key"] == "DarkModeEnabled", new BsonDocument() { { "Key", "DarkModeEnabled" }, { "Value", checkBox1.Checked.ToString() } });
-            Database.UpsertRecord(x => x["Key"] == "SessionsArchiveReadCount", new BsonDocument() { { "Key", "SessionsArchiveReadCount" }, { "Value", ((int)numericUpDown4.Value).ToString() } });
             Database.UpsertRecord(x => x["Key"] == "SubscriberCheckCooldown", new BsonDocument() { { "Key", "SubscriberCheckCooldown" }, { "Value", ((int)numericUpDown5.Value).ToString() } });
 
             Globals.ChatBotSettings = tmpChatBotSettings;

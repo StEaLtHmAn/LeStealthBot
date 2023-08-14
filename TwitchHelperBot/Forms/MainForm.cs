@@ -148,8 +148,6 @@ namespace LeStealthBot
                 File.Delete("TwitchHelperBot.exe.config");
             Database.ConvertOldIniIntoDB();
 
-
-
             //get LoginName, if we dont have LoginName in the config then we ask the user for his LoginName with a popup textbox
             //without a LoginName we cannot continue so not entering it closes the app
             Globals.loginName = Database.ReadOneRecord(x => x["Key"] == "LoginName")?["Value"]?.AsString ?? string.Empty;
@@ -260,6 +258,10 @@ namespace LeStealthBot
             {
                 Database.UpsertRecord(x => x["Key"] == "VolumeNotificationDuration", new BsonDocument() { { "Key", "VolumeNotificationDuration" }, { "Value", "5000" } });
             }
+
+            tmp = Database.ReadSettingCell("SubscriberCheckCooldown");
+            if (string.IsNullOrEmpty(tmp) || !bool.TryParse(tmp, out _))
+                Database.UpsertRecord(x => x["Key"] == "SubscriberCheckCooldown", new BsonDocument() { { "Key", "SubscriberCheckCooldown" }, { "Value", 5 } });
 
             //Login
             Globals.access_token = Database.ReadSettingCell("access_token");
