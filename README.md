@@ -1,4 +1,4 @@
-# TwitchHelperBot
+# LeStealthBot
 A side project/broadcaster tool that escalated, its main purpose is to automatically change your twitch category based on what you are playing.
 
 # - Features/Preview:
@@ -8,13 +8,13 @@ A side project/broadcaster tool that escalated, its main purpose is to automatic
 
   • Application level audio mixer with hotkeys.
   
-  ![image](https://github.com/StEaLtHmAn/TwitchHelperBot/assets/2267356/812355e6-bec7-4179-a786-7582acfb3fe9)
+  ![image](https://github.com/StEaLtHmAn/LeStealthBot/assets/2267356/812355e6-bec7-4179-a786-7582acfb3fe9)
   
   
   • Always on top custom viewer list with watchtime stats.
   
-  ![image](https://github.com/StEaLtHmAn/TwitchHelperBot/assets/2267356/ac46d5ad-818b-4186-8fc5-6a06bc86ead0)
-  ![image](https://github.com/StEaLtHmAn/TwitchHelperBot/assets/2267356/52fc9cc9-bf06-440a-99d2-f81f0017d209)
+  ![image](https://github.com/StEaLtHmAn/LeStealthBot/assets/2267356/ac46d5ad-818b-4186-8fc5-6a06bc86ead0)
+  ![image](https://github.com/StEaLtHmAn/LeStealthBot/assets/2267356/52fc9cc9-bf06-440a-99d2-f81f0017d209)
 
 
 # - How does it work:
