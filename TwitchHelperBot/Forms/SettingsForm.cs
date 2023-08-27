@@ -1,9 +1,9 @@
 ﻿using LiteDB;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Windows.Forms;
@@ -58,6 +58,13 @@ namespace LeStealthBot
                 button.Click += delegate
                 {
                     loadChatBotSettingsInnerUI(settingName, isDefaultSetting);
+                };
+                button.MouseMove += delegate(object sender, MouseEventArgs e)
+                {
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        button.Parent.DoDragDrop(button, DragDropEffects.Move);
+                    }
                 };
                 ChatBotSettingsTabButtons.Add(settingName, button);
                 flowLayoutPanel1.Controls.Add(button);
@@ -343,6 +350,29 @@ namespace LeStealthBot
                 panel1.Controls.Add(numericInput);
                 yValue += numericInput.Height + 10;
             }
+            if (settingName.StartsWith("Timer - "))
+            {
+                Label lblMessage = new Label();
+                lblMessage.Text = "offset: ";
+                lblMessage.Location = new Point(lblHeading.Location.X, yValue);
+                lblMessage.AutoSize = true;
+                panel1.Controls.Add(lblMessage);
+                NumericUpDown numericInput = new NumericUpDown();
+                numericInput.Value = decimal.Parse(tmpChatBotSettings[settingName]?["offset"]?.ToString()??"0");
+                numericInput.Location = new Point(lblMessage.Width + 10, yValue);
+                numericInput.Size = new Size(panel1.Width - lblMessage.Width - 20, 50);
+                numericInput.DecimalPlaces = 2;
+                numericInput.Maximum = 1337;
+                numericInput.ValueChanged += delegate
+                {
+                    if((tmpChatBotSettings[settingName] as JObject).ContainsKey("offset"))
+                        tmpChatBotSettings[settingName]["offset"] = numericInput.Value;
+                    else
+                        (tmpChatBotSettings[settingName] as JObject).Add("offset", numericInput.Value);
+                };
+                panel1.Controls.Add(numericInput);
+                yValue += numericInput.Height + 10;
+            }
 
             if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("suburb"))
             {
@@ -439,12 +469,72 @@ namespace LeStealthBot
             {
                 { "enabled", "false" },
                 { "default", "false" },
+                { "offset", "0" },
                 { "interval", "90" },
                 { "message", "" },
             });
             loadChatBotSettingsOuterUI();
             loadChatBotSettingsInnerUI($"Timer - {newIndex}", false);
             flowLayoutPanel1.ScrollControlIntoView(ChatBotSettingsTabButtons[$"Timer - {newIndex}"]);
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveFileDialog1 = new SaveFileDialog();
+            saveFileDialog1.Title = "Export ChatBotSettings";
+            saveFileDialog1.DefaultExt = "json";
+            saveFileDialog1.FileName = "ChatBotSettings.json";
+            saveFileDialog1.Filter = "Json (*.json)|*.json|Text (*.txt)|*.txt|Custom|*.*";
+            saveFileDialog1.RestoreDirectory = true;
+            if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(saveFileDialog1.FileName));
+                File.WriteAllText(saveFileDialog1.FileName, tmpChatBotSettings.ToString(Newtonsoft.Json.Formatting.None));
+            } 
+        }
+
+        private void button6_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog1 = new OpenFileDialog();
+            openFileDialog1.Title = "Import ChatBotSettings";
+            openFileDialog1.DefaultExt = "json";
+            openFileDialog1.CheckFileExists = true;
+            openFileDialog1.FileName = "ChatBotSettings.json";
+            openFileDialog1.Filter = "Json (*.json)|*.json|Text (*.txt)|*.txt|Custom|*.*";
+            openFileDialog1.RestoreDirectory = true;
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                tmpChatBotSettings = JObject.Parse(File.ReadAllText(openFileDialog1.FileName));
+            }
+        }
+
+        private void flowLayoutPanel1_DragDrop(object sender, DragEventArgs e)
+        {
+            Button btnToMove = (Button)e.Data.GetData(typeof(Button));
+            Control btnToMoveTo = flowLayoutPanel1.GetChildAtPoint(flowLayoutPanel1.PointToClient(new Point(e.X, e.Y)));
+            if (btnToMoveTo == null)
+            {
+                btnToMoveTo = flowLayoutPanel1.GetChildAtPoint(flowLayoutPanel1.PointToClient(new Point(e.X, e.Y+10)));
+            }
+            if (btnToMoveTo == null || btnToMove == null || btnToMoveTo == btnToMove)
+                return;
+            int fromIndex = flowLayoutPanel1.Controls.GetChildIndex(btnToMove, false);
+            int index = flowLayoutPanel1.Controls.GetChildIndex(btnToMoveTo, false);
+
+            var propertyToMove = tmpChatBotSettings.Property(btnToMove.Text);
+            propertyToMove.Remove();
+            if(fromIndex >= index)
+                tmpChatBotSettings.Property(btnToMoveTo.Text).AddBeforeSelf(propertyToMove);
+            else
+                tmpChatBotSettings.Property(btnToMoveTo.Text).AddAfterSelf(propertyToMove);
+
+            flowLayoutPanel1.Controls.SetChildIndex(btnToMove, index);
+            flowLayoutPanel1.Invalidate();
+        }
+
+        private void flowLayoutPanel1_DragEnter(object sender, DragEventArgs e)
+        {
+            e.Effect = DragDropEffects.All;
         }
     }
 }

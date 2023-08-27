@@ -38,7 +38,7 @@ namespace LeStealthBot
             File.AppendAllText(filename, $"{DateTime.Now}: {message}{Environment.NewLine}");
         }
 
-        public static void DelayAction(int millisecond, Action action)
+        public static void DelayAction(TimeSpan interval, Action action)
         {
             DispatcherTimer timer = new DispatcherTimer();
             timer.Tick += delegate
@@ -47,8 +47,13 @@ namespace LeStealthBot
                 timer.Stop();
             };
 
-            timer.Interval = TimeSpan.FromMilliseconds(millisecond);
+            timer.Interval = interval;;
             timer.Start();
+        }
+
+        public static void DelayAction(int millisecond, Action action)
+        {
+            DelayAction(TimeSpan.FromMilliseconds(millisecond), action);
         }
 
         public static string getRelativeTimeSpan(TimeSpan ts)
@@ -284,8 +289,11 @@ namespace LeStealthBot
                     };
                     if (bool.Parse(Globals.ChatBotSettings[setting.Name]["enabled"].ToString()))
                     {
-                        if(!timer.IsEnabled)
-                            timer.Start();
+                        if (!timer.IsEnabled)
+                        {
+                            double delay = double.Parse(Globals.ChatBotSettings[setting.Name]?["offset"]?.ToString() ?? "0");
+                            Globals.DelayAction(TimeSpan.FromMinutes(delay), new Action(() => { timer.Start(); }));
+                        }
                         if (!Globals.ChatbotTimers.ContainsKey(setting.Name))
                             Globals.ChatbotTimers.Add(setting.Name, timer);
                     }

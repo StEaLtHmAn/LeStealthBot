@@ -47,6 +47,14 @@ namespace LeStealthBot
 
             ((ToolStripDropDownMenu)toolsToolStripMenuItem.DropDown).ShowImageMargin = false;
 
+            //AnimationForm animationForm = new AnimationForm();
+            //animationForm.Show();
+            //OverlayManagerForm overlayManagerForm = new OverlayManagerForm();
+            //overlayManagerForm.Show();
+
+            //HttpServer server = new HttpServer();
+            //server.start("http://localhost:8080/");
+
             if (!checkForUpdates())
             {
                 startupApp();
@@ -498,7 +506,7 @@ namespace LeStealthBot
             Globals.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
         }
 
-        DispatcherTimer followerTimer;
+        private DispatcherTimer followerTimer;
         private void setupChatBot()
         {
             int attempts = 0;
@@ -553,7 +561,7 @@ namespace LeStealthBot
                     if (bool.Parse(Globals.ChatBotSettings["OnMessageReceived - Bits > 0"]["enabled"].ToString()) && e.ChatMessage.Bits > 0)
                     {
                         Globals.sendChatBotMessage(e.ChatMessage.Channel,
-                            Globals.ChatBotSettings["OnMessageReceived - Bits > 0"]["enabled"].ToString()
+                            Globals.ChatBotSettings["OnMessageReceived - Bits > 0"]["message"].ToString()
                             .Replace("##SenderName##", e.ChatMessage.DisplayName)
                             .Replace("##Bits##", e.ChatMessage.Bits.ToString())
                             .Replace("##BitsInDollars##", e.ChatMessage.BitsInDollars.ToString("0:##")));
@@ -650,14 +658,14 @@ namespace LeStealthBot
                                         using (WebClient webClient = new WebClient())
                                         {
                                             string htmlSchedule = webClient.DownloadString($"https://www.ourpower.co.za/areas/{Globals.ChatBotSettings["ChatCommand - eskont"]["suburb"]}");
-                                            int i1 = htmlSchedule.IndexOf("time dateTime=");
-                                            int i2 = htmlSchedule.IndexOf("</section>");
-                                            htmlSchedule = "<xml><section><h3><" + htmlSchedule.Substring(i1, htmlSchedule.IndexOf("</section>", i2 + 1) - i1) + "</section></xml>";
+
+                                            int i1 = htmlSchedule.IndexOf("<main>");
+                                            htmlSchedule = htmlSchedule.Substring(i1, htmlSchedule.IndexOf("</main>") - i1) + "</main>";
 
                                             XmlDocument document = new XmlDocument();
                                             document.LoadXml(htmlSchedule);
-                                            XmlNode nextScheduledTime = document.SelectSingleNode("//span[@style='color:red']");
-                                            XmlNode nextScheduledDate = nextScheduledTime.SelectSingleNode("../../h3/time");
+                                            XmlNode nextScheduledTime = document.SelectSingleNode("//*[@style='color:red']");
+                                            XmlNode nextScheduledDate = nextScheduledTime.SelectSingleNode("../../*/time");
 
                                             Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - eskont"]["message"].ToString()
                                             .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
@@ -870,26 +878,12 @@ namespace LeStealthBot
                     followerTimer.Stop();
                     try
                     {
-                        if (!Globals.twitchChatClient.IsInitialized && !Globals.twitchChatClient.IsConnected)
-                        {
-                            Globals.twitchChatClient.Reconnect();
-                        }
-                        else if (Globals.twitchChatClient.JoinedChannels.Count == 0)
-                        {
-                            Globals.twitchChatClient.JoinChannel(Globals.loginName);
-                        }
-
-                        List<string> followerNamesBefore = new List<string>();
+                        List<string> followerNamesBefore;
                         if (bool.Parse(Globals.ChatBotSettings["OnNewFollow"]["enabled"].ToString()))
                         {
                             followerNamesBefore = Globals.Followers.Select(x => x["user_name"].ToString()).ToList();
-                        }
-
-                        //get new follow data
-                        Globals.GetFollowedData();
-
-                        if (bool.Parse(Globals.ChatBotSettings["OnNewFollow"]["enabled"].ToString()))
-                        {
+                            //get new follow data
+                            Globals.GetFollowedData();
                             //loop through new followers
                             foreach (var followerName in Globals.Followers.Select(x => x["user_name"].ToString()).Where(x => !followerNamesBefore.Contains(x)))
                             {
@@ -898,12 +892,30 @@ namespace LeStealthBot
                                     .Replace("##FollowerName##", followerName));
                             }
                         }
+                        else
+                        {
+                            //get new follow data
+                            Globals.GetFollowedData();
+                        }
+
+                        //This makes sure the bot stays connected to the the chat
+                        if (!Globals.twitchChatClient.IsInitialized && !Globals.twitchChatClient.IsConnected)
+                        {
+                            Globals.twitchChatClient.Reconnect();
+                        }
+                        else if (Globals.twitchChatClient.JoinedChannels.Count == 0)
+                        {
+                            Globals.twitchChatClient.JoinChannel(Globals.loginName);
+                        }
                     }
                     catch (Exception ex)
                     {
                         Globals.LogMessage("followerTimer " + ex.ToString());
                     }
-                    followerTimer.Start();
+                    finally
+                    {
+                        followerTimer.Start();
+                    }
                 };
                 followerTimer.Start();
 

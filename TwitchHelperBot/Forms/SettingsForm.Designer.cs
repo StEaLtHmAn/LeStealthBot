@@ -47,6 +47,8 @@
             this.panel1 = new System.Windows.Forms.Panel();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.button6 = new System.Windows.Forms.Button();
+            this.button5 = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
             this.button2 = new System.Windows.Forms.Button();
             this.tabPage1 = new System.Windows.Forms.TabPage();
@@ -260,6 +262,7 @@
             // 
             // flowLayoutPanel1
             // 
+            this.flowLayoutPanel1.AllowDrop = true;
             this.flowLayoutPanel1.AutoScroll = true;
             this.flowLayoutPanel1.AutoSize = true;
             this.flowLayoutPanel1.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
@@ -274,10 +277,14 @@
             this.flowLayoutPanel1.Size = new System.Drawing.Size(20, 485);
             this.flowLayoutPanel1.TabIndex = 0;
             this.flowLayoutPanel1.WrapContents = false;
+            this.flowLayoutPanel1.DragDrop += new System.Windows.Forms.DragEventHandler(this.flowLayoutPanel1_DragDrop);
+            this.flowLayoutPanel1.DragEnter += new System.Windows.Forms.DragEventHandler(this.flowLayoutPanel1_DragEnter);
             // 
             // panel2
             // 
             this.panel2.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panel2.Controls.Add(this.button6);
+            this.panel2.Controls.Add(this.button5);
             this.panel2.Controls.Add(this.button4);
             this.panel2.Controls.Add(this.button2);
             this.panel2.Dock = System.Windows.Forms.DockStyle.Top;
@@ -285,6 +292,32 @@
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(671, 32);
             this.panel2.TabIndex = 2;
+            // 
+            // button6
+            // 
+            this.button6.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button6.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button6.ForeColor = System.Drawing.Color.Green;
+            this.button6.Location = new System.Drawing.Point(513, 3);
+            this.button6.Name = "button6";
+            this.button6.Size = new System.Drawing.Size(153, 24);
+            this.button6.TabIndex = 105;
+            this.button6.Text = "Import ChatBot Settings";
+            this.button6.UseVisualStyleBackColor = true;
+            this.button6.Click += new System.EventHandler(this.button6_Click);
+            // 
+            // button5
+            // 
+            this.button5.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button5.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button5.ForeColor = System.Drawing.Color.Green;
+            this.button5.Location = new System.Drawing.Point(354, 3);
+            this.button5.Name = "button5";
+            this.button5.Size = new System.Drawing.Size(153, 24);
+            this.button5.TabIndex = 104;
+            this.button5.Text = "Export ChatBot Settings";
+            this.button5.UseVisualStyleBackColor = true;
+            this.button5.Click += new System.EventHandler(this.button5_Click);
             // 
             // button4
             // 
@@ -455,5 +488,7 @@
         private System.Windows.Forms.Panel panel2;
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Button button6;
+        private System.Windows.Forms.Button button5;
     }
 }

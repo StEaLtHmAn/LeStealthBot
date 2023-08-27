@@ -12,6 +12,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.DataVisualization.Charting;
 using LeStealthBot.RtfWriter;
+using System.Reflection;
+using System.Threading;
 
 namespace LeStealthBot
 {
@@ -463,8 +465,8 @@ namespace LeStealthBot
             client.AddDefaultHeader("Client-ID", Globals.clientId);
             client.AddDefaultHeader("Authorization", "Bearer " + Globals.access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/chat/chatters", Method.Get);
-            //request.AddQueryParameter("broadcaster_id", "526375465");
-            request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
+            request.AddQueryParameter("broadcaster_id", "526375465");
+            //request.AddQueryParameter("broadcaster_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("moderator_id", Globals.userDetailsResponse["data"][0]["id"].ToString());
             request.AddQueryParameter("first", 1000);
             RestResponse response = client.Execute(request);
@@ -655,6 +657,20 @@ namespace LeStealthBot
         {
             if (e.Button == MouseButtons.Right)
             {
+                Panel panel = new Panel()
+                {
+                    MinimumSize = new Size(395, 250),
+                    BackgroundImageLayout = ImageLayout.Stretch,
+                    Margin = Padding.Empty,
+                    Padding = Padding.Empty
+                };
+                Label lblDisplayName = new Label();
+                lblDisplayName.AutoSize = true;
+                lblDisplayName.Font = new Font(lblDisplayName.Font, System.Drawing.FontStyle.Bold);
+                lblDisplayName.Location = new Point(160, 12);
+                lblDisplayName.Text = "Loading...";
+                panel.Controls.Add(lblDisplayName);
+
                 RightClickedWordPos = System.Windows.Forms.Cursor.Position;
 
                 richTextBox1.SelectionStart = richTextBox1.Text.Substring(0, richTextBox1.GetCharIndexFromPosition(e.Location)).LastIndexOfAny(new char[] { ' ', '\r', '\n' }) + 1;
@@ -662,6 +678,9 @@ namespace LeStealthBot
                 richTextBox1.SelectionLength = RightClickedWord.Length;
                 if (Sessions.Any(x => x.Viewers.Any(y => y.UserName == RightClickedWord)) || WatchTimeList.Any(y => y.UserName == RightClickedWord))
                 {
+                    popup = new PopupWindow(panel, true);
+                    popup.Show(new Point(RightClickedWordPos.X + 20, RightClickedWordPos.Y + 10));
+
                     JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
 
                     var checkFollowList = Globals.Followers.Where(x => x["user_id"].ToString() == userDetails["data"][0]["id"].ToString());
@@ -681,7 +700,6 @@ namespace LeStealthBot
                     });
                     SessionsListClone = SessionsListClone.Where(x => x.Viewers.Any(y => y.UserName == RightClickedWord)).ToList();
 
-                    Label lblDisplayName = new Label();
                     Label lblDescription = new Label();
                     Label lblSubscribed = new Label();
                     Label lblFollowed = new Label();
@@ -710,10 +728,6 @@ namespace LeStealthBot
                     pbxProfileImage.Location = new Point(0, 0);
                     pbxProfileImage.Size = new Size(150, 150);
                     pbxProfileImage.SizeMode = PictureBoxSizeMode.Zoom;
-
-                    lblDisplayName.AutoSize = true;
-                    lblDisplayName.Font = new Font(lblDisplayName.Font, System.Drawing.FontStyle.Bold);
-                    lblDisplayName.Location = new Point(160, 12);
 
                     lblDescription.AutoSize = true;
                     lblDescription.Location = new Point(12, 162);
@@ -779,14 +793,6 @@ namespace LeStealthBot
                     }
                     lblFollowed.Text = followdata != null ? "Following for " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(followdata["followed_at"].ToString())) : "Not Following";
 
-                    Panel panel = new Panel()
-                    {
-                        MinimumSize = new Size(395, 250),
-                        BackgroundImageLayout = ImageLayout.Stretch,
-                        Margin = Padding.Empty,
-                        Padding = Padding.Empty
-                    };
-                    panel.Controls.Add(lblDisplayName);
                     panel.Controls.Add(lblDescription);
                     panel.Controls.Add(lblAccountCreated);
                     panel.Controls.Add(pbxProfileImage);
@@ -800,8 +806,6 @@ namespace LeStealthBot
                     if (!string.IsNullOrWhiteSpace(userDetails["data"][0]["offline_image_url"].ToString()))
                         panel.BackgroundImage = GetImageFromURL(userDetails["data"][0]["offline_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString() + "_offline");
 
-                    popup = new PopupWindow(panel, true);
-                    popup.Show(RightClickedWordPos);
                     popup.Closing += delegate
                     {
                         try
