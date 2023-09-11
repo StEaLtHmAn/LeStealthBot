@@ -86,11 +86,11 @@ public class KeyboardHook : IDisposable
     /// </summary>
     /// <param name="modifier">The modifiers that are associated with the hot key.</param>
     /// <param name="key">The key itself that is associated with the hot key.</param>
-    public void RegisterHotKey(ModifierKeys modifier, Keys key)
+    public bool RegisterHotKey(ModifierKeys modifier, Keys key)
     {
         if (ID_Dictionary.ContainsKey($"{modifier}_{key}"))
         {
-            return;//hotkey already setup
+            return false;//hotkey already setup
         }
         int newID = 0;
         while (ID_Dictionary.ContainsValue(newID))
@@ -101,7 +101,8 @@ public class KeyboardHook : IDisposable
 
         // register the hot key.
         if (!RegisterHotKey(_window.Handle, newID, (uint)modifier, (uint)key))
-            throw new InvalidOperationException("Couldn’t register the hot key.");
+            return false;
+        return true;
     }
 
     public void UnregisterHotKey(ModifierKeys modifier, Keys key)

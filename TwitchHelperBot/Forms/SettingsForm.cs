@@ -1,7 +1,10 @@
-﻿using LiteDB;
+﻿using HtmlAgilityPack;
+using LeStealthBot.CustomUI;
+using LiteDB;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -31,6 +34,8 @@ namespace LeStealthBot
 
             loadChatBotSettingsOuterUI();
 
+            loadOverlays();
+
             //check if darkmode is enabled and toggle UI
             bool DarkModeEnabled = bool.Parse(Database.ReadSettingCell("DarkModeEnabled"));
             Globals.ToggleDarkMode(this, DarkModeEnabled);
@@ -41,7 +46,7 @@ namespace LeStealthBot
         Dictionary<string, Button> ChatBotSettingsTabButtons = new Dictionary<string, Button>();
         private void loadChatBotSettingsOuterUI()
         {
-            flowLayoutPanel1.Controls.Clear();
+            flowLayoutPanel1.Controls.ClearAndDispose();
             ChatBotSettingsTabButtons.Clear();
             var ChatBotSettingsProperties = tmpChatBotSettings.Properties().ToList();
             for (int i = 0; i < ChatBotSettingsProperties.Count; i++)
@@ -73,9 +78,8 @@ namespace LeStealthBot
 
         private void loadChatBotSettingsInnerUI(string settingName, bool isDefaultSetting)
         {
-            panel1.Controls.Clear();
+            panel1.Controls.ClearAndDispose();
             int yValue = 10;
-            DispatcherTimer TextChangedDelayTimer = new DispatcherTimer();
 
             Control lblHeading;
             if (!isDefaultSetting)
@@ -120,12 +124,14 @@ namespace LeStealthBot
             }
             panel1.Controls.Add(lblHeading);
 
-            CheckBox cbxEnabled = new CheckBox();
-            cbxEnabled.Font = new Font(lblHeading.Font.FontFamily, 9);
-            cbxEnabled.Text = "Enabled";
-            cbxEnabled.Location = new Point(lblHeading.Location.X + lblHeading.Width + 5, yValue + 2);
-            cbxEnabled.Checked = bool.Parse(tmpChatBotSettings[settingName]["enabled"].ToString());
-            cbxEnabled.AutoSize = true;
+            CheckBox cbxEnabled = new CheckBox
+            {
+                Font = new Font(lblHeading.Font.FontFamily, 9),
+                Text = "Enabled",
+                Location = new Point(lblHeading.Location.X + lblHeading.Width + 5, yValue + 2),
+                Checked = bool.Parse(tmpChatBotSettings[settingName]["enabled"].ToString()),
+                AutoSize = true
+            };
             cbxEnabled.CheckedChanged += delegate
             {
                 tmpChatBotSettings[settingName]["enabled"] = cbxEnabled.Checked;
@@ -184,7 +190,7 @@ namespace LeStealthBot
                 {
                     tmpChatBotSettings.Remove(settingName);
                     loadChatBotSettingsOuterUI();
-                    panel1.Controls.Clear();
+                    panel1.Controls.ClearAndDispose();
                 };
                 panel1.Controls.Add(btnDelete);
             }
@@ -416,9 +422,27 @@ namespace LeStealthBot
             }
         }
 
+        string SelectedOverlayName = string.Empty;
+        private void loadOverlays()
+        {
+            flowLayoutPanel2.Controls.ClearAndDispose();
+            foreach (var overlayPath in Directory.GetDirectories("Overlays"))
+            {
+                string OverlayName = overlayPath.Replace("Overlays\\", string.Empty);
+                OverlayListItem item = new OverlayListItem(overlayPath.Replace("Overlays\\", string.Empty));
+                item.Click += (s, e) =>
+                {
+                    SelectedOverlayName = OverlayName;
+                    label13.Text = OverlayName;
+                    webView21.Source = new Uri($"http://localhost:{Globals.webServerPort}/?overlay={SelectedOverlayName}");
+                };
+                flowLayoutPanel2.Controls.Add(item);
+            }
+        }
+
         private void button3_Click(object sender, EventArgs e)
         {
-            Dispose();
+                Dispose();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -535,6 +559,276 @@ namespace LeStealthBot
         private void flowLayoutPanel1_DragEnter(object sender, DragEventArgs e)
         {
             e.Effect = DragDropEffects.All;
+        }
+
+        private void button10_Click(object sender, EventArgs e)
+        {
+            int i = 0;
+            while (Directory.Exists($"Overlays\\NewOverlay{i}"))
+            {
+                i++;
+            }
+            Directory.CreateDirectory($"Overlays\\NewOverlay{i}");
+            File.WriteAllText($"Overlays\\NewOverlay{i}\\NewOverlay{i}.html",
+                "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "<title>LeStealthBot - Overlay</title>" +
+                "</head>" +
+                "<body>" +
+                "</body>" +
+                "</html>"
+                );
+            loadOverlays();
+        }
+
+        private void linkLabel1_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+        {
+            Process.Start(((LinkLabel)sender).Text);
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(SelectedOverlayName))
+                return;
+            bool isMouseWithinForm = tabPage3.ClientRectangle.Contains(tabPage3.PointToClient(MousePosition));
+            if (panel7.Visible != isMouseWithinForm)
+            {
+                panel7.Visible = isMouseWithinForm;
+                panel7.Parent.Invalidate();
+            }
+        }
+
+        private void button7_Click(object sender, EventArgs e)
+        {
+            Clipboard.SetText($"http://localhost:{Globals.webServerPort}/?overlay={SelectedOverlayName}");
+        }
+
+        private void button12_Click(object sender, EventArgs e)
+        {
+            if (MessageBox.Show($"Are you sure you want to permanently DELETE {SelectedOverlayName}?", "Confirm DELETE "+ SelectedOverlayName, MessageBoxButtons.YesNo)
+                == DialogResult.Yes)
+            {
+                if (Directory.Exists($"Overlays\\{SelectedOverlayName}"))
+                {
+                    Directory.Delete($"Overlays\\{SelectedOverlayName}", true);
+                }
+                loadOverlays();
+                SelectedOverlayName = string.Empty;
+                webView21.Source = new Uri($"http://localhost:{Globals.webServerPort}/?overlay={SelectedOverlayName}");
+            }
+        }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+            using (TextInputForm testDialog = new TextInputForm("Rename " + SelectedOverlayName, $"Enter a new name for {SelectedOverlayName}:"))
+            {
+                if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox.Text.Length > 0)
+                {
+                    Directory.Move($"Overlays\\{SelectedOverlayName}", $"Overlays\\{testDialog.textBox.Text}");
+                    File.Move($"Overlays\\{testDialog.textBox.Text}\\{SelectedOverlayName}.html", $"Overlays\\{testDialog.textBox.Text}\\{testDialog.textBox.Text}.html");
+                    loadOverlays();
+                    SelectedOverlayName = testDialog.textBox.Text;
+                    webView21.Source = new Uri($"http://localhost:{Globals.webServerPort}/?overlay={SelectedOverlayName}");
+                }
+            }
+        }
+
+        //add image
+        private void button9_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog1 = new OpenFileDialog();
+            openFileDialog1.Title = "Select an image";
+            openFileDialog1.DefaultExt = "webp";
+            openFileDialog1.CheckFileExists = true;
+            openFileDialog1.Filter = "webp|*.webp|gif|*.gif|jpeg|*.jpeg;*.jpg|png|*.png;*.apng|bmp|*.bmp|avif|*.avif|other|*.*";
+            openFileDialog1.RestoreDirectory = true;
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                string imageFileName = Path.GetFileName(openFileDialog1.FileName);
+                //copy the image to the overlay path
+                File.Copy(openFileDialog1.FileName, $"Overlays\\{SelectedOverlayName}\\{imageFileName}");
+                //edit the html embed the image
+                HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
+                document.Load($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+
+                int count = 0;
+                string newID = $"image{count}";
+                while (document.GetElementbyId(newID) != null)
+                {
+                    count++;
+                    newID = $"image{count}";
+                }
+
+                var htmlBody = document.DocumentNode.SelectSingleNode("//body");
+                htmlBody.ChildNodes.Add(HtmlNode.CreateNode($"<img id=\"{newID}\" src=\"{imageFileName}\" style=\"position:fixed;top:0;left:0;\">"));
+                document.Save($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+
+                loadOverlays();
+                webView21.Reload();
+            }
+        }
+
+        //add text
+        private void button11_Click(object sender, EventArgs e)
+        {
+            using (TextInputForm testDialog = new TextInputForm("Rename " + SelectedOverlayName, $"Enter a new name for {SelectedOverlayName}:"))
+            {
+                if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox.Text.Length > 0)
+                {
+                    HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
+                    document.Load($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+
+                    int count = 0;
+                    string newID = $"text{count}";
+                    while (document.GetElementbyId(newID) != null)
+                    {
+                        count++;
+                        newID = $"text{count}";
+                    }
+
+                    var htmlBody = document.DocumentNode.SelectSingleNode("//body");
+                    htmlBody.ChildNodes.Add(HtmlNode.CreateNode($"<p id=\"{newID}\">{testDialog.textBox.Text}</p> style=\"position:fixed;top:0;left:0;\">"));
+                    document.Save($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+
+                    loadOverlays();
+                    webView21.Reload();
+                }
+            }
+        }
+
+        private void comboBox1_DropDown(object sender, EventArgs e)
+        {
+            HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
+            document.Load($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+            comboBox1.Items.Clear();
+            foreach (var image in document.DocumentNode.Descendants("img"))
+                comboBox1.Items.Add(image.Attributes["id"]?.Value ?? image.OuterHtml);
+            foreach (var text in document.DocumentNode.Descendants("p"))
+                comboBox1.Items.Add(text.Attributes["id"]?.Value ?? text.OuterHtml);
+        }
+
+        private void comboBox1_TextChanged(object sender, EventArgs e)
+        {
+            HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
+            document.Load($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+            HtmlNode selectedNode = null;
+            var nodeList = document.DocumentNode.Descendants().Where(x => x.Id == comboBox1.SelectedItem.ToString() || x.OuterHtml == comboBox1.SelectedItem.ToString());
+            if(nodeList.Count() > 0)
+                selectedNode = nodeList.First();
+            if (selectedNode != null)
+            {
+                button13.Enabled = true;
+                textBox4.Enabled = true;
+                textBox4.TextChanged -= textBox4_TextChanged;
+                textBox4.Text = selectedNode.GetAttributeValue("style", "position:static;top:0;left:0;");
+                textBox4.TextChanged += textBox4_TextChanged;
+                textBox5.Enabled = true;
+                textBox5.TextChanged -= textBox5_TextChanged;
+                textBox5.Text = selectedNode.Attributes["id"]?.Value ?? selectedNode.OuterHtml;
+                textBox5.TextChanged += textBox5_TextChanged;
+            }
+            else
+            {
+                button13.Enabled = false;
+                textBox4.Enabled = false;
+                textBox5.Enabled = false;
+                textBox4.Clear();
+            }
+        }
+
+        private void button13_Click(object sender, EventArgs e)
+        {
+            HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
+            document.Load($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+            HtmlNode selectedNode = null;
+            var nodeList = document.DocumentNode.Descendants().Where(x => x.Id == comboBox1.SelectedItem.ToString() || x.OuterHtml == comboBox1.SelectedItem.ToString());
+            if (nodeList.Count() > 0)
+                selectedNode = nodeList.First(); if (selectedNode != null)
+            {
+                selectedNode.Remove();
+                document.Save($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+
+                loadOverlays();
+                webView21.Reload();
+            }
+        }
+
+        private DispatcherTimer textBox4timer = null;
+        private void textBox4_TextChanged(object sender, EventArgs e)
+        {
+            if (textBox4timer != null)
+            {
+                textBox4timer.Stop();
+                textBox4timer = null;
+            }
+
+            textBox4timer = new DispatcherTimer();
+            
+            textBox4timer.Tick += (s, e2) =>
+            {
+                HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
+                document.Load($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+                HtmlNode selectedNode = null;
+                if (comboBox1.SelectedItem == null)
+                    return;
+                var nodeList = document.DocumentNode.Descendants().Where(x => x.Id == comboBox1.SelectedItem.ToString() || x.OuterHtml == comboBox1.SelectedItem.ToString());
+                if (nodeList.Count() > 0)
+                    selectedNode = nodeList.First();
+                if (selectedNode != null)
+                {
+                    selectedNode.SetAttributeValue("style", textBox4.Text);
+                    document.Save($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+
+                    loadOverlays();
+                    webView21.Reload();
+                }
+
+
+                textBox4timer.Stop();
+                textBox4timer = null;
+            };
+            textBox4timer.Interval = TimeSpan.FromMilliseconds(800);
+            textBox4timer.Start();
+        }
+
+        private DispatcherTimer textBox5timer = null;
+        private void textBox5_TextChanged(object sender, EventArgs e)
+        {
+            if (textBox5timer != null)
+            {
+                textBox5timer.Stop();
+                textBox5timer = null;
+            }
+
+            textBox5timer = new DispatcherTimer();
+
+            textBox5timer.Tick += (s, e2) =>
+            {
+                HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
+                document.Load($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+                HtmlNode selectedNode = null;
+                if (comboBox1.SelectedItem == null)
+                    return;
+                var nodeList = document.DocumentNode.Descendants().Where(x => x.Id == comboBox1.SelectedItem.ToString() || x.OuterHtml == comboBox1.SelectedItem.ToString());
+                if (nodeList.Count() > 0)
+                    selectedNode = nodeList.First();
+                if (selectedNode != null)
+                {
+                    selectedNode.SetAttributeValue("id", textBox5.Text);
+                    document.Save($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+
+                    loadOverlays();
+                    webView21.Reload();
+                }
+                comboBox1_DropDown(null,null);
+                comboBox1.SelectedItem = textBox5.Text;
+
+                textBox5timer.Stop();
+                textBox5timer = null;
+            };
+            textBox5timer.Interval = TimeSpan.FromMilliseconds(800);
+            textBox5timer.Start();
         }
     }
 }

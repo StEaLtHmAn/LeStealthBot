@@ -114,7 +114,7 @@
             this.flowLayoutPanel1.Location = new System.Drawing.Point(1, 25);
             this.flowLayoutPanel1.Margin = new System.Windows.Forms.Padding(0);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(313, 393);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(314, 393);
             this.flowLayoutPanel1.TabIndex = 6;
             this.flowLayoutPanel1.Visible = false;
             this.flowLayoutPanel1.WrapContents = false;
@@ -244,8 +244,6 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(315, 420);
             this.Controls.Add(this.flowLayoutPanel1);
-            this.Controls.Add(this.button2);
-            this.Controls.Add(this.checkBox1);
             this.Controls.Add(this.button6);
             this.Controls.Add(this.button5);
             this.Controls.Add(this.button4);
@@ -254,6 +252,8 @@
             this.Controls.Add(this.richTextBox1);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.textBox2);
+            this.Controls.Add(this.button2);
+            this.Controls.Add(this.checkBox1);
             this.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
             this.MinimizeBox = false;
             this.Name = "ViewerListForm";

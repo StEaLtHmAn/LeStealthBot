@@ -72,6 +72,9 @@
     <Reference Include="CSCore, Version=1.2.1.2, Culture=neutral, PublicKeyToken=5a08f2b6f4415dea, processorArchitecture=MSIL">
       <HintPath>..\packages\CSCore.1.2.1.2\lib\net35-client\CSCore.dll</HintPath>
     </Reference>
+    <Reference Include="HtmlAgilityPack, Version=1.11.52.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>..\packages\HtmlAgilityPack.1.11.52\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    </Reference>
     <Reference Include="LiteDB, Version=5.0.17.0, Culture=neutral, PublicKeyToken=4ee40123013c9f27, processorArchitecture=MSIL">
       <HintPath>..\packages\LiteDB.5.0.17\lib\net45\LiteDB.dll</HintPath>
     </Reference>
@@ -178,6 +181,12 @@
   <ItemGroup>
     <Compile Include="CustomUI\CustomTabControl.cs">
       <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="CustomUI\OverlayListItem.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CustomUI\OverlayListItem.Designer.cs">
+      <DependentUpon>OverlayListItem.cs</DependentUpon>
     </Compile>
     <Compile Include="CustomUI\SessionHistoryItem.cs">
       <SubType>UserControl</SubType>
@@ -286,6 +295,8 @@
     <Compile Include="Tools\RtfWriter\RtfTable.cs" />
     <Compile Include="Tools\RtfWriter\RtfTableCell.cs" />
     <Compile Include="Tools\RtfWriter\RtfUtility.cs" />
+    <Compile Include="Tools\WebServer.cs" />
+    <Compile Include="Tools\WebsiteThumbnailImageGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -293,6 +304,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="CustomUI\OverlayListItem.resx">
+      <DependentUpon>OverlayListItem.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="CustomUI\SessionHistoryItem.resx">
       <DependentUpon>SessionHistoryItem.cs</DependentUpon>
     </EmbeddedResource>

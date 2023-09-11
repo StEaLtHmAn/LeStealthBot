@@ -135,7 +135,7 @@ namespace LeStealthBot
                         }
                         else
                         {
-                            string name = viewer["user_name"].ToString().ToLower() == viewer["user_login"].ToString().ToLower() ? viewer["user_name"].ToString() :viewer["user_login"].ToString();
+                            string name = viewer["user_name"].ToString().ToLower() == viewer["user_login"].ToString().ToLower() ? viewer["user_name"].ToString() : viewer["user_login"].ToString();
                             WatchTimeList.Add(new ViewerData() { UserName = name, WatchTime = TimeSpan.Zero, UserID = viewer["user_id"].ToString() });
                         }
                     }
@@ -376,7 +376,7 @@ namespace LeStealthBot
                                 fmt.FgColor = green;
 
                                 par = doc.AddParagraph();
-                                line = $"Session Viewer:";
+                                line = $"Session Viewers:";
                                 par.SetText(line);
                                 fmt = par.AddCharFormat();
                                 fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
@@ -583,7 +583,7 @@ namespace LeStealthBot
         private void SaveSession()
         {
             //if its less than 5 minutes - dont save
-            if (DateTime.UtcNow - sessionStart < TimeSpan.FromMinutes(5))
+            if (DateTime.UtcNow - sessionStart < TimeSpan.FromMinutes(5) && WatchTimeList.Count > 0)
                 return;
 
             Database.InsertRecord(new SessionData()
@@ -596,6 +596,23 @@ namespace LeStealthBot
                 CombinedHoursWatched = WatchTimeList.Sum(x => x.WatchTime.TotalHours),
                 Viewers = WatchTimeList
             }, "Sessions");
+
+            //rename old viewer names
+            foreach (var session in Sessions)
+            {
+                foreach (var viewerData in WatchTimeList)
+                {
+                    var needsChangeViewers = session.Viewers.Where(x => viewerData.UserID == x.UserID && viewerData.UserName != x.UserName);
+                    if (needsChangeViewers.Count() > 0)
+                    {
+                        foreach (var needsChangeViewer in needsChangeViewers)
+                        {
+                            needsChangeViewer.UserName = viewerData.UserName;
+                        }
+                        Database.UpdateSession(x => x._id == session._id, session);
+                    }
+                }
+            }
         }
 
         private Image GetImageFromURL(string url, string filename)
@@ -663,9 +680,9 @@ namespace LeStealthBot
                     Padding = Padding.Empty
                 };
                 Label lblDisplayName = new Label();
-                lblDisplayName.AutoSize = true;
-                lblDisplayName.Font = new Font(lblDisplayName.Font, System.Drawing.FontStyle.Bold);
-                lblDisplayName.Location = new Point(160, 12);
+                lblDisplayName.Size = new Size(226, 20);
+                lblDisplayName.Font = new Font("Cascadia Mono", 9, System.Drawing.FontStyle.Bold);
+                lblDisplayName.Location = new Point(160, 10);
                 lblDisplayName.Text = "Loading...";
                 panel.Controls.Add(lblDisplayName);
 
@@ -680,6 +697,17 @@ namespace LeStealthBot
                     popup.Show(new Point(RightClickedWordPos.X + 20, RightClickedWordPos.Y + 10));
 
                     JObject userDetails = JObject.Parse(Globals.GetUserDetails(RightClickedWord));
+                    if (!(userDetails["data"] as JArray).HasValues)
+                    {
+                        var tempWatchTimes = Sessions.Where(x => x.Viewers.Any(y => y.UserName == RightClickedWord));
+                        userDetails = JObject.Parse(Globals.GetUserDetailsID(tempWatchTimes.First().Viewers.First(x=>x.UserName == RightClickedWord).UserID));
+                        foreach (var item in tempWatchTimes)
+                        {
+                            item.Viewers.First(x => x.UserName == RightClickedWord).UserName = userDetails["data"][0]["display_name"].ToString();
+                            Database.UpdateSession(x => x._id == item._id, item);
+                        }
+                        RightClickedWord = userDetails["data"][0]["display_name"].ToString();
+                    }
 
                     var checkFollowList = Globals.Followers.Where(x => x["user_id"].ToString() == userDetails["data"][0]["id"].ToString());
                     JObject followdata = checkFollowList.Count() > 0 ? checkFollowList.First() as JObject : null;
@@ -706,9 +734,10 @@ namespace LeStealthBot
                     Label lblFirstSession = new Label();
                     Label lblTotalHoursWatched = new Label();
                     Label lblAccountCreated = new Label();
+                    Label lblAffiliate = new Label();
                     Button btnExit = new Button();
 
-                    btnExit.Location = new Point(374, 0);
+                    btnExit.Location = new Point(373, 0);
                     btnExit.Size = new Size(26, 26);
                     btnExit.Text = "×";
                     btnExit.FlatStyle = FlatStyle.Flat;
@@ -727,44 +756,54 @@ namespace LeStealthBot
                     pbxProfileImage.Size = new Size(150, 150);
                     pbxProfileImage.SizeMode = PictureBoxSizeMode.Zoom;
 
-                    lblDescription.AutoSize = true;
-                    lblDescription.Location = new Point(12, 162);
-                    lblDescription.MaximumSize = new Size(376, 80);
+                    lblDescription.Font = new Font("Cascadia Mono", 9);
+                    lblDescription.Location = new Point(10, 162);
+                    lblDescription.Size = new Size(376, 80);
 
-                    lblAccountCreated.AutoSize = true;
-                    lblAccountCreated.Location = new Point(162, 33);
+                    lblAccountCreated.Font = new Font("Cascadia Mono", 9);
+                    lblAccountCreated.Location = new Point(160, 30);
+                    lblAccountCreated.Size = new Size(226, 20);
 
-                    lblSubscribed.AutoSize = true;
-                    lblSubscribed.Location = new Point(162, 54);
+                    lblSubscribed.Font = new Font("Cascadia Mono", 9);
+                    lblSubscribed.Location = new Point(160, 48);
+                    lblSubscribed.Size = new Size(226, 20);
 
-                    lblFollowed.AutoSize = true;
-                    lblFollowed.Location = new Point(162, 75);
+                    lblFollowed.Font = new Font("Cascadia Mono", 9);
+                    lblFollowed.Location = new Point(160, 66);
+                    lblFollowed.Size = new Size(226, 20);
 
-                    lblLastSession.AutoSize = true;
-                    lblLastSession.Location = new Point(162, 96);
+                    lblLastSession.Font = new Font("Cascadia Mono", 9);
+                    lblLastSession.Location = new Point(160, 84);
+                    lblLastSession.Size = new Size(226, 20);
 
-                    lblFirstSession.AutoSize = true;
-                    lblFirstSession.Location = new Point(162, 117);
+                    lblFirstSession.Font = new Font("Cascadia Mono", 9);
+                    lblFirstSession.Location = new Point(160, 102);
+                    lblFirstSession.Size = new Size(226, 20);
 
-                    lblTotalHoursWatched.AutoSize = true;
-                    lblTotalHoursWatched.Location = new Point(162, 138);
+                    lblTotalHoursWatched.Font = new Font("Cascadia Mono", 9);
+                    lblTotalHoursWatched.Location = new Point(160, 120);
+                    lblTotalHoursWatched.Size = new Size(226, 20);
+
+                    lblAffiliate.Font = new Font("Cascadia Mono", 9);
+                    lblAffiliate.Location = new Point(160, 138);
+                    lblAffiliate.Size = new Size(226, 20);
 
                     // Display the user details.
                     lblDisplayName.Text = RightClickedWord;
                     lblDescription.Text = userDetails["data"][0]["description"].ToString();
-                    lblAccountCreated.Text = "Account created " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(userDetails["data"][0]["created_at"].ToString())) + " ago";
+                    lblAccountCreated.Text = "🎁 Account created " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(userDetails["data"][0]["created_at"].ToString())) + " ago";
                     pbxProfileImage.Image = GetImageFromURL(userDetails["data"][0]["profile_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString());
 
                     // Display the watched sessions.
                     lblFirstSession.Text = "Started watching " + Globals.getRelativeTimeSpan(DateTime.UtcNow - SessionsListClone.First().DateTimeStarted) + " ago";
                     lblLastSession.Text = "Last seen " + Globals.getRelativeTimeSpan(DateTime.UtcNow - SessionsListClone.Last().DateTimeEnded) + " ago";
                     TimeSpan total = TimeSpan.FromMilliseconds(SessionsListClone.Sum(x => x.Viewers.First(y => y.UserName == RightClickedWord).WatchTime.TotalMilliseconds));
-                    lblTotalHoursWatched.Text = $"Watched for {Globals.getRelativeTimeSpan(total)}";
+                    lblTotalHoursWatched.Text = $"⌛ Watched for {Globals.getRelativeTimeSpan(total)}";
 
                     //gifter_name, is_gift, tier, plan_name
                     if (subscribedata != null)
                     {
-                        lblSubscribed.Text = "Subscribed";
+                        lblSubscribed.Text = "★ Subscribed";
                         if (subscribedata?["tier"] != null && subscribedata?["tier"].ToString().Length > 0)
                         {
                             switch (subscribedata["tier"].ToString())
@@ -787,9 +826,14 @@ namespace LeStealthBot
                     }
                     else
                     {
-                        lblSubscribed.Text = "Not Subscribed";
+                        lblSubscribed.Text = "☆ Not Subscribed";
                     }
-                    lblFollowed.Text = followdata != null ? "Following for " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(followdata["followed_at"].ToString())) : "Not Following";
+                    lblFollowed.Text = followdata != null ? "❤ Following for " + Globals.getRelativeTimeSpan(DateTime.UtcNow - DateTime.Parse(followdata["followed_at"].ToString())) : "♡ Not Following";
+
+                    if (!string.IsNullOrEmpty(userDetails["data"][0]["type"].ToString()))
+                        lblAffiliate.Text = "✓ Twitch " + userDetails["data"][0]["type"].ToString();
+                    else if (!string.IsNullOrEmpty(userDetails["data"][0]["broadcaster_type"].ToString()))
+                        lblAffiliate.Text = "✓ Twitch " + userDetails["data"][0]["broadcaster_type"].ToString();
 
                     panel.Controls.Add(lblDescription);
                     panel.Controls.Add(lblAccountCreated);
@@ -799,7 +843,10 @@ namespace LeStealthBot
                     panel.Controls.Add(lblTotalHoursWatched);
                     panel.Controls.Add(lblSubscribed);
                     panel.Controls.Add(lblFollowed);
+                    if (!string.IsNullOrEmpty(lblAffiliate.Text))
+                        panel.Controls.Add(lblAffiliate);
                     panel.Controls.Add(btnExit);
+                    lblDisplayName.SendToBack();
 
                     if (!string.IsNullOrWhiteSpace(userDetails["data"][0]["offline_image_url"].ToString()))
                         panel.BackgroundImage = GetImageFromURL(userDetails["data"][0]["offline_image_url"].ToString(), userDetails["data"][0]["display_name"].ToString() + "_offline");
@@ -884,13 +931,15 @@ namespace LeStealthBot
         private void button1_Click(object sender, EventArgs e)
         {
             flowLayoutPanel1.Hide();
+            richTextBox1.Location = new Point(0, 49);
+            richTextBox1.Size = new Size(Width - 17, Height - richTextBox1.Location.Y - 40);
             TextDisplaying = button1.Text;
             UpdateText();
         }
 
         private void RefreshSessionHistoryUI()
         {
-            flowLayoutPanel1.Controls.Clear();
+            flowLayoutPanel1.Controls.ClearAndDispose();
             int count = 1;
             foreach (var sessionData in Sessions.OrderByDescending(x => x.DateTimeStarted))
             {
@@ -1147,9 +1196,15 @@ namespace LeStealthBot
                         if (legendItem.Name == "Peak Viewers")
                         {
                             if (series1.Color.A == 0)
+                            {
                                 series1.Color = Color.FromArgb(165, 85, 0, 255);
+                                chartArea.AxisY.Maximum = (int)graphPeakViewersData.Values.Max();
+                            }
                             else
+                            {
                                 series1.Color = Color.FromArgb(0, 0, 0, 0);
+                                chartArea.AxisY.Maximum = (int)graphAverageViewersData.Values.Max();
+                            }
                         }
                         else if (legendItem.Name == "Average Viewers")
                         {
@@ -1332,7 +1387,7 @@ namespace LeStealthBot
                 //}
             }
 
-            flowLayoutPanel1.Controls.Clear();
+            flowLayoutPanel1.Controls.ClearAndDispose();
             generateViewerCountChart();
             generateUniqueViewerCountChart();
             //generate30DayViewerCountChart();
@@ -1361,6 +1416,8 @@ namespace LeStealthBot
         private void button3_Click(object sender, EventArgs e)
         {
             flowLayoutPanel1.Hide();
+            richTextBox1.Location = new Point(0, 26);
+            richTextBox1.Size = new Size(Width - 17, Height - richTextBox1.Location.Y - 40);
             TextDisplaying = button3.Text;
             UpdateText();
             richTextBox1.SelectionStart = 0;
@@ -1383,6 +1440,8 @@ namespace LeStealthBot
         private void button6_Click(object sender, EventArgs e)
         {
             flowLayoutPanel1.Hide();
+            richTextBox1.Location = new Point(0, 49);
+            richTextBox1.Size = new Size(Width - 17, Height - richTextBox1.Location.Y - 40);
             TextDisplaying = button6.Text;
             UpdateText();
             richTextBox1.SelectionStart = 0;

@@ -13,59 +13,59 @@ namespace LeStealthBot
     {
         public static readonly string exe = Assembly.GetExecutingAssembly().GetName().Name;
 
-        public static void ConvertOldIniIntoDB()
-        {
-            //convert from ini file to database
-            if (File.Exists($"{exe}Settings.ini") && !File.Exists($"{exe}Settings.db"))
-            {
-                using (var db = new LiteDatabase($"{exe}Settings.db"))
-                {
-                    IniHelper iniHelper = new IniHelper($"{exe}Settings.ini");
-                    foreach (string section in iniHelper.SectionNames())
-                    {
-                        if (File.Exists(section))
-                        {
-                            var col = db.GetCollection("Presets");
-                            col.Insert(new BsonDocument
-                            {
-                                ["exePath"] = section,
-                                ["PresetTitle"] = iniHelper.Read("PresetTitle", section),
-                                ["PresetCategory"] = iniHelper.Read("PresetCategory", section)
-                            });
-                        }
-                        else
-                        {
-                            if (section == "HotkeysUp" || section == "HotkeysDown")
-                            {
-                                var col = db.GetCollection("Hotkeys");
-                                foreach (string key in iniHelper.ReadKeys(section))
-                                {
-                                    col.Insert(new BsonDocument
-                                    {
-                                        ["exePath"] = key,
-                                        ["keyCode"] = iniHelper.Read(key, section),
-                                        ["isVolumeUp"] = section.Contains("Up")
-                                    });
-                                }
-                            }
-                            else
-                            {
-                                var col = db.GetCollection(section);
-                                foreach (string key in iniHelper.ReadKeys(section))
-                                {
-                                    col.Insert(new BsonDocument
-                                    {
-                                        ["Key"] = key,
-                                        ["Value"] = iniHelper.Read(key, section)
-                                    });
-                                }
-                            }
-                        }
-                    }
-                }
-                //File.Delete($"{Assembly.GetExecutingAssembly().GetName().Name}Settings.ini");
-            }
-        }
+        //public static void ConvertOldIniIntoDB()
+        //{
+        //    //convert from ini file to database
+        //    if (File.Exists($"{exe}Settings.ini") && !File.Exists($"{exe}Settings.db"))
+        //    {
+        //        using (var db = new LiteDatabase($"{exe}Settings.db"))
+        //        {
+        //            IniHelper iniHelper = new IniHelper($"{exe}Settings.ini");
+        //            foreach (string section in iniHelper.SectionNames())
+        //            {
+        //                if (File.Exists(section))
+        //                {
+        //                    var col = db.GetCollection("Presets");
+        //                    col.Insert(new BsonDocument
+        //                    {
+        //                        ["exePath"] = section,
+        //                        ["PresetTitle"] = iniHelper.Read("PresetTitle", section),
+        //                        ["PresetCategory"] = iniHelper.Read("PresetCategory", section)
+        //                    });
+        //                }
+        //                else
+        //                {
+        //                    if (section == "HotkeysUp" || section == "HotkeysDown")
+        //                    {
+        //                        var col = db.GetCollection("Hotkeys");
+        //                        foreach (string key in iniHelper.ReadKeys(section))
+        //                        {
+        //                            col.Insert(new BsonDocument
+        //                            {
+        //                                ["exePath"] = key,
+        //                                ["keyCode"] = iniHelper.Read(key, section),
+        //                                ["isVolumeUp"] = section.Contains("Up")
+        //                            });
+        //                        }
+        //                    }
+        //                    else
+        //                    {
+        //                        var col = db.GetCollection(section);
+        //                        foreach (string key in iniHelper.ReadKeys(section))
+        //                        {
+        //                            col.Insert(new BsonDocument
+        //                            {
+        //                                ["Key"] = key,
+        //                                ["Value"] = iniHelper.Read(key, section)
+        //                            });
+        //                        }
+        //                    }
+        //                }
+        //            }
+        //        }
+        //        //File.Delete($"{Assembly.GetExecutingAssembly().GetName().Name}Settings.ini");
+        //    }
+        //}
 
         public static string ReadSettingCell(string columnName)
         {
@@ -176,7 +176,37 @@ namespace LeStealthBot
                     }
                 }
             }
-            catch
+            catch (Exception ex)
+            {
+                if (attempts < 5)
+                {
+                    Thread.Sleep(1);
+                    attempts++;
+                    goto retry;
+                }
+            }
+            return false;
+        }
+
+        public static bool InsertRecord(BsonDocument newDocument, string collection = null)
+        {
+            int attempts = 0;
+        retry:
+            try
+            {
+                using (var db = new LiteDatabase($"{exe}Settings.db"))
+                {
+                    var col = db.GetCollection(collection ?? exe);
+                    if (col.Insert(newDocument) == null && attempts < 5)
+                    {
+                        Thread.Sleep(1);
+                        attempts++;
+                        goto retry;
+                    }
+                    return true;
+                }
+            }
+            catch (Exception ex)
             {
                 if (attempts < 5)
                 {

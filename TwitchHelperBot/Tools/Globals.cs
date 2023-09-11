@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using LiteDB;
+using Newtonsoft.Json.Linq;
 using RestSharp;
 using System;
 using System.Collections;
@@ -11,7 +12,6 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using System.Windows.Threading;
 using TwitchLib.Client;
-using TwitchLib.Client.Models;
 
 namespace LeStealthBot
 {
@@ -27,6 +27,7 @@ namespace LeStealthBot
         public static string loginName = null;
         public static TwitchClient twitchChatClient = null;
         public static Dictionary<string, DispatcherTimer> ChatbotTimers = new Dictionary<string, DispatcherTimer>();
+        public static int webServerPort = 8080;
 
         public static void LogMessage(string message)
         {
@@ -98,10 +99,26 @@ namespace LeStealthBot
             var HotkeysList = Database.ReadAllData("Hotkeys");
             foreach (var item in HotkeysList)
             {
+                if (item.ContainsKey("exePath") && !item.ContainsKey("exeFileName"))
+                {
+                    var IdToDelete = item["_id"].AsObjectId;
+                    Database.UpsertRecord(x => x["_id"].AsObjectId == IdToDelete,
+                    new BsonDocument()
+                    {
+                        { "exeFileName", item["exeFileName"].AsString },
+                        { "keyCode", item["keyCode"].AsString },
+                        { "isVolumeUp", item["isVolumeUp"].AsBoolean }
+                    }, "Hotkeys");
+                }
                 Keys keys = (Keys)int.Parse(item["keyCode"].AsString);
                 ModifierKeys modifiers = KeyPressedEventArgs.GetModifiers(keys, out keys);
 
-                keyboardHook.RegisterHotKey(modifiers, keys);
+                if (!keyboardHook.RegisterHotKey(modifiers, keys))
+                {
+                    //if the hotkey fails, delete
+                    var IdToDelete = item["_id"].AsObjectId;
+                    Database.DeleteRecords(x => x["_id"].AsObjectId == IdToDelete, "Hotkeys");
+                }
             }
         }
 
@@ -176,6 +193,17 @@ namespace LeStealthBot
             client.AddDefaultHeader("Authorization", "Bearer " + access_token);
             RestRequest request = new RestRequest("https://api.twitch.tv/helix/users", Method.Get);
             request.AddQueryParameter("login", loginName);
+            RestResponse response = client.Execute(request);
+            return response.Content;
+        }
+
+        public static string GetUserDetailsID(string id)
+        {
+            RestClient client = new RestClient();
+            client.AddDefaultHeader("Client-ID", clientId);
+            client.AddDefaultHeader("Authorization", "Bearer " + access_token);
+            RestRequest request = new RestRequest("https://api.twitch.tv/helix/users", Method.Get);
+            request.AddQueryParameter("id", id);
             RestResponse response = client.Execute(request);
             return response.Content;
         }
@@ -299,6 +327,20 @@ namespace LeStealthBot
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// The default clear method does not dispose the items removed from the container.
+        /// This method disposes all items in the container
+        /// </summary>
+        public static void ClearAndDispose(this Control.ControlCollection c)
+        {
+            c.Owner.SuspendLayout();
+            while (c.Count != 0)
+            {
+                c[0].Dispose();
+            }
+            c.Owner.ResumeLayout();
         }
     }
 }

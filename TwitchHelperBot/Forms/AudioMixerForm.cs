@@ -3,6 +3,7 @@ using LiteDB;
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -22,7 +23,10 @@ namespace LeStealthBot
 
         public void InitForm()
         {
-            Invoke(new Action(() => flowLayoutPanel1.Controls.Clear()));
+            Invoke(new Action(() =>
+            {
+                flowLayoutPanel1.Controls.ClearAndDispose();
+            }));
             using (var sessionEnumerator = AudioManager.GetAudioSessions())
             {
                 foreach (var session in sessionEnumerator)
@@ -108,7 +112,7 @@ namespace LeStealthBot
             btnVolumeUpHotkey.AutoSize = true;
             btnVolumeUpHotkey.FlatStyle = FlatStyle.Flat;
             btnVolumeUpHotkey.ForeColor = Color.Green;
-            BsonDocument HotkeysUpValue = Database.ReadOneRecord(x => x["exePath"].AsString == (process.Id == 0 ? "0" : process.MainModule.FileName) && x["isVolumeUp"].AsBoolean, "Hotkeys");
+            BsonDocument HotkeysUpValue = Database.ReadOneRecord(x => x["exeFileName"].AsString == Path.GetFileName(process.Id == 0 ? "0" : process.MainModule.FileName) && x["isVolumeUp"].AsBoolean, "Hotkeys");
             if (HotkeysUpValue!=null)
             {
                 Keys keyData = (Keys)int.Parse(HotkeysUpValue["keyCode"].AsString);
@@ -138,9 +142,8 @@ namespace LeStealthBot
                     try
                     {
                         Database.DeleteRecords(x =>
-                        x["exePath"].AsString == (process.Id == 0 ? "0" : process.MainModule.FileName) && x["isVolumeUp"].AsBoolean,
+                        x["exeFileName"].AsString == Path.GetFileName(process.Id == 0 ? "0" : process.MainModule.FileName) && x["isVolumeUp"].AsBoolean,
                         "Hotkeys");
-                        //Globals.iniHelper.DeleteKey(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysUp");
                         Globals.registerAudioMixerHotkeys();
                     }
                     catch { }
@@ -153,19 +156,23 @@ namespace LeStealthBot
                         keyNames = new KeysConverter().ConvertToString(e.KeyCode);
                     }
                     btnVolumeUpHotkey.Text = string.Join("+", e.Modifiers.ToString().Split(new string[] { ", " }, StringSplitOptions.RemoveEmptyEntries).Reverse()) + "+" + keyNames;
-                    try
+                    if (keyNames != "None")
                     {
-                        Database.UpsertRecord(x => x["exePath"] == (process.Id == 0 ? "0" : process.MainModule.FileName) && x["isVolumeUp"].AsBoolean,
-                            new BsonDocument()
-                            {
-                                { "exePath", process.Id == 0 ? "0" : process.MainModule.FileName },
-                                { "keyCode", ((int)e.KeyData).ToString() },
-                                { "isVolumeUp", true },
-                            }, "Hotkeys");
-                        //Database.UpsertCellValue(x => x["exePath"] == (process.Id == 0 ? "0" : process.MainModule.FileName), "keyCode", ((int)e.KeyData).ToString(), "Hotkeys");
-                        Globals.registerAudioMixerHotkeys();
+                        try
+                        {
+                            Database.UpsertRecord(x => x["exeFileName"].AsString == Path.GetFileName(process.Id == 0 ? "0" : process.MainModule.FileName) && x["isVolumeUp"].AsBoolean,
+                                new BsonDocument()
+                                {
+                                    { "exeFileName", Path.GetFileName(process.Id == 0 ? "0" : process.MainModule.FileName) },
+                                    { "keyCode", ((int)e.KeyData).ToString() },
+                                    { "isVolumeUp", true },
+                                }, "Hotkeys");
+                            Globals.registerAudioMixerHotkeys();
+                        }
+                        catch (Exception ex)
+                        {
+                        }
                     }
-                    catch { }
                 }
             };
             btnVolumeUpHotkey.Anchor = AnchorStyles.None;
@@ -174,7 +181,7 @@ namespace LeStealthBot
             btnVolumeDownHotkey.AutoSize = true;
             btnVolumeDownHotkey.FlatStyle = FlatStyle.Flat;
             btnVolumeDownHotkey.ForeColor = Color.Blue;
-            BsonDocument HotkeysDownValue = Database.ReadOneRecord(x => x["exePath"].AsString == (process.Id == 0 ? "0" : process.MainModule.FileName) && !x["isVolumeUp"].AsBoolean, "Hotkeys");
+            BsonDocument HotkeysDownValue = Database.ReadOneRecord(x => x["exeFileName"].AsString == Path.GetFileName(process.Id == 0 ? "0" : process.MainModule.FileName) && !x["isVolumeUp"].AsBoolean, "Hotkeys");
             if (HotkeysDownValue != null)
             {
                 Keys keyData = (Keys)int.Parse(HotkeysDownValue["keyCode"].AsString);
@@ -204,7 +211,7 @@ namespace LeStealthBot
                     try
                     {
                         Database.DeleteRecords(x =>
-                        x["exePath"].AsString == (process.Id == 0 ? "0" : process.MainModule.FileName) && !x["isVolumeUp"].AsBoolean,
+                        x["exeFileName"].AsString == Path.GetFileName(process.Id == 0 ? "0" : process.MainModule.FileName) && !x["isVolumeUp"].AsBoolean,
                         "Hotkeys");
                         //Globals.iniHelper.DeleteKey(process.Id == 0 ? "0" : process.MainModule.FileName, "HotkeysDown");
                         Globals.registerAudioMixerHotkeys();
@@ -221,10 +228,10 @@ namespace LeStealthBot
                     btnVolumeDownHotkey.Text = string.Join("+", e.Modifiers.ToString().Split(new string[] { ", " }, StringSplitOptions.RemoveEmptyEntries).Reverse()) + "+" + keyNames;
                     try
                     {
-                        Database.UpsertRecord(x => x["exePath"] == (process.Id == 0 ? "0" : process.MainModule.FileName) && !x["isVolumeUp"].AsBoolean,
+                        Database.UpsertRecord(x => x["exeFileName"].AsString == Path.GetFileName(process.Id == 0 ? "0" : process.MainModule.FileName) && !x["isVolumeUp"].AsBoolean,
                             new BsonDocument()
                             {
-                                { "exePath", process.Id == 0 ? "0" : process.MainModule.FileName },
+                                { "exeFileName", Path.GetFileName(process.Id == 0 ? "0" : process.MainModule.FileName) },
                                 { "keyCode", ((int)e.KeyData).ToString() },
                                 { "isVolumeUp", false },
                             }, "Hotkeys");

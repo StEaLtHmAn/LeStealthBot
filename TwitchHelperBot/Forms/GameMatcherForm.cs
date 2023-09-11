@@ -98,9 +98,9 @@ namespace LeStealthBot
                 });
                 var item = new ListViewItem(new string[]
                 {
-                        category["name"].ToString(),
-                        preset["PresetTitle"],
-                        preset["exePath"],
+                    category["name"].ToString(),
+                    preset["PresetTitle"].AsString,
+                    preset["exePath"].AsString,
                 }, presetsListView.SmallImageList.Images.Count - 1);
                 presetsListView.Items.Add(item);
             }
@@ -409,13 +409,15 @@ namespace LeStealthBot
 
         private void button4_Click(object sender, EventArgs e)
         {
-            OpenFileDialog dialog = new OpenFileDialog();
-            dialog.Filter = "Exe Files (.exe)|*.exe|All Files (*.*)|*.*";
-            dialog.FilterIndex = 1;
-            if (dialog.ShowDialog() == DialogResult.OK)
+            OpenFileDialog openFileDialog1 = new OpenFileDialog();
+            openFileDialog1.Title = "Select the EXE file for the preset";
+            openFileDialog1.CheckFileExists = true;
+            openFileDialog1.Filter = "Exe Files (.exe)|*.exe|All Files (*.*)|*.*";
+            openFileDialog1.RestoreDirectory = true;
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
-                cbxPresetExePath.Items.Add(dialog.FileName);
-                cbxPresetExePath.SelectedItem = dialog.FileName;
+                cbxPresetExePath.Items.Add(openFileDialog1.FileName);
+                cbxPresetExePath.SelectedItem = openFileDialog1.FileName;
             }
         }
 

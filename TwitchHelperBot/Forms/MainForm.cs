@@ -38,6 +38,7 @@ namespace LeStealthBot
         private int currentWindowID = -1;
         private Process currentProcess = null;
         private bool paused = false;
+        private HttpServer OverlayWebServer = new HttpServer();
 
         public MainForm()
         {
@@ -46,14 +47,6 @@ namespace LeStealthBot
             notifyIcon1.Icon = Properties.Resources.LeStealthBot;
 
             ((ToolStripDropDownMenu)toolsToolStripMenuItem.DropDown).ShowImageMargin = false;
-
-            //AnimationForm animationForm = new AnimationForm();
-            //animationForm.Show();
-            //OverlayManagerForm overlayManagerForm = new OverlayManagerForm();
-            //overlayManagerForm.Show();
-
-            //HttpServer server = new HttpServer();
-            //server.start("http://localhost:8080/");
 
             if (!checkForUpdates())
             {
@@ -132,26 +125,6 @@ namespace LeStealthBot
 
         private void startupApp()
         {
-            //if (File.Exists("TwitchHelperBotSettings.db"))
-            //{
-            //    File.Copy("TwitchHelperBotSettings.db", "LeStealthBotSettings.db");
-            //    File.Delete("TwitchHelperBotSettings.db");
-            //    using (var db = new LiteDatabase("LeStealthBotSettings.db"))
-            //    {
-            //        if (db.CollectionExists("TwitchHelperBot"))
-            //            db.RenameCollection("TwitchHelperBot", "LeStealthBot");
-            //    }
-            //}
-            //if (File.Exists("TwitchHelperBot.exe"))
-            //    File.Delete("TwitchHelperBot.exe");
-            //if (File.Exists("TwitchHelperBot.pdb"))
-            //    File.Delete("TwitchHelperBot.pdb");
-            //if (File.Exists("TwitchHelperBot.log"))
-            //    File.Delete("TwitchHelperBot.log");
-            //if (File.Exists("TwitchHelperBot.exe.config"))
-            //    File.Delete("TwitchHelperBot.exe.config");
-            //Database.ConvertOldIniIntoDB();
-
             //get LoginName, if we dont have LoginName in the config then we ask the user for his LoginName with a popup textbox
             //without a LoginName we cannot continue so not entering it closes the app
             Globals.loginName = Database.ReadOneRecord(x => x["Key"] == "LoginName")?["Value"]?.AsString ?? string.Empty;
@@ -169,7 +142,6 @@ namespace LeStealthBot
                             { "Key", "LoginName" },
                             { "Value", Globals.loginName }
                         });
-                        //Database.UpsertCellValue(x => x["Key"] == "LoginName", "Value", Globals.loginName);
                     }
                     else
                     {
@@ -184,7 +156,13 @@ namespace LeStealthBot
             Globals.clientId = Database.ReadOneRecord(x => x["Key"] == "ClientId")?["Value"]?.AsString ?? string.Empty;
             if (string.IsNullOrEmpty(Globals.clientId))
             {
-                using (TextInputForm testDialog = new TextInputForm("Setup ClientID", "We need your application ClientID.\r\n\r\n- Browse here: https://dev.twitch.tv/console/apps/create \r\n- Set OAuthRedirectURL to http://localhost (or something else if you know what you doing)\r\n- Set Category to Broadcaster Suite\r\n- Click Create and copy-paste the ClientID into the box below."))
+                using (TextInputForm testDialog = new TextInputForm(
+                    "Setup ClientID", "We need your application ClientID.\r\n\r\n" +
+                    "- Browse here: https://dev.twitch.tv/console/apps/create\r\n" +
+                    "- Set Name to StealthBot\r\n" +
+                    "- Set OAuth Redirect URLs to http://localhost\r\n" +
+                    "- Set Category to Broadcaster Suite\r\n" +
+                    "- Click Create and copy-paste the ClientID into the box below."))
                 {
                     if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox.Text.Length > 0)
                     {
@@ -207,41 +185,31 @@ namespace LeStealthBot
             RedirectURI = Database.ReadSettingCell("AuthRedirectURI");
             if (string.IsNullOrEmpty(RedirectURI))
             {
-                using (TextInputForm testDialog = new TextInputForm("Setup OAuthRedirectURL", $"We need the OAuthRedirectURL you entered for your application.\r\nIf you closed the page it can be found here https://dev.twitch.tv/console/apps/{Globals.clientId}"))
-                {
-                    if (testDialog.ShowDialog(this) == DialogResult.OK && testDialog.textBox.Text.Length > 0)
-                    {
-                        RedirectURI = testDialog.textBox.Text;
-                        Database.UpsertRecord(x => x["Key"] == "AuthRedirectURI", new BsonDocument() { { "Key", "AuthRedirectURI" }, { "Value", RedirectURI } });
-                    }
-                    else
-                    {
-                        Globals.DelayAction(0, new Action(() => { Dispose(); }));
-                        return;
-                    }
-                }
+                RedirectURI = "http://localhost/";
+                Database.UpsertRecord(x => x["Key"] == "AuthRedirectURI", new BsonDocument() { { "Key", "AuthRedirectURI" }, { "Value", RedirectURI } });
             }
 
             //load configs
             string tmp = Database.ReadSettingCell("DarkModeEnabled");
+            bool DarkModeEnabled = true;
             if (string.IsNullOrEmpty(tmp) || !bool.TryParse(tmp, out _))
             {
-                Database.UpsertRecord(x => x["Key"] == "DarkModeEnabled", new BsonDocument() { { "Key", "DarkModeEnabled" }, { "Value", "false" } });
+                Database.UpsertRecord(x => x["Key"] == "DarkModeEnabled", new BsonDocument() { { "Key", "DarkModeEnabled" }, { "Value", "true" } });
             }
             else
             {
-                bool DarkModeEnabled = bool.Parse(Database.ReadSettingCell("DarkModeEnabled"));
-                if (DarkModeEnabled)
+                DarkModeEnabled = bool.Parse(tmp);
+            }
+            if (DarkModeEnabled)
+            {
+                Globals.ToggleDarkMode(this, DarkModeEnabled);
+                NotificationMenuStrip.BackColor = Globals.DarkColour;
+                NotificationMenuStrip.ForeColor = SystemColors.ControlLightLight;
+                NotificationMenuStrip.Renderer = new MyRenderer();
+                foreach (ToolStripItem item in toolsToolStripMenuItem.DropDownItems)
                 {
-                    Globals.ToggleDarkMode(this, DarkModeEnabled);
-                    NotificationMenuStrip.BackColor = Globals.DarkColour;
-                    NotificationMenuStrip.ForeColor = SystemColors.ControlLightLight;
-                    NotificationMenuStrip.Renderer = new MyRenderer();
-                    foreach (ToolStripItem item in toolsToolStripMenuItem.DropDownItems)
-                    {
-                        item.BackColor = Globals.DarkColour;
-                        item.ForeColor = SystemColors.ControlLightLight;
-                    }
+                    item.BackColor = Globals.DarkColour;
+                    item.ForeColor = SystemColors.ControlLightLight;
                 }
             }
             tmp = Database.ReadSettingCell("ModifyChannelCooldown");
@@ -504,6 +472,8 @@ namespace LeStealthBot
 
             Globals.registerAudioMixerHotkeys();
             Globals.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
+
+            OverlayWebServer.start();
         }
 
         private DispatcherTimer followerTimer;
@@ -878,18 +848,18 @@ namespace LeStealthBot
                     followerTimer.Stop();
                     try
                     {
-                        List<string> followerNamesBefore;
+                        List<string> followerIDsBefore;
                         if (bool.Parse(Globals.ChatBotSettings["OnNewFollow"]["enabled"].ToString()))
                         {
-                            followerNamesBefore = Globals.Followers.Select(x => x["user_name"].ToString()).ToList();
+                            followerIDsBefore = Globals.Followers.Select(x => x["user_id"].ToString()).ToList();
                             //get new follow data
                             Globals.GetFollowedData();
                             //loop through new followers
-                            foreach (var followerName in Globals.Followers.Select(x => x["user_name"].ToString()).Where(x => !followerNamesBefore.Contains(x)))
+                            foreach (var newFollower in Globals.Followers.Where(x => !followerIDsBefore.Contains(x["user_id"].ToString())))
                             {
                                 Globals.sendChatBotMessage(Globals.loginName,
                                     Globals.ChatBotSettings["OnNewFollow"]["message"].ToString()
-                                    .Replace("##FollowerName##", followerName));
+                                    .Replace("##FollowerName##", newFollower["user_name"].ToString()));
                             }
                         }
                         else
@@ -939,11 +909,11 @@ namespace LeStealthBot
             int keysWithMods = (int)KeyPressedEventArgs.AddModifiers(e.Key, e.Modifier); 
             BsonDocument dbResponse = Database.ReadOneRecord(x => x["keyCode"].AsString == keysWithMods.ToString(), "Hotkeys");
 
-            string processPath = string.Empty;
+            string exeFileName = string.Empty;
             bool isUp = false;
             if (dbResponse != null)
             {
-                processPath = dbResponse["exePath"].AsString;
+                exeFileName = dbResponse["exeFileName"].AsString;
                 isUp = dbResponse["isVolumeUp"].AsBoolean;
             }
 
@@ -959,7 +929,7 @@ namespace LeStealthBot
                                 bool shouldSkip = true;
                                 try
                                 {
-                                    if ((processPath == "0" && sessionControl.ProcessID == 0) || processPath == sessionControl.Process.MainModule.FileName)
+                                    if ((exeFileName == "0" && sessionControl.ProcessID == 0) || exeFileName == Path.GetFileName(sessionControl.Process.MainModule.FileName))
                                         shouldSkip = false;
                                 }
                                 catch { }
@@ -1128,7 +1098,7 @@ namespace LeStealthBot
                     if (currentProcess != null && !currentProcess.HasExited && !string.IsNullOrEmpty(currentProcess?.MainWindowTitle))
                     {
                         string forgroundAppName = currentProcess?.MainModule?.FileName ?? string.Empty;
-                        var Presets = Database.ReadAllData("Presets").Where(x => x["exePath"] == forgroundAppName);
+                        var Presets = Database.ReadAllData("Presets").Where(x => x["exePath"].AsString == forgroundAppName);
                         if (Presets.Count() > 0)
                         {
                             string PresetTitle = Presets.First()["PresetTitle"].AsString;

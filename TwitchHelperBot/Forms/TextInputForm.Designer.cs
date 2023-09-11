@@ -38,21 +38,28 @@
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(6, 3);
+            this.label1.Location = new System.Drawing.Point(15, 15);
+            this.label1.Margin = new System.Windows.Forms.Padding(15, 15, 15, 7);
+            this.label1.MaximumSize = new System.Drawing.Size(403, 500);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(0, 13);
+            this.label1.Size = new System.Drawing.Size(37, 13);
             this.label1.TabIndex = 0;
+            this.label1.TabStop = true;
+            this.label1.Text = "          ";
             // 
-            // textBox1
+            // textBox
             // 
-            this.textBox.Location = new System.Drawing.Point(6, 19);
-            this.textBox.Name = "textBox1";
-            this.textBox.Size = new System.Drawing.Size(200, 20);
+            this.textBox.Location = new System.Drawing.Point(15, 42);
+            this.textBox.Margin = new System.Windows.Forms.Padding(15, 7, 15, 7);
+            this.textBox.Name = "textBox";
+            this.textBox.Size = new System.Drawing.Size(382, 20);
             this.textBox.TabIndex = 1;
             // 
             // button1
             // 
-            this.button1.Location = new System.Drawing.Point(6, 45);
+            this.button1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+            this.button1.Location = new System.Drawing.Point(322, 76);
+            this.button1.Margin = new System.Windows.Forms.Padding(15, 7, 15, 15);
             this.button1.Name = "button1";
             this.button1.RightToLeft = System.Windows.Forms.RightToLeft.Yes;
             this.button1.Size = new System.Drawing.Size(75, 23);
@@ -70,9 +77,9 @@
             this.flowLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flowLayoutPanel1.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flowLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            this.flowLayoutPanel1.Margin = new System.Windows.Forms.Padding(0);
             this.flowLayoutPanel1.Name = "flowLayoutPanel1";
-            this.flowLayoutPanel1.Padding = new System.Windows.Forms.Padding(3);
-            this.flowLayoutPanel1.Size = new System.Drawing.Size(234, 117);
+            this.flowLayoutPanel1.Size = new System.Drawing.Size(409, 116);
             this.flowLayoutPanel1.TabIndex = 3;
             // 
             // TextInputForm
@@ -82,11 +89,13 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
             this.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
-            this.ClientSize = new System.Drawing.Size(234, 117);
+            this.ClientSize = new System.Drawing.Size(409, 116);
             this.Controls.Add(this.flowLayoutPanel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
+            this.MaximumSize = new System.Drawing.Size(425, 700);
             this.MinimizeBox = false;
+            this.MinimumSize = new System.Drawing.Size(425, 155);
             this.Name = "TextInputForm";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Input";
@@ -101,7 +110,7 @@
 
         private System.Windows.Forms.LinkLabel label1;
         private System.Windows.Forms.Button button1;
-        private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
         public System.Windows.Forms.TextBox textBox;
+        private System.Windows.Forms.FlowLayoutPanel flowLayoutPanel1;
     }
 }
