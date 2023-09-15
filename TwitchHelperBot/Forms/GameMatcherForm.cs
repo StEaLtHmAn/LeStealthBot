@@ -70,7 +70,6 @@ namespace LeStealthBot
                         presetCategoryPictureBox.Image = Image.FromStream(fs);
                     }
                 });
-                
             }
             catch (Exception ex)
             {
@@ -239,6 +238,11 @@ namespace LeStealthBot
         {
             try
             {
+                if (txtPresetCategory.Text.Length == 0)
+                {
+                    txtPresetCategory.ResetListBox();
+                    return;
+                }
                 if (!txtPresetCategory.Focused)
                     return;
                 string currentText = txtPresetCategory.Text;

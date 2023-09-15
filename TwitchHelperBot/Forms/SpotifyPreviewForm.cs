@@ -12,6 +12,7 @@ using System.Net;
 using System.Linq;
 using Newtonsoft.Json;
 using LiteDB;
+using System.Web;
 
 namespace LeStealthBot
 {
@@ -145,6 +146,139 @@ namespace LeStealthBot
             {
                 timer1.Enabled = true;
             }
+        }
+
+        public bool AddSongToRecommendedList(string Track, string Artist)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(SpotifyToken))
+                {
+                    SpotifyAuth();
+                    return false;
+                }
+
+                RestClient client = new RestClient();
+                string url = $"https://api.spotify.com/v1/search?q={HttpUtility.UrlEncode(Track)}%20{HttpUtility.UrlEncode(Artist)}%20artist%3A{HttpUtility.UrlEncode(Artist)}%20track%3A{HttpUtility.UrlEncode(Track)}&type=track";
+                if (string.IsNullOrEmpty(Artist))
+                {
+                    url = $"https://api.spotify.com/v1/search?q={HttpUtility.UrlEncode(Track)}&type=track";
+                }
+                RestRequest request = new RestRequest(url, Method.Get);
+                request.AddHeader("Authorization", "Bearer " + SpotifyToken);
+                RestResponse response = client.Execute(request);
+                if (response.Content.Contains("The access token expired"))
+                {
+                    if (!string.IsNullOrEmpty(SpotifyRefreshToken))
+                        SpotifyReLog();
+                    else
+                        SpotifyToken = string.Empty;
+
+                    return false;
+                }
+                if (!response.Content.StartsWith("{"))
+                {
+                    return false;
+                }
+                JObject SearchData = JObject.Parse(response.Content);
+                if (SearchData["tracks"]["total"].ToString() == "0")
+                {
+                    return false;
+                }
+                int accuracy = 0;
+                int accurateIndex = 0;
+                for (int i = 0; i < (SearchData["tracks"]["items"] as JArray).Count; i++)
+                {
+                    int currentAccuracy = int.Parse(SearchData["tracks"]["items"][i]["popularity"].ToString());
+                    if (SearchData["tracks"]["items"][i]["name"].ToString().ToLower() == Track.ToLower())
+                        currentAccuracy += 100;
+                    if ((SearchData["tracks"]["items"][i]["artists"] as JArray).Any(x=>x["name"].ToString().ToLower() == Artist.ToLower()))
+                        currentAccuracy += 100;
+
+                    if (currentAccuracy > accuracy)
+                    {
+                        accuracy = currentAccuracy;
+                        accurateIndex = i;
+                    }
+                }
+
+                Globals.SongRequestList.Add(SearchData["tracks"]["items"][accurateIndex].DeepClone());
+                File.WriteAllText("SongRequestList.json", Globals.SongRequestList.ToString());
+                return true;
+            }
+            catch//(Exception ex)
+            {
+                SpotifyToken = string.Empty;
+            }
+            return false;
+        }
+
+        public bool EnqueueTrack(string TrackURI)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(SpotifyToken))
+                {
+                    SpotifyAuth();
+                    return false;
+                }
+
+                RestClient client = new RestClient();
+                RestRequest request = new RestRequest($"https://api.spotify.com/v1/me/player/queue?uri={HttpUtility.UrlEncode(TrackURI)}", Method.Post);
+                request.AddHeader("Authorization", "Bearer " + SpotifyToken);
+                RestResponse response = client.Execute(request);
+                if (response.Content.Contains("The access token expired"))
+                {
+                    if (!string.IsNullOrEmpty(SpotifyRefreshToken))
+                        SpotifyReLog();
+                    else
+                        SpotifyToken = string.Empty;
+
+                    return false;
+                }
+                return true;
+            }
+            catch//(Exception ex)
+            {
+                SpotifyToken = string.Empty;
+            }
+            return false;
+        }
+
+        public bool PlayTrack(string TrackURI)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(SpotifyToken))
+                {
+                    SpotifyAuth();
+                    return false;
+                }
+                RestClient client = new RestClient();
+                RestRequest request = new RestRequest($"https://api.spotify.com/v1/me/player/play", Method.Put);
+                request.AddHeader("Authorization", "Bearer " + SpotifyToken);
+                request.AddBody(new JObject()
+                {
+                    {"context_uri", TrackURI},
+                    {"position_ms", 0}
+                }.ToString(Formatting.None));
+                RestResponse response = client.Execute(request);
+                if (response.Content.Contains("The access token expired"))
+                {
+                    if (!string.IsNullOrEmpty(SpotifyRefreshToken))
+                        SpotifyReLog();
+                    else
+                        SpotifyToken = string.Empty;
+
+                    return false;
+                }
+                return true;
+            }
+            catch//(Exception ex)
+            {
+                SpotifyToken = string.Empty;
+            }
+            return false;
         }
 
         private void SpotifyReLog()

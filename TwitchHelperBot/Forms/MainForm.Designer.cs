@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
             this.updateChannelInfoTimer = new System.Windows.Forms.Timer(this.components);
             this.notifyIcon1 = new System.Windows.Forms.NotifyIcon(this.components);
             this.NotificationMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
@@ -44,6 +43,7 @@
             this.toolStripMenuItem1 = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.quitToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.spotifySongRecommendationsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.NotificationMenuStrip.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -74,7 +74,8 @@
             this.quitToolStripMenuItem});
             this.NotificationMenuStrip.Name = "contextMenuStrip1";
             this.NotificationMenuStrip.ShowImageMargin = false;
-            this.NotificationMenuStrip.Size = new System.Drawing.Size(167, 148);
+            this.NotificationMenuStrip.Size = new System.Drawing.Size(167, 170);
+            this.NotificationMenuStrip.Opening += new System.ComponentModel.CancelEventHandler(this.NotificationMenuStrip_Opening);
             this.NotificationMenuStrip.Opened += new System.EventHandler(this.NotificationMenuStrip_Opened);
             // 
             // setupPresetsToolStripMenuItem
@@ -106,7 +107,8 @@
             this.toolsToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.showViewerListToolStripMenuItem,
             this.AudioMixerToolStripMenuItem,
-            this.spotifyPreviewToolStripMenuItem});
+            this.spotifyPreviewToolStripMenuItem,
+            this.spotifySongRecommendationsToolStripMenuItem});
             this.toolsToolStripMenuItem.Font = new System.Drawing.Font("Segoe UI", 9.1F);
             this.toolsToolStripMenuItem.Name = "toolsToolStripMenuItem";
             this.toolsToolStripMenuItem.Size = new System.Drawing.Size(166, 22);
@@ -115,21 +117,21 @@
             // showViewerListToolStripMenuItem
             // 
             this.showViewerListToolStripMenuItem.Name = "showViewerListToolStripMenuItem";
-            this.showViewerListToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.showViewerListToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
             this.showViewerListToolStripMenuItem.Text = "Viewer List";
             this.showViewerListToolStripMenuItem.Click += new System.EventHandler(this.showViewerListToolStripMenuItem_Click);
             // 
             // AudioMixerToolStripMenuItem
             // 
             this.AudioMixerToolStripMenuItem.Name = "AudioMixerToolStripMenuItem";
-            this.AudioMixerToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.AudioMixerToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
             this.AudioMixerToolStripMenuItem.Text = "Audio Mixer";
             this.AudioMixerToolStripMenuItem.Click += new System.EventHandler(this.AudioMixerToolStripMenuItem_Click);
             // 
             // spotifyPreviewToolStripMenuItem
             // 
             this.spotifyPreviewToolStripMenuItem.Name = "spotifyPreviewToolStripMenuItem";
-            this.spotifyPreviewToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.spotifyPreviewToolStripMenuItem.Size = new System.Drawing.Size(262, 22);
             this.spotifyPreviewToolStripMenuItem.Text = "Spotify Preview";
             this.spotifyPreviewToolStripMenuItem.Click += new System.EventHandler(this.spotifyPreviewToolStripMenuItem_Click);
             // 
@@ -165,6 +167,14 @@
             this.quitToolStripMenuItem.Text = "Quit";
             this.quitToolStripMenuItem.Click += new System.EventHandler(this.quitToolStripMenuItem_Click);
             // 
+            // spotifySongRecommendationsToolStripMenuItem
+            // 
+            this.spotifySongRecommendationsToolStripMenuItem.Name = "spotifySongRecommendationsToolStripMenuItem";
+            this.spotifySongRecommendationsToolStripMenuItem.Size = new System.Drawing.Size(218, 22);
+            this.spotifySongRecommendationsToolStripMenuItem.Text = "Song Recommendations";
+            this.spotifySongRecommendationsToolStripMenuItem.Visible = false;
+            this.spotifySongRecommendationsToolStripMenuItem.Click += new System.EventHandler(this.spotifySongRecommendationsToolStripMenuItem_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -198,5 +208,6 @@
         private System.Windows.Forms.ToolStripMenuItem toolsToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem spotifyPreviewToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem spotifySongRecommendationsToolStripMenuItem;
     }
 }

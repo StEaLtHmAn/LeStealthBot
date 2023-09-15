@@ -33,7 +33,6 @@ public class AutoCompleteTextBox : TextBox
     private void InitializeComponent()
     {
         listBox = new ListBox();
-        listBox.Width = Width;
         listBox.Click += _listBox_Click;
         listBox.FormattingEnabled = true;
         listBox.Format += _listBox_Format;
@@ -79,7 +78,7 @@ public class AutoCompleteTextBox : TextBox
         }
     }
 
-    private void ResetListBox()
+    public void ResetListBox()
     {
         popup.Close();
         _isAdded = false;

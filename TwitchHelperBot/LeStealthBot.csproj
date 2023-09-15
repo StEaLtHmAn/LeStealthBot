@@ -188,11 +188,23 @@
     <Compile Include="CustomUI\OverlayListItem.Designer.cs">
       <DependentUpon>OverlayListItem.cs</DependentUpon>
     </Compile>
+    <Compile Include="CustomUI\SongRequestItem.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="CustomUI\SongRequestItem.Designer.cs">
+      <DependentUpon>SongRequestItem.cs</DependentUpon>
+    </Compile>
     <Compile Include="CustomUI\SessionHistoryItem.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="CustomUI\SessionHistoryItem.Designer.cs">
       <DependentUpon>SessionHistoryItem.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\SongRecommendationsList.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Forms\SongRecommendationsList.Designer.cs">
+      <DependentUpon>SongRecommendationsList.cs</DependentUpon>
     </Compile>
     <Compile Include="Tools\AudioManager.cs" />
     <Compile Include="Forms\AudioMixerForm.cs">
@@ -307,6 +319,9 @@
     <EmbeddedResource Include="CustomUI\OverlayListItem.resx">
       <DependentUpon>OverlayListItem.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="CustomUI\SongRequestItem.resx">
+      <DependentUpon>SongRequestItem.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="CustomUI\SessionHistoryItem.resx">
       <DependentUpon>SessionHistoryItem.cs</DependentUpon>
     </EmbeddedResource>
@@ -327,6 +342,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Forms\OverlayNotificationVolume.resx">
       <DependentUpon>OverlayNotificationVolume.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Forms\SongRecommendationsList.resx">
+      <DependentUpon>SongRecommendationsList.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

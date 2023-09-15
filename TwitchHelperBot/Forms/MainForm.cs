@@ -338,6 +338,14 @@ namespace LeStealthBot
                     { "message", "MrDestructoid You have watched @##YourName## for ##Watchtime##." },
                     { "messageWithUser", "MrDestructoid @##Name## has watched @##YourName## for ##Watchtime##." }
                 } },
+                { "ChatCommand - sr", new JObject{
+                    { "enabled", "false" },
+                    { "default", "true" },
+                    { "permissions", "Any" },
+                    { "messageAdded", "Thanks for your recommendation :)" },
+                    { "messageFailed", "I can't find the song :(" },
+                    { "messageSpotifyPreviewNotOpen", "Sorry, not taking recommendations right now." }
+                } },
                 { "ChatCommand - commands", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
@@ -453,6 +461,9 @@ namespace LeStealthBot
                     });
             }
             setupChatBot();
+
+            if(File.Exists("SongRequestList.json"))
+                Globals.SongRequestList = JArray.Parse(File.ReadAllText("SongRequestList.json"));
 
             //show welcome message
             OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {Globals.userDetailsResponse["data"][0]["display_name"]}", Globals.userDetailsResponse["data"][0]["profile_image_url"].ToString(), Globals.userDetailsResponse["data"][0]["id"].ToString());
@@ -721,7 +732,26 @@ namespace LeStealthBot
                                         {
                                             if (setting.StartsWith("ChatCommand - ") && bool.Parse(Globals.ChatBotSettings[setting]["enabled"].ToString()))
                                             {
-                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                //check permissions
+                                                if ((Globals.ChatBotSettings[setting] as JObject).ContainsKey("permissions"))
+                                                {
+                                                    switch (Globals.ChatBotSettings[setting]["permissions"].ToString().ToLower())
+                                                    {
+                                                        case "moderator":
+                                                            if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster)
+                                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                            break;
+                                                        case "broadcaster":
+                                                            if (e.Command.ChatMessage.IsBroadcaster)
+                                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                            break;
+                                                        default:
+                                                            messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                            break;
+                                                    }
+                                                }
+                                                else
+                                                    messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
                                             }
                                         }
                                         messageToSend = messageToSend.Substring(0, messageToSend.Length - 2);
@@ -768,6 +798,42 @@ namespace LeStealthBot
                                             .Replace("##Name##", userToSearch)
                                             .Replace("##Watchtime##", Globals.getRelativeTimeSpan(tmpWatchTime)),
                                             e.Command.ChatMessage.Id);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
+                                    }
+                                    break;
+                                }
+                            case "sr":
+                                {
+                                    try
+                                    {
+                                        string messageToSend = null;
+                                        var OpenSpotifyPreviewForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
+                                        if (OpenSpotifyPreviewForms.Count() > 0)
+                                        {
+                                            string[] arguments = e.Command.ArgumentsAsString.Split(new string[] { "-" }, StringSplitOptions.RemoveEmptyEntries);
+                                            bool AddSongToRecommendedListResponse = false;
+                                            if (arguments.Length == 2)
+                                                AddSongToRecommendedListResponse = OpenSpotifyPreviewForms.First().AddSongToRecommendedList(arguments[0].Trim(), arguments[1].Trim());
+                                            else if (arguments.Length == 1)
+                                                AddSongToRecommendedListResponse = OpenSpotifyPreviewForms.First().AddSongToRecommendedList(arguments[0].Trim(), string.Empty);
+                                            else if (arguments.Length > 2)
+                                            {
+                                                AddSongToRecommendedListResponse = OpenSpotifyPreviewForms.First().AddSongToRecommendedList(e.Command.ArgumentsAsString, string.Empty);
+                                            }
+                                            if(AddSongToRecommendedListResponse)
+                                                messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["messageAdded"].ToString();
+                                            else
+                                                messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["messageFailed"].ToString();
+                                        }
+                                        else
+                                        {
+                                            messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["messageSpotifyPreviewNotOpen"].ToString();
+                                        }
+                                        if(!string.IsNullOrEmpty(messageToSend))
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
                                     }
                                     catch (Exception ex)
                                     {
@@ -1283,6 +1349,20 @@ namespace LeStealthBot
         private void toolStripMenuItem1_Click(object sender, EventArgs e)
         {
             checkForUpdates();
+        }
+
+        private void NotificationMenuStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            spotifySongRecommendationsToolStripMenuItem.Visible = Globals.SongRequestList.Count > 0;
+        }
+
+        private void spotifySongRecommendationsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (Application.OpenForms.OfType<SongRecommendationsList>().Count() == 0)
+            {
+                SongRecommendationsList form = new SongRecommendationsList();
+                form.Show();
+            }
         }
     }
 }

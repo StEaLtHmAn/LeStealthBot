@@ -255,7 +255,6 @@
             this.Controls.Add(this.button2);
             this.Controls.Add(this.checkBox1);
             this.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
-            this.MinimizeBox = false;
             this.Name = "ViewerListForm";
             this.Padding = new System.Windows.Forms.Padding(1, 3, 1, 3);
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;

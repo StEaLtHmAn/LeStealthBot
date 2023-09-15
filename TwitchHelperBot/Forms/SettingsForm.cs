@@ -200,7 +200,7 @@ namespace LeStealthBot
             if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("message"))
             {
                 Label lblMessage = new Label();
-                lblMessage.Text = "message: ";
+                lblMessage.Text = "Message: ";
                 lblMessage.Location = new Point(lblHeading.Location.X, yValue);
                 lblMessage.AutoSize = true;
                 panel1.Controls.Add(lblMessage);
@@ -253,7 +253,7 @@ namespace LeStealthBot
             if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("messagePart"))
             {
                 Label lblMessage = new Label();
-                lblMessage.Text = "messagePart: ";
+                lblMessage.Text = "Message Part: ";
                 lblMessage.Location = new Point(lblHeading.Location.X, yValue);
                 lblMessage.AutoSize = true;
                 panel1.Controls.Add(lblMessage);
@@ -275,7 +275,7 @@ namespace LeStealthBot
             if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("messageNoReason"))
             {
                 Label lblMessage = new Label();
-                lblMessage.Text = "messageNoReason: ";
+                lblMessage.Text = "Message - NoReason: ";
                 lblMessage.Location = new Point(lblHeading.Location.X, yValue);
                 lblMessage.AutoSize = true;
                 panel1.Controls.Add(lblMessage);
@@ -296,7 +296,7 @@ namespace LeStealthBot
             if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("messageWithReason"))
             {
                 Label lblMessage = new Label();
-                lblMessage.Text = "messageWithReason: ";
+                lblMessage.Text = "Message - WithReason: ";
                 lblMessage.Location = new Point(lblHeading.Location.X, yValue);
                 lblMessage.AutoSize = true;
                 panel1.Controls.Add(lblMessage);
@@ -317,7 +317,7 @@ namespace LeStealthBot
             if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("messageWithUser"))
             {
                 Label lblMessage = new Label();
-                lblMessage.Text = "messageWithUser: ";
+                lblMessage.Text = "Message - WithUser: ";
                 lblMessage.Location = new Point(lblHeading.Location.X, yValue);
                 lblMessage.AutoSize = true;
                 panel1.Controls.Add(lblMessage);
@@ -335,10 +335,73 @@ namespace LeStealthBot
                 yValue += txtMessage.Height + 10;
             }
 
+            if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("messageAdded"))
+            {
+                Label lblMessage = new Label();
+                lblMessage.Text = "Message - Added: ";
+                lblMessage.Location = new Point(lblHeading.Location.X, yValue);
+                lblMessage.AutoSize = true;
+                panel1.Controls.Add(lblMessage);
+
+                TextBox txtMessage = new TextBox();
+                txtMessage.Text = tmpChatBotSettings[settingName]["messageAdded"].ToString();
+                txtMessage.Location = new Point(lblMessage.Width + 10, yValue);
+                txtMessage.Size = new Size(panel1.Width - lblMessage.Width - 20, 50);
+                txtMessage.Multiline = true;
+                txtMessage.TextChanged += delegate
+                {
+                    tmpChatBotSettings[settingName]["messageAdded"] = txtMessage.Text;
+                };
+                panel1.Controls.Add(txtMessage);
+                yValue += txtMessage.Height + 10;
+            }
+
+            if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("messageFailed"))
+            {
+                Label lblMessage = new Label();
+                lblMessage.Text = "Message - Failed: ";
+                lblMessage.Location = new Point(lblHeading.Location.X, yValue);
+                lblMessage.AutoSize = true;
+                panel1.Controls.Add(lblMessage);
+
+                TextBox txtMessage = new TextBox();
+                txtMessage.Text = tmpChatBotSettings[settingName]["messageFailed"].ToString();
+                txtMessage.Location = new Point(lblMessage.Width + 10, yValue);
+                txtMessage.Size = new Size(panel1.Width - lblMessage.Width - 20, 50);
+                txtMessage.Multiline = true;
+                txtMessage.TextChanged += delegate
+                {
+                    tmpChatBotSettings[settingName]["messageFailed"] = txtMessage.Text;
+                };
+                panel1.Controls.Add(txtMessage);
+                yValue += txtMessage.Height + 10;
+            }
+
+            if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("messageSpotifyPreviewNotOpen"))
+            {
+                Label lblMessage = new Label();
+                lblMessage.Text = "Message - SpotifyPreviewNotOpen: ";
+                lblMessage.Location = new Point(lblHeading.Location.X, yValue);
+                lblMessage.AutoSize = true;
+                panel1.Controls.Add(lblMessage);
+
+                TextBox txtMessage = new TextBox();
+                txtMessage.Text = tmpChatBotSettings[settingName]["messageSpotifyPreviewNotOpen"].ToString();
+                txtMessage.Location = new Point(lblMessage.Width + 10, yValue);
+                txtMessage.Size = new Size(panel1.Width - lblMessage.Width - 20, 50);
+                txtMessage.Multiline = true;
+                txtMessage.TextChanged += delegate
+                {
+                    tmpChatBotSettings[settingName]["messageSpotifyPreviewNotOpen"] = txtMessage.Text;
+                };
+                panel1.Controls.Add(txtMessage);
+                yValue += txtMessage.Height + 10;
+            }
+
             if (settingName.StartsWith("Timer - ") && (tmpChatBotSettings[settingName] as JObject).ContainsKey("interval"))
             {
                 Label lblMessage = new Label();
-                lblMessage.Text = "interval: ";
+                lblMessage.Text = "Interval: ";
                 lblMessage.Location = new Point(lblHeading.Location.X, yValue);
                 lblMessage.AutoSize = true;
                 panel1.Controls.Add(lblMessage);
@@ -359,7 +422,7 @@ namespace LeStealthBot
             if (settingName.StartsWith("Timer - "))
             {
                 Label lblMessage = new Label();
-                lblMessage.Text = "offset: ";
+                lblMessage.Text = "Offset: ";
                 lblMessage.Location = new Point(lblHeading.Location.X, yValue);
                 lblMessage.AutoSize = true;
                 panel1.Controls.Add(lblMessage);
@@ -383,7 +446,7 @@ namespace LeStealthBot
             if ((tmpChatBotSettings[settingName] as JObject).ContainsKey("suburb"))
             {
                 Label lblMessage = new Label();
-                lblMessage.Text = "suburb: ";
+                lblMessage.Text = "Suburb: ";
                 lblMessage.Location = new Point(lblHeading.Location.X, yValue);
                 lblMessage.AutoSize = true;
                 panel1.Controls.Add(lblMessage);
@@ -426,17 +489,20 @@ namespace LeStealthBot
         private void loadOverlays()
         {
             flowLayoutPanel2.Controls.ClearAndDispose();
-            foreach (var overlayPath in Directory.GetDirectories("Overlays"))
+            if (Directory.Exists("Overlays"))
             {
-                string OverlayName = overlayPath.Replace("Overlays\\", string.Empty);
-                OverlayListItem item = new OverlayListItem(overlayPath.Replace("Overlays\\", string.Empty));
-                item.Click += (s, e) =>
+                foreach (var overlayPath in Directory.GetDirectories("Overlays"))
                 {
-                    SelectedOverlayName = OverlayName;
-                    label13.Text = OverlayName;
-                    webView21.Source = new Uri($"http://localhost:{Globals.webServerPort}/?overlay={SelectedOverlayName}");
-                };
-                flowLayoutPanel2.Controls.Add(item);
+                    string OverlayName = overlayPath.Replace("Overlays\\", string.Empty);
+                    OverlayListItem item = new OverlayListItem(overlayPath.Replace("Overlays\\", string.Empty));
+                    item.Click += (s, e) =>
+                    {
+                        SelectedOverlayName = OverlayName;
+                        label13.Text = OverlayName;
+                        webView21.Source = new Uri($"http://localhost:{Globals.webServerPort}/?overlay={SelectedOverlayName}");
+                    };
+                    flowLayoutPanel2.Controls.Add(item);
+                }
             }
         }
 

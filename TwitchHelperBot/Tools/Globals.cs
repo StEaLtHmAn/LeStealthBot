@@ -24,6 +24,7 @@ namespace LeStealthBot
         public static JObject userDetailsResponse;
         public static JObject windowLocations;
         public static JObject ChatBotSettings;
+        public static JArray SongRequestList = new JArray();
         public static string loginName = null;
         public static TwitchClient twitchChatClient = null;
         public static Dictionary<string, DispatcherTimer> ChatbotTimers = new Dictionary<string, DispatcherTimer>();
