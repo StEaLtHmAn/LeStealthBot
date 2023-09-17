@@ -146,17 +146,26 @@ namespace LeStealthBot
                 cbxPermissions.FlatStyle = FlatStyle.Flat;
                 cbxPermissions.DropDownStyle = ComboBoxStyle.DropDownList;
                 cbxPermissions.Size = new Size(83, 28);
-                cbxPermissions.Items.AddRange(new string[] { "Any", "Moderator", "Broadcaster" });
+                cbxPermissions.Items.AddRange(new string[] { "Any", "Follower", "Subscriber", "VIP", "Moderator", "Broadcaster" });
                 switch (tmpChatBotSettings?[settingName]?["permissions"]?.ToString() ?? "Any")
                 {
                     case "Any":
                         cbxPermissions.SelectedIndex = 0;
                         break;
-                    case "Moderator":
+                    case "Follower":
                         cbxPermissions.SelectedIndex = 1;
                         break;
-                    case "Broadcaster":
+                    case "Subscriber":
                         cbxPermissions.SelectedIndex = 2;
+                        break;
+                    case "VIP":
+                        cbxPermissions.SelectedIndex = 3;
+                        break;
+                    case "Moderator":
+                        cbxPermissions.SelectedIndex = 4;
+                        break;
+                    case "Broadcaster":
+                        cbxPermissions.SelectedIndex = 5;
                         break;
                 }
                 cbxPermissions.SelectedIndexChanged += delegate
@@ -167,9 +176,18 @@ namespace LeStealthBot
                             tmpChatBotSettings[settingName]["permissions"] = "Any";
                             break;
                         case 1:
-                            tmpChatBotSettings[settingName]["permissions"] = "Moderator";
+                            tmpChatBotSettings[settingName]["permissions"] = "Follower";
                             break;
                         case 2:
+                            tmpChatBotSettings[settingName]["permissions"] = "Subscriber";
+                            break;
+                        case 3:
+                            tmpChatBotSettings[settingName]["permissions"] = "VIP";
+                            break;
+                        case 4:
+                            tmpChatBotSettings[settingName]["permissions"] = "Moderator";
+                            break;
+                        case 5:
                             tmpChatBotSettings[settingName]["permissions"] = "Broadcaster";
                             break;
                     }

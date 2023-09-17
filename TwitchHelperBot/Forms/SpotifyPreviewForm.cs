@@ -37,6 +37,7 @@ namespace LeStealthBot
                 Globals.DelayAction(0, new Action(() => { Dispose(); }));
                 return;
             }
+            SpotifyToken = Database.ReadSettingCell("SpotifyToken");
             GetSpotifyCurrentTrack();
         }
 
@@ -202,8 +203,15 @@ namespace LeStealthBot
                     }
                 }
 
-                Globals.SongRequestList.Add(SearchData["tracks"]["items"][accurateIndex].DeepClone());
-                File.WriteAllText("SongRequestList.json", Globals.SongRequestList.ToString());
+                if (Globals.AutoEnqueue)
+                {
+                    EnqueueTrack(SearchData["tracks"]["items"][accurateIndex]["uri"].ToString());
+                }
+                else
+                {
+                    Globals.SongRequestList.Add(SearchData["tracks"]["items"][accurateIndex].DeepClone());
+                    File.WriteAllText("SongRequestList.json", Globals.SongRequestList.ToString());
+                }
                 return true;
             }
             catch//(Exception ex)
@@ -236,6 +244,8 @@ namespace LeStealthBot
 
                     return false;
                 }
+                else if (response.Content.Contains("error"))
+                    return false;
                 return true;
             }
             catch//(Exception ex)
@@ -257,10 +267,13 @@ namespace LeStealthBot
                 RestClient client = new RestClient();
                 RestRequest request = new RestRequest($"https://api.spotify.com/v1/me/player/play", Method.Put);
                 request.AddHeader("Authorization", "Bearer " + SpotifyToken);
+                request.AddHeader("Content-Type", "application/json");
                 request.AddBody(new JObject()
                 {
-                    {"context_uri", TrackURI},
-                    {"position_ms", 0}
+                    //{ "context_uri", "https://open.spotify.com/collection/tracks" },
+                    {"uris", new JArray()
+                        { TrackURI }
+                    }
                 }.ToString(Formatting.None));
                 RestResponse response = client.Execute(request);
                 if (response.Content.Contains("The access token expired"))
@@ -272,6 +285,8 @@ namespace LeStealthBot
 
                     return false;
                 }
+                else if (response.Content.Contains("error"))
+                    return false;
                 return true;
             }
             catch//(Exception ex)
@@ -310,7 +325,7 @@ namespace LeStealthBot
         {
             if (Application.OpenForms.OfType<BrowserForm>().Count() == 0)
             {
-                BrowserForm form = new BrowserForm($"https://accounts.spotify.com/authorize?client_id={secrets.SpotifyClientId}&redirect_uri=" + "http://localhost/" + "&response_type=code&scope=user-read-currently-playing");
+                BrowserForm form = new BrowserForm($"https://accounts.spotify.com/authorize?client_id={secrets.SpotifyClientId}&redirect_uri=" + "http://localhost/" + "&response_type=code&scope=user-read-currently-playing+user-modify-playback-state");
                 form.webView2.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_SpotifyAuthNavigationCompleted);
                 form.ShowDialog();
             }

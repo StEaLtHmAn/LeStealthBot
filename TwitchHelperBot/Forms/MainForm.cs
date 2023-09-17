@@ -233,6 +233,16 @@ namespace LeStealthBot
             tmp = Database.ReadSettingCell("SubscriberCheckCooldown");
             if (string.IsNullOrEmpty(tmp) || !int.TryParse(tmp, out _))
                 Database.UpsertRecord(x => x["Key"] == "SubscriberCheckCooldown", new BsonDocument() { { "Key", "SubscriberCheckCooldown" }, { "Value", 5 } });
+            tmp = Database.ReadSettingCell("AutoEnqueue");
+            if (string.IsNullOrEmpty(tmp) || !bool.TryParse(tmp, out _))
+            {
+                Globals.AutoEnqueue = false;
+                Database.UpsertRecord(x => x["Key"] == "AutoEnqueue", new BsonDocument() { { "Key", "AutoEnqueue" }, { "Value", false } });
+            }
+            else
+            {
+                Globals.AutoEnqueue = bool.Parse(tmp);
+            }
 
             //Login
             Globals.access_token = Database.ReadSettingCell("access_token");
@@ -620,6 +630,18 @@ namespace LeStealthBot
                         {
                             switch (Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["permissions"].ToString().ToLower())
                             {
+                                case "follower":
+                                    if (!(e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsVip || e.Command.ChatMessage.IsSubscriber || Globals.Followers.Any(x=>x["id"].ToString() == e.Command.ChatMessage.UserId.ToString())))
+                                        return;
+                                    break;
+                                case "subscriber":
+                                    if (!(e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsVip || e.Command.ChatMessage.IsSubscriber))
+                                        return;
+                                    break;
+                                case "vip":
+                                    if (!(e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsVip))
+                                        return;
+                                    break;
                                 case "moderator":
                                     if(!(e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster))
                                         return;
@@ -737,6 +759,18 @@ namespace LeStealthBot
                                                 {
                                                     switch (Globals.ChatBotSettings[setting]["permissions"].ToString().ToLower())
                                                     {
+                                                        case "follower":
+                                                            if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsVip || e.Command.ChatMessage.IsSubscriber || Globals.Followers.Any(x => x["id"].ToString() == e.Command.ChatMessage.UserId.ToString()))
+                                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                            break;
+                                                        case "subscriber":
+                                                            if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsVip || e.Command.ChatMessage.IsSubscriber)
+                                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                            break;
+                                                        case "vip":
+                                                            if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsVip)
+                                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                            break;
                                                         case "moderator":
                                                             if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster)
                                                                 messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";

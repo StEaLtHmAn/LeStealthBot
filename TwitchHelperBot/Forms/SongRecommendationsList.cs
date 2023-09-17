@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using LiteDB;
+using Newtonsoft.Json.Linq;
 using System;
 using System.IO;
 using System.Linq;
@@ -13,7 +14,8 @@ namespace LeStealthBot
             InitializeComponent();
             Icon = Properties.Resources.LeStealthBot;
             Globals.ToggleDarkMode(this, bool.Parse(Database.ReadSettingCell("DarkModeEnabled")));
-            timer1_Tick(null, null);
+            checkBox1.Checked = Globals.AutoEnqueue;
+            reloadSongs();
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -23,7 +25,7 @@ namespace LeStealthBot
             flowLayoutPanel1.Controls.ClearAndDispose();
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private void reloadSongs()
         {
             flowLayoutPanel1.Controls.ClearAndDispose();
             foreach (var item in Globals.SongRequestList)
@@ -43,7 +45,7 @@ namespace LeStealthBot
                 {
                     Globals.SongRequestList.Remove(item);
                     File.WriteAllText("SongRequestList.json", Globals.SongRequestList.ToString());
-                    timer1_Tick(null, null);
+                    reloadSongs();
                 };
                 songRequestItem.button2.Click += delegate
                 {
@@ -53,17 +55,42 @@ namespace LeStealthBot
                         OpenSpotifyPreviewForms.First().EnqueueTrack(item["uri"].ToString());
                     }
                 };
-                songRequestItem.button3.Click += delegate
-                {
-                    var OpenSpotifyPreviewForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
-                    if (OpenSpotifyPreviewForms.Count() > 0)
-                    {
-                        OpenSpotifyPreviewForms.First().PlayTrack(item["uri"].ToString());
-                    }
-                };
-                songRequestItem.textBox1.Text = $"{item["name"]} - {artists} - {item["external_urls"]["spotify"]}";
+                //songRequestItem.button3.Click += delegate
+                //{
+                //    var OpenSpotifyPreviewForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
+                //    if (OpenSpotifyPreviewForms.Count() > 0)
+                //    {
+                //        OpenSpotifyPreviewForms.First().PlayTrack(item["uri"].ToString());
+                //    }
+                //};
+                songRequestItem.textBox1.Text = $"{item["name"]} - {artists}";
                 flowLayoutPanel1.Controls.Add(songRequestItem);
             }
+        }
+
+        private void button2_Click(object sender, EventArgs e)
+        {
+            var OpenSpotifyPreviewForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
+            if (OpenSpotifyPreviewForms.Count() > 0)
+            {
+                while (Globals.SongRequestList.Count > 0)
+                {
+                    if(OpenSpotifyPreviewForms.First().EnqueueTrack(Globals.SongRequestList[0]["uri"].ToString()))
+                        Globals.SongRequestList[0].Remove();
+                }
+                reloadSongs();
+            }
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            reloadSongs();
+        }
+
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+            Globals.AutoEnqueue = checkBox1.Checked;
+            Database.UpsertRecord(x => x["Key"] == "AutoEnqueue", new BsonDocument() { { "Key", "AutoEnqueue" }, { "Value", Globals.AutoEnqueue } });
         }
     }
 }
