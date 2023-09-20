@@ -849,16 +849,38 @@ namespace LeStealthBot
                                         {
                                             string[] arguments = e.Command.ArgumentsAsString.Split(new string[] { "-" }, StringSplitOptions.RemoveEmptyEntries);
                                             bool AddSongToRecommendedListResponse = false;
+                                            string outResult = string.Empty;
                                             if (arguments.Length == 2)
-                                                AddSongToRecommendedListResponse = OpenSpotifyPreviewForms.First().AddSongToRecommendedList(arguments[0].Trim(), arguments[1].Trim());
+                                                AddSongToRecommendedListResponse = OpenSpotifyPreviewForms.First().AddSongToRecommendedList(arguments[0].Trim(), arguments[1].Trim(), out outResult);
                                             else if (arguments.Length == 1)
-                                                AddSongToRecommendedListResponse = OpenSpotifyPreviewForms.First().AddSongToRecommendedList(arguments[0].Trim(), string.Empty);
+                                                AddSongToRecommendedListResponse = OpenSpotifyPreviewForms.First().AddSongToRecommendedList(arguments[0].Trim(), string.Empty, out outResult);
                                             else if (arguments.Length > 2)
                                             {
-                                                AddSongToRecommendedListResponse = OpenSpotifyPreviewForms.First().AddSongToRecommendedList(e.Command.ArgumentsAsString, string.Empty);
+                                                AddSongToRecommendedListResponse = OpenSpotifyPreviewForms.First().AddSongToRecommendedList(e.Command.ArgumentsAsString, string.Empty, out outResult);
                                             }
-                                            if(AddSongToRecommendedListResponse)
+                                            if (AddSongToRecommendedListResponse)
+                                            {
                                                 messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["messageAdded"].ToString();
+
+                                                JObject outResultJson = JObject.Parse(outResult);
+
+                                                string artists = string.Empty;
+                                                for (int i = 0; i < (outResultJson["artists"] as JArray).Count; i++)
+                                                {
+                                                    artists += outResultJson["artists"][i]["name"].ToString();
+                                                    if (i != (outResultJson["artists"] as JArray).Count - 1)
+                                                    {
+                                                        artists += ", ";
+                                                    }
+                                                }
+
+                                                if (messageToSend.Contains("##SpotifySong##"))
+                                                    messageToSend = messageToSend.Replace("##SpotifySong##", outResultJson["name"].ToString());
+                                                if (messageToSend.Contains("##SpotifyArtist##"))
+                                                    messageToSend = messageToSend.Replace("##SpotifyArtist##", artists);
+                                                if (messageToSend.Contains("##SpotifyURL##"))
+                                                    messageToSend = messageToSend.Replace("##SpotifyURL##", outResultJson["external_urls"]["spotify"].ToString());
+                                            }
                                             else
                                                 messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["messageFailed"].ToString();
                                         }
@@ -1387,7 +1409,7 @@ namespace LeStealthBot
 
         private void NotificationMenuStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            spotifySongRecommendationsToolStripMenuItem.Visible = Globals.SongRequestList.Count > 0;
+            spotifySongRecommendationsToolStripMenuItem.Visible = bool.Parse(Globals.ChatBotSettings[$"ChatCommand - sr"]["enabled"].ToString());
         }
 
         private void spotifySongRecommendationsToolStripMenuItem_Click(object sender, EventArgs e)

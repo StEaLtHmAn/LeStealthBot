@@ -149,8 +149,9 @@ namespace LeStealthBot
             }
         }
 
-        public bool AddSongToRecommendedList(string Track, string Artist)
+        public bool AddSongToRecommendedList(string Track, string Artist, out string result)
         {
+            result = string.Empty;
             try
             {
                 if (string.IsNullOrEmpty(SpotifyToken))
@@ -203,6 +204,7 @@ namespace LeStealthBot
                     }
                 }
 
+                result = SearchData["tracks"]["items"][accurateIndex].ToString();
                 if (Globals.AutoEnqueue)
                 {
                     EnqueueTrack(SearchData["tracks"]["items"][accurateIndex]["uri"].ToString());
