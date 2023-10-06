@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -662,19 +663,25 @@ namespace LeStealthBot
                                         {
                                             string htmlSchedule = webClient.DownloadString($"https://www.ourpower.co.za/areas/{Globals.ChatBotSettings["ChatCommand - eskont"]["suburb"]}");
 
-                                            int i1 = htmlSchedule.IndexOf("<main>");
-                                            htmlSchedule = htmlSchedule.Substring(i1, htmlSchedule.IndexOf("</main>") - i1) + "</main>";
+                                            HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
+                                            document.LoadHtml(htmlSchedule);
 
-                                            XmlDocument document = new XmlDocument();
-                                            document.LoadXml(htmlSchedule);
-                                            XmlNode nextScheduledTime = document.SelectSingleNode("//*[@style='color:red']");
-                                            XmlNode nextScheduledDate = nextScheduledTime.SelectSingleNode("../../*/time");
+                                            var nextScheduledTime = document.DocumentNode.SelectSingleNode("//*[@style='color:red']");
+                                            var nextScheduledDate = nextScheduledTime.SelectSingleNode("../../*/time");
+
+                                            TimeSpan span = TimeSpan.Zero;
+                                            try
+                                            {
+                                                span = DateTime.ParseExact($"{nextScheduledDate.InnerText.Split('-')[1].Trim()} {nextScheduledTime.InnerText.Split('-')[0].Trim()}", "d MMMM HH':'mm", CultureInfo.InvariantCulture) - DateTime.Now;
+                                            }
+                                            catch { }
 
                                             Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - eskont"]["message"].ToString()
                                             .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                             .Replace("##ScheduledMonth##", nextScheduledDate.InnerText)
                                             .Replace("##ScheduledTime##", nextScheduledTime.InnerText)
-                                            .Replace("##Time##", DateTime.Now.ToShortTimeString()),
+                                            .Replace("##Time##", DateTime.Now.ToShortTimeString())
+                                            .Replace("##Span##", Globals.getRelativeTimeSpan(span)),
                                             e.Command.ChatMessage.Id);
                                         }
                                     }

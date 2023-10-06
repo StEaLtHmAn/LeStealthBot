@@ -790,6 +790,8 @@ namespace LeStealthBot
                 comboBox1.Items.Add(image.Attributes["id"]?.Value ?? image.OuterHtml);
             foreach (var text in document.DocumentNode.Descendants("p"))
                 comboBox1.Items.Add(text.Attributes["id"]?.Value ?? text.OuterHtml);
+            foreach (var text in document.DocumentNode.Descendants("audio"))
+                comboBox1.Items.Add(text.Attributes["id"]?.Value ?? text.OuterHtml);
         }
 
         private void comboBox1_TextChanged(object sender, EventArgs e)
@@ -913,6 +915,40 @@ namespace LeStealthBot
             };
             textBox5timer.Interval = TimeSpan.FromMilliseconds(800);
             textBox5timer.Start();
+        }
+
+        private void button14_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog openFileDialog1 = new OpenFileDialog();
+            openFileDialog1.Title = "Select an image";
+            openFileDialog1.DefaultExt = "webp";
+            openFileDialog1.CheckFileExists = true;
+            //mp3, . aac, . ogg, . wav.
+            openFileDialog1.Filter = "mp3|*.mp3|aac|*.aac|ogg|*.ogg|other|*.*";
+            openFileDialog1.RestoreDirectory = true;
+            if (openFileDialog1.ShowDialog() == DialogResult.OK)
+            {
+                string soundFileName = Path.GetFileName(openFileDialog1.FileName);
+                //copy the image to the overlay path
+                File.Copy(openFileDialog1.FileName, $"Overlays\\{SelectedOverlayName}\\{soundFileName}");
+                //edit the html embed the image
+                HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
+                document.Load($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+
+                int count = 0;
+                string newID = $"sound{count}";
+                while (document.GetElementbyId(newID) != null)
+                {
+                    count++;
+                    newID = $"sound{count}";
+                }
+                var htmlBody = document.DocumentNode.SelectSingleNode("//body");
+                htmlBody.ChildNodes.Add(HtmlNode.CreateNode($"<audio id=\"{newID}\" src=\"{soundFileName}\" style=\"display:none;\" autoplay>"));
+                document.Save($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
+
+                loadOverlays();
+                webView21.Reload();
+            }
         }
     }
 }

@@ -64,6 +64,8 @@
             this.panel5 = new System.Windows.Forms.Panel();
             this.panel6 = new System.Windows.Forms.Panel();
             this.panel7 = new System.Windows.Forms.Panel();
+            this.label14 = new System.Windows.Forms.Label();
+            this.textBox5 = new System.Windows.Forms.TextBox();
             this.button13 = new System.Windows.Forms.Button();
             this.textBox4 = new System.Windows.Forms.TextBox();
             this.label13 = new System.Windows.Forms.Label();
@@ -83,8 +85,7 @@
             this.label6 = new System.Windows.Forms.Label();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.numericUpDown3 = new System.Windows.Forms.NumericUpDown();
-            this.textBox5 = new System.Windows.Forms.TextBox();
-            this.label14 = new System.Windows.Forms.Label();
+            this.button14 = new System.Windows.Forms.Button();
             this.tabControl1.SuspendLayout();
             this.tabPage4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
@@ -505,6 +506,7 @@
             // 
             this.panel7.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.panel7.BackColor = System.Drawing.Color.Transparent;
+            this.panel7.Controls.Add(this.button14);
             this.panel7.Controls.Add(this.label14);
             this.panel7.Controls.Add(this.textBox5);
             this.panel7.Controls.Add(this.button13);
@@ -522,6 +524,23 @@
             this.panel7.Size = new System.Drawing.Size(219, 686);
             this.panel7.TabIndex = 1;
             this.panel7.Visible = false;
+            // 
+            // label14
+            // 
+            this.label14.AutoSize = true;
+            this.label14.Location = new System.Drawing.Point(3, 129);
+            this.label14.Name = "label14";
+            this.label14.Size = new System.Drawing.Size(21, 13);
+            this.label14.TabIndex = 10;
+            this.label14.Text = "ID:";
+            // 
+            // textBox5
+            // 
+            this.textBox5.Location = new System.Drawing.Point(30, 126);
+            this.textBox5.Name = "textBox5";
+            this.textBox5.Size = new System.Drawing.Size(186, 20);
+            this.textBox5.TabIndex = 9;
+            this.textBox5.TextChanged += new System.EventHandler(this.textBox5_TextChanged);
             // 
             // button13
             // 
@@ -783,22 +802,20 @@
             0,
             0});
             // 
-            // textBox5
+            // button14
             // 
-            this.textBox5.Location = new System.Drawing.Point(30, 126);
-            this.textBox5.Name = "textBox5";
-            this.textBox5.Size = new System.Drawing.Size(186, 20);
-            this.textBox5.TabIndex = 9;
-            this.textBox5.TextChanged += new System.EventHandler(this.textBox5_TextChanged);
-            // 
-            // label14
-            // 
-            this.label14.AutoSize = true;
-            this.label14.Location = new System.Drawing.Point(3, 129);
-            this.label14.Name = "label14";
-            this.label14.Size = new System.Drawing.Size(21, 13);
-            this.label14.TabIndex = 10;
-            this.label14.Text = "ID:";
+            this.button14.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.button14.BackColor = System.Drawing.Color.White;
+            this.button14.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button14.ForeColor = System.Drawing.Color.Black;
+            this.button14.Location = new System.Drawing.Point(6, 72);
+            this.button14.Margin = new System.Windows.Forms.Padding(1);
+            this.button14.Name = "button14";
+            this.button14.Size = new System.Drawing.Size(70, 23);
+            this.button14.TabIndex = 11;
+            this.button14.Text = "Add Sound";
+            this.button14.UseVisualStyleBackColor = false;
+            this.button14.Click += new System.EventHandler(this.button14_Click);
             // 
             // SettingsForm
             // 
@@ -896,5 +913,6 @@
         private System.Windows.Forms.Button button13;
         private System.Windows.Forms.TextBox textBox5;
         private System.Windows.Forms.Label label14;
+        private System.Windows.Forms.Button button14;
     }
 }
