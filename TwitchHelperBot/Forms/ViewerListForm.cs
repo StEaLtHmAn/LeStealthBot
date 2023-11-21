@@ -105,11 +105,10 @@ namespace LeStealthBot
                     if ((DateTime.UtcNow - lastSubscriberCheck).TotalMinutes >= SubscriberCheckCooldown)
                     {
                         Subscribers = GetSubscribedData();
-                        Globals.GetFollowedData();
                     }
 
                     JArray Viewers = GetChattersList();
-                    Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString())).ToList());
+                    Viewers.ReplaceAll(Viewers.Where(x => !botNamesList.Contains(x["user_login"].ToString()) && x["user_login"].ToString() != string.Empty).ToList());
 
                     //We use the name if the login is the same otherwise we use the login
                     ViewersOnlineNames = Viewers.Select(x =>
@@ -210,6 +209,8 @@ namespace LeStealthBot
                                 {
                                     foreach (var viewerData in sessionData.Viewers)
                                     {
+                                        if (viewerData == null || viewerData.UserName == null)
+                                            continue;
                                         if (!tmpWatchTimeList.ContainsKey(viewerData.UserName))
                                         {
                                             tmpWatchTimeList.Add(viewerData.UserName, viewerData.WatchTime);
@@ -674,13 +675,13 @@ namespace LeStealthBot
             {
                 Panel panel = new Panel()
                 {
-                    MinimumSize = new Size(395, 250),
+                    MinimumSize = new Size(445, 250),
                     BackgroundImageLayout = ImageLayout.Stretch,
                     Margin = Padding.Empty,
                     Padding = Padding.Empty
                 };
                 Label lblDisplayName = new Label();
-                lblDisplayName.Size = new Size(226, 20);
+                lblDisplayName.Size = new Size(275, 20);
                 lblDisplayName.Font = new Font("Cascadia Mono", 9, System.Drawing.FontStyle.Bold);
                 lblDisplayName.Location = new Point(160, 10);
                 lblDisplayName.Text = "Loading...";
@@ -736,8 +737,9 @@ namespace LeStealthBot
                     Label lblAccountCreated = new Label();
                     Label lblAffiliate = new Label();
                     Button btnExit = new Button();
+                    System.Windows.Forms.ToolTip ToolTip1 = new System.Windows.Forms.ToolTip();
 
-                    btnExit.Location = new Point(373, 0);
+                    btnExit.Location = new Point(423, 0);
                     btnExit.Size = new Size(26, 26);
                     btnExit.Text = "×";
                     btnExit.FlatStyle = FlatStyle.Flat;
@@ -758,35 +760,51 @@ namespace LeStealthBot
 
                     lblDescription.Font = new Font("Cascadia Mono", 9);
                     lblDescription.Location = new Point(10, 162);
-                    lblDescription.Size = new Size(376, 80);
+                    lblDescription.Size = new Size(426, 80);
+                    lblDescription.AutoEllipsis = true;
+                    ToolTip1.SetToolTip(lblDescription, lblDescription.Text);
 
                     lblAccountCreated.Font = new Font("Cascadia Mono", 9);
                     lblAccountCreated.Location = new Point(160, 30);
-                    lblAccountCreated.Size = new Size(226, 20);
+                    lblAccountCreated.Size = new Size(275, 22);
+                    lblAccountCreated.AutoEllipsis = true;
+                    ToolTip1.SetToolTip(lblAccountCreated, lblAccountCreated.Text);
 
                     lblSubscribed.Font = new Font("Cascadia Mono", 9);
                     lblSubscribed.Location = new Point(160, 48);
-                    lblSubscribed.Size = new Size(226, 20);
+                    lblSubscribed.Size = new Size(275, 22);
+                    lblSubscribed.AutoEllipsis = true;
+                    ToolTip1.SetToolTip(lblSubscribed, lblSubscribed.Text);
 
                     lblFollowed.Font = new Font("Cascadia Mono", 9);
                     lblFollowed.Location = new Point(160, 66);
-                    lblFollowed.Size = new Size(226, 20);
+                    lblFollowed.Size = new Size(275, 22);
+                    lblFollowed.AutoEllipsis = true;
+                    ToolTip1.SetToolTip(lblFollowed, lblFollowed.Text);
 
                     lblLastSession.Font = new Font("Cascadia Mono", 9);
                     lblLastSession.Location = new Point(160, 84);
-                    lblLastSession.Size = new Size(226, 20);
+                    lblLastSession.Size = new Size(275, 22);
+                    lblLastSession.AutoEllipsis = true;
+                    ToolTip1.SetToolTip(lblLastSession, lblLastSession.Text);
 
                     lblFirstSession.Font = new Font("Cascadia Mono", 9);
                     lblFirstSession.Location = new Point(160, 102);
-                    lblFirstSession.Size = new Size(226, 20);
+                    lblFirstSession.Size = new Size(275, 22);
+                    lblFirstSession.AutoEllipsis = true;
+                    ToolTip1.SetToolTip(lblFirstSession, lblFirstSession.Text);
 
                     lblTotalHoursWatched.Font = new Font("Cascadia Mono", 9);
                     lblTotalHoursWatched.Location = new Point(160, 120);
-                    lblTotalHoursWatched.Size = new Size(226, 20);
+                    lblTotalHoursWatched.Size = new Size(275, 22);
+                    lblTotalHoursWatched.AutoEllipsis = true;
+                    ToolTip1.SetToolTip(lblTotalHoursWatched, lblTotalHoursWatched.Text);
 
                     lblAffiliate.Font = new Font("Cascadia Mono", 9);
                     lblAffiliate.Location = new Point(160, 138);
-                    lblAffiliate.Size = new Size(226, 20);
+                    lblAffiliate.Size = new Size(275, 22);
+                    lblAffiliate.AutoEllipsis = true;
+                    ToolTip1.SetToolTip(lblAffiliate, lblAffiliate.Text);
 
                     // Display the user details.
                     lblDisplayName.Text = RightClickedWord;
@@ -809,19 +827,19 @@ namespace LeStealthBot
                             switch (subscribedata["tier"].ToString())
                             {
                                 case "1000":
-                                    lblSubscribed.Text += $" (Tier 1)";
+                                    lblSubscribed.Text += $" T1";
                                     break;
                                 case "2000":
-                                    lblSubscribed.Text += $" (Tier 1)";
+                                    lblSubscribed.Text += $" T2";
                                     break;
                                 case "3000":
-                                    lblSubscribed.Text += $" (Tier 1)";
+                                    lblSubscribed.Text += $" T3";
                                     break;
                             }
                         }
                         if (subscribedata?["gifter_name"] != null && subscribedata["gifter_name"].ToString().Length > 0)
                         {
-                            lblSubscribed.Text += $" (gift from {subscribedata["gifter_name"]})";
+                            lblSubscribed.Text += $" gift {subscribedata["gifter_name"]}";
                         }
                     }
                     else
@@ -898,7 +916,7 @@ namespace LeStealthBot
 
         private void ViewerListForm_Move(object sender, EventArgs e)
         {
-            if (Globals.windowLocations[Name]["Location"].ToString() != $"{Location.X}x{Location.Y}")
+            if (WindowState == FormWindowState.Normal && Globals.windowLocations[Name]["Location"].ToString() != $"{Location.X}x{Location.Y}")
             {
                 Globals.windowLocations[Name]["Location"] = $"{Location.X}x{Location.Y}";
                 File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));

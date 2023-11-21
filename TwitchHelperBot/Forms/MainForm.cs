@@ -249,8 +249,8 @@ namespace LeStealthBot
             Globals.access_token = Database.ReadSettingCell("access_token");
             if (string.IsNullOrWhiteSpace(Globals.access_token) || !ValidateToken())
             {
-                string scopes = "channel:manage:broadcast+moderator:read:chatters+moderator:read:followers+channel:read:subscriptions+chat:edit+chat:read";
-                BrowserForm form = new BrowserForm($"https://id.twitch.tv/oauth2/authorize?client_id={Globals.clientId}&redirect_uri={RedirectURI}&response_type=token&scope={scopes}");
+                string[] scopes = { "channel:manage:broadcast", "moderator:read:chatters", "moderator:read:followers", "channel:read:subscriptions", "chat:edit", "chat:read", "channel:manage:redemptions" };
+                BrowserForm form = new BrowserForm($"https://id.twitch.tv/oauth2/authorize?client_id={Globals.clientId}&redirect_uri={RedirectURI}&response_type=token&scope={string.Join("+", scopes)}");
                 form.webView2.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_TwitchAuthNavigationCompleted);
                 form.ShowDialog();
 
@@ -711,7 +711,7 @@ namespace LeStealthBot
                                         {
                                             foreach (var viewerData in sessionData.Viewers)
                                             {
-                                                if (viewerData.UserName.ToLower() == Globals.loginName.ToLower())
+                                                if (viewerData == null || viewerData.UserName == null || viewerData.UserName.ToLower() == Globals.loginName.ToLower())
                                                     continue;
                                                 if (e.Command.ArgumentsAsString.ToLower().Contains("online") &&
                                                 viewerListForm != null &&
@@ -970,13 +970,14 @@ namespace LeStealthBot
 
                 //follower tracker timer
                 Globals.GetFollowedData();
+                //Globals.GetChannelPointsRedemtionList();
                 followerTimer = new DispatcherTimer();
                 followerTimer.Interval = TimeSpan.FromMilliseconds(60000);
                 followerTimer.Tick += delegate
                 {
-                    followerTimer.Stop();
                     try
                     {
+                        followerTimer.Stop();
                         List<string> followerIDsBefore;
                         if (bool.Parse(Globals.ChatBotSettings["OnNewFollow"]["enabled"].ToString()))
                         {
@@ -996,6 +997,20 @@ namespace LeStealthBot
                             //get new follow data
                             Globals.GetFollowedData();
                         }
+
+
+                        //if ()
+                        //{
+                        //    Globals.GetChannelPointsRedemtionList();
+                        //}
+                        //else
+                        //{
+                        //    Globals.GetChannelPointsRedemtionList();
+                        //}
+
+
+
+
 
                         //This makes sure the bot stays connected to the the chat
                         if (!Globals.twitchChatClient.IsInitialized && !Globals.twitchChatClient.IsConnected)
@@ -1184,7 +1199,9 @@ namespace LeStealthBot
             client.AddDefaultHeader("Authorization", "OAuth " + Globals.access_token);
             RestRequest request = new RestRequest("https://id.twitch.tv/oauth2/validate", Method.Get);
             RestResponse response = client.Execute(request);
-            return response.StatusCode == HttpStatusCode.OK;
+            return response.StatusCode == HttpStatusCode.OK &&
+                response.Content.Contains("\"login\":\"" + Globals.loginName) &&
+                response.Content.Contains("\"client_id\":\"" + Globals.clientId);
         }
 
         public bool UpdateChannelInfo(string game_id, string title)

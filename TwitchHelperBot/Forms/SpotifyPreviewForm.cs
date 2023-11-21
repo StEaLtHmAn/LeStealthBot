@@ -425,7 +425,7 @@ namespace LeStealthBot
 
         private void SpotifyPreviewForm_Move(object sender, EventArgs e)
         {
-            if (Globals.windowLocations[Name]["Location"].ToString() != $"{Location.X}x{Location.Y}")
+            if (WindowState == FormWindowState.Normal && Globals.windowLocations[Name]["Location"].ToString() != $"{Location.X}x{Location.Y}")
             {
                 Globals.windowLocations[Name]["Location"] = $"{Location.X}x{Location.Y}";
                 File.WriteAllText("WindowLocations.json", Globals.windowLocations.ToString(Formatting.None));

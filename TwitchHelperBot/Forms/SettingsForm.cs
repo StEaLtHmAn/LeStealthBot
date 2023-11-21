@@ -929,6 +929,9 @@ namespace LeStealthBot
             if (openFileDialog1.ShowDialog() == DialogResult.OK)
             {
                 string soundFileName = Path.GetFileName(openFileDialog1.FileName);
+                //if old file delete
+                if(File.Exists($"Overlays\\{SelectedOverlayName}\\{soundFileName}"))
+                    File.Delete($"Overlays\\{SelectedOverlayName}\\{soundFileName}");
                 //copy the image to the overlay path
                 File.Copy(openFileDialog1.FileName, $"Overlays\\{SelectedOverlayName}\\{soundFileName}");
                 //edit the html embed the image
@@ -943,7 +946,7 @@ namespace LeStealthBot
                     newID = $"sound{count}";
                 }
                 var htmlBody = document.DocumentNode.SelectSingleNode("//body");
-                htmlBody.ChildNodes.Add(HtmlNode.CreateNode($"<audio id=\"{newID}\" src=\"{soundFileName}\" style=\"display:none;\" autoplay>"));
+                htmlBody.ChildNodes.Add(HtmlNode.CreateNode($"<audio id=\"{newID}\" src=\"{soundFileName}\" controls autoplay><source src=\"{soundFileName}.mp3\"></audio>"));
                 document.Save($"Overlays\\{SelectedOverlayName}\\{SelectedOverlayName}.html");
 
                 loadOverlays();

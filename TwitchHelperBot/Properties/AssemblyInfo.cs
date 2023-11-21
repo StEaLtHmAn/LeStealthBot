@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("LeStealthBot")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("LeStealthBot")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("")]
-[assembly: AssemblyCopyright("")]
-[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCompany("LeStealthBot")]
+[assembly: AssemblyProduct("LeStealthBot")]
+[assembly: AssemblyCopyright("LeStealthBot")]
+[assembly: AssemblyTrademark("LeStealthBot")]
 [assembly: AssemblyCulture("")]
 
 // Setting ComVisible to false makes the types in this assembly not visible
@@ -19,7 +19,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("2ecf23e5-5d1f-4f41-a82c-1ea1ec4c0ab4")]
+[assembly: Guid("2ecf23e5-5d1f-4f41-a82c-1ea1ec4c0ab5")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -31,5 +31,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.0.2.7")]
-[assembly: AssemblyFileVersion("2.0.2.7")]
+[assembly: AssemblyVersion("2.0.3.0")]
+[assembly: AssemblyFileVersion("2.0.3.0")]
