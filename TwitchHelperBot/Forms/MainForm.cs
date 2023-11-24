@@ -328,7 +328,7 @@ namespace LeStealthBot
                     { "default", "true" },
                     { "message", "MrDestructoid Thanks @##RaiderName##, for the ##RaidViewerCount## viewer raid." }
                 } },
-                { "ChatCommand - eskont", new JObject{
+                { "ChatCommand - power", new JObject{
                     { "enabled", "false" },
                     { "default", "true" },
                     { "permissions", "Any" },
@@ -655,13 +655,13 @@ namespace LeStealthBot
                         }
                         switch (e.Command.CommandText.ToLower())
                         {
-                            case "eskont":
+                            case "power":
                                 {
                                     try
                                     {
                                         using (WebClient webClient = new WebClient())
                                         {
-                                            string htmlSchedule = webClient.DownloadString($"https://www.ourpower.co.za/areas/{Globals.ChatBotSettings["ChatCommand - eskont"]["suburb"]}");
+                                            string htmlSchedule = webClient.DownloadString($"https://www.ourpower.co.za/areas/{Globals.ChatBotSettings["ChatCommand - power"]["suburb"]}");
 
                                             HtmlAgilityPack.HtmlDocument document = new HtmlAgilityPack.HtmlDocument();
                                             document.LoadHtml(htmlSchedule);
@@ -672,16 +672,18 @@ namespace LeStealthBot
                                             TimeSpan span = TimeSpan.Zero;
                                             try
                                             {
-                                                span = DateTime.ParseExact($"{nextScheduledDate.InnerText.Split('-')[1].Trim()} {nextScheduledTime.InnerText.Split('-')[0].Trim()}", "d MMMM HH':'mm", CultureInfo.InvariantCulture) - DateTime.Now;
+                                                string dateString = $"{nextScheduledDate.InnerText.Split('-')[1].Trim()} {nextScheduledTime.InnerText.Split('-')[0].Trim()}";
+                                                span = DateTime.ParseExact(dateString, "d MMMM HH':'mm", CultureInfo.InvariantCulture) - DateTime.Now;
                                             }
                                             catch { }
 
-                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - eskont"]["message"].ToString()
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, Globals.ChatBotSettings["ChatCommand - power"]["message"].ToString()
                                             .Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString())
                                             .Replace("##ScheduledMonth##", nextScheduledDate.InnerText)
                                             .Replace("##ScheduledTime##", nextScheduledTime.InnerText)
                                             .Replace("##Time##", DateTime.Now.ToShortTimeString())
-                                            .Replace("##Span##", Globals.getRelativeTimeSpan(span)),
+                                            .Replace("##Date##", DateTime.Now.ToShortDateString())
+                                            .Replace("##Span##", span > TimeSpan.Zero ? Globals.getRelativeTimeSpan(span) : "Unknown"),
                                             e.Command.ChatMessage.Id);
                                         }
                                     }
@@ -1433,7 +1435,12 @@ namespace LeStealthBot
 
         private void NotificationMenuStrip_Opening(object sender, System.ComponentModel.CancelEventArgs e)
         {
-            spotifySongRecommendationsToolStripMenuItem.Visible = bool.Parse(Globals.ChatBotSettings[$"ChatCommand - sr"]["enabled"].ToString());
+            try
+            {
+                if(Globals.ChatBotSettings != null)
+                    spotifySongRecommendationsToolStripMenuItem.Visible = bool.Parse(Globals.ChatBotSettings[$"ChatCommand - sr"]["enabled"].ToString());
+            }
+            catch { }
         }
 
         private void spotifySongRecommendationsToolStripMenuItem_Click(object sender, EventArgs e)

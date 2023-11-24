@@ -66,7 +66,7 @@ namespace LeStealthBot
             if (ts.TotalHours < 1)//min ago
                 return ts.Minutes == 1 ? "1 Minute" : ts.Minutes + " Minutes";
             if (ts.TotalDays < 1)//hours ago
-                return ts.Hours == 1 ? "1 Hour" : ts.Hours + " Hours";
+                return ts.TotalHours.ToString("0.##") + " Hours";
             if (ts.TotalDays < 7)//days ago
                 return ts.TotalDays.ToString("0.##") + " Days";
             if (ts.TotalDays < 30.436875)//weeks ago
@@ -84,7 +84,7 @@ namespace LeStealthBot
             if (ts.TotalHours < 1)//min ago
                 return ts.Minutes + "m";
             if (ts.TotalDays < 1)//hours ago
-                return ts.Hours + "h";
+                return ts.TotalHours.ToString("0.##") + "h";
             if (ts.TotalDays < 7)//days ago
                 return ts.TotalDays.ToString("0.##") + "D";
             if (ts.TotalDays < 30.436875)//weeks ago
@@ -274,7 +274,7 @@ namespace LeStealthBot
             }
             for (int i = 0; i < listTodelete.Count; i++)
             {
-                Globals.ChatBotSettings.Remove(listTodelete[0].ToString());
+                Globals.ChatbotTimers.Remove(listTodelete[i].ToString());
             }
             foreach (var setting in Globals.ChatBotSettings.Properties())
             {
@@ -332,7 +332,7 @@ namespace LeStealthBot
         }
 
         /// <summary>
-        /// The default clear method does not dispose the items removed from the container.
+        /// The default Control.Clear() does not dispose the items removed from the container.
         /// This method disposes all items in the container
         /// </summary>
         public static void ClearAndDispose(this Control.ControlCollection c)
