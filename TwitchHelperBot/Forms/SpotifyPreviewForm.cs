@@ -257,6 +257,40 @@ namespace LeStealthBot
             return false;
         }
 
+        public bool SkipOrNextTrack()
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(SpotifyToken))
+                {
+                    SpotifyAuth();
+                    return false;
+                }
+
+                RestClient client = new RestClient();
+                RestRequest request = new RestRequest($"https://api.spotify.com/v1/me/player/next", Method.Post);
+                request.AddHeader("Authorization", "Bearer " + SpotifyToken);
+                RestResponse response = client.Execute(request);
+                if (response.Content.Contains("The access token expired"))
+                {
+                    if (!string.IsNullOrEmpty(SpotifyRefreshToken))
+                        SpotifyReLog();
+                    else
+                        SpotifyToken = string.Empty;
+
+                    return false;
+                }
+                else if (response.Content.Contains("error"))
+                    return false;
+                return true;
+            }
+            catch//(Exception ex)
+            {
+                SpotifyToken = string.Empty;
+            }
+            return false;
+        }
+
         public bool PlayTrack(string TrackURI)
         {
             try

@@ -249,7 +249,7 @@ namespace LeStealthBot
             Globals.access_token = Database.ReadSettingCell("access_token");
             if (string.IsNullOrWhiteSpace(Globals.access_token) || !ValidateToken())
             {
-                string[] scopes = { "channel:manage:broadcast", "moderator:read:chatters", "moderator:read:followers", "channel:read:subscriptions", "chat:edit", "chat:read", "channel:manage:redemptions" };
+                string[] scopes = { "channel:manage:broadcast", "moderator:read:chatters", "moderator:read:followers", "channel:read:subscriptions", "chat:edit", "chat:read", "channel:manage:redemptions", "channel:read:redemptions" };
                 BrowserForm form = new BrowserForm($"https://id.twitch.tv/oauth2/authorize?client_id={Globals.clientId}&redirect_uri={RedirectURI}&response_type=token&scope={string.Join("+", scopes)}");
                 form.webView2.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_TwitchAuthNavigationCompleted);
                 form.ShowDialog();
@@ -266,6 +266,36 @@ namespace LeStealthBot
             Globals.userDetailsResponse = JObject.Parse(Globals.GetUserDetails(Globals.loginName));
 
             //setup chatbot
+            setupChatBot();
+
+            if(File.Exists("SongRequestList.json"))
+                Globals.SongRequestList = JArray.Parse(File.ReadAllText("SongRequestList.json"));
+
+            //show welcome message
+            OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {Globals.userDetailsResponse["data"][0]["display_name"]}", Globals.userDetailsResponse["data"][0]["profile_image_url"].ToString(), Globals.userDetailsResponse["data"][0]["id"].ToString());
+            form123.Show();
+
+            Globals.windowLocations = File.Exists("WindowLocations.json") ? JObject.Parse(File.ReadAllText("WindowLocations.json")) : new JObject();
+            if (Globals.windowLocations["SpotifyPreviewForm"]?["IsOpen"]?.ToString() == "true")
+            {
+                SpotifyPreviewForm sForm = new SpotifyPreviewForm();
+                sForm.Show();
+            }
+            if (Globals.windowLocations["ViewerListForm"]?["IsOpen"]?.ToString() == "true")
+            {
+                ViewerListForm sForm = new ViewerListForm();
+                sForm.Show();
+            }
+
+            Globals.registerAudioMixerHotkeys();
+            Globals.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
+
+            OverlayWebServer.start();
+        }
+
+        private DispatcherTimer followerTimer;
+        private void setupChatBot()
+        {
             //read chatbot settings string
             string ChatBotSettingsString = Database.ReadSettingCell("ChatBotSettings");
             //create defaults chatbot settings
@@ -333,7 +363,7 @@ namespace LeStealthBot
                     { "default", "true" },
                     { "permissions", "Any" },
                     { "suburb", "nelson-mandela-bay/lorraine?block=13" },
-                    { "message", "MrDestructoid @##YourName##'s next loadshedding is scheduled for: ##ScheduledMonth## @ ##ScheduledTime##. @##YourName##'s current local time is ##Time##" }
+                    { "message", "@##YourName##'s next loadshedding is scheduled for: 📅 ##ScheduledMonth## @ ##ScheduledTime##. ⏳ ##Span## until loadshedding." }
                 } },
                 { "ChatCommand - topviewers", new JObject{
                     { "enabled", "false" },
@@ -363,18 +393,19 @@ namespace LeStealthBot
                     { "permissions", "Any" },
                     { "message", "MrDestructoid Available commands: ##EnabledCommandList##." }
                 } },
+                { "ChatCommand - skip", new JObject{
+                    { "enabled", "false" },
+                    { "default", "true" },
+                    { "permissions", "Subscriber" },
+                    { "message", "Song skipped." },
+                    { "messageFailed", "Failed to skip song." },
+                    { "messageSpotifyPreviewNotOpen", "Sorry, not allowing skips right now." }
+                } },
             };
             //chatbot settings validation/correction
             bool needSave = false;
             if (ChatBotSettingsString != null && ChatBotSettingsString.StartsWith("{"))
             {
-                //ChatBotSettingsString = ChatBotSettingsString.Replace(",\"messageWithUser\":\"City-Of-Cape-Town/Edgemead?block=13\"", string.Empty);
-                //rename OnChatCommandReceived
-                if (ChatBotSettingsString.Contains("OnChatCommandReceived - "))
-                {
-                    ChatBotSettingsString = ChatBotSettingsString.Replace("OnChatCommandReceived - ", "ChatCommand - ");
-                    needSave = true;
-                }
                 //Parse json
                 JObject tmpSettings = JObject.Parse(ChatBotSettingsString);
 
@@ -471,36 +502,8 @@ namespace LeStealthBot
                             { "Value", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None) }
                     });
             }
-            setupChatBot();
 
-            if(File.Exists("SongRequestList.json"))
-                Globals.SongRequestList = JArray.Parse(File.ReadAllText("SongRequestList.json"));
 
-            //show welcome message
-            OverlayNotificationMessage form123 = new OverlayNotificationMessage($"Logged in as {Globals.userDetailsResponse["data"][0]["display_name"]}", Globals.userDetailsResponse["data"][0]["profile_image_url"].ToString(), Globals.userDetailsResponse["data"][0]["id"].ToString());
-            form123.Show();
-
-            Globals.windowLocations = File.Exists("WindowLocations.json") ? JObject.Parse(File.ReadAllText("WindowLocations.json")) : new JObject();
-            if (Globals.windowLocations["SpotifyPreviewForm"]?["IsOpen"]?.ToString() == "true")
-            {
-                SpotifyPreviewForm sForm = new SpotifyPreviewForm();
-                sForm.Show();
-            }
-            if (Globals.windowLocations["ViewerListForm"]?["IsOpen"]?.ToString() == "true")
-            {
-                ViewerListForm sForm = new ViewerListForm();
-                sForm.Show();
-            }
-
-            Globals.registerAudioMixerHotkeys();
-            Globals.keyboardHook.KeyPressed += KeyboardHook_KeyPressed;
-
-            OverlayWebServer.start();
-        }
-
-        private DispatcherTimer followerTimer;
-        private void setupChatBot()
-        {
             int attempts = 0;
             retry:
             try
@@ -897,7 +900,33 @@ namespace LeStealthBot
                                         {
                                             messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["messageSpotifyPreviewNotOpen"].ToString();
                                         }
-                                        if(!string.IsNullOrEmpty(messageToSend))
+                                        if (!string.IsNullOrEmpty(messageToSend))
+                                            Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Globals.LogMessage(e.Command.CommandText + ": " + ex.ToString());
+                                    }
+                                    break;
+                                }
+                            case "skip":
+                                {
+                                    try
+                                    {
+                                        string messageToSend = null;
+                                        var OpenSpotifyPreviewForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
+                                        if (OpenSpotifyPreviewForms.Count() > 0)
+                                        {
+                                            if (OpenSpotifyPreviewForms.First().SkipOrNextTrack())
+                                                messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["message"].ToString();
+                                            else
+                                                messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["messageFailed"].ToString();
+                                        }
+                                        else
+                                        {
+                                            messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["messageSpotifyPreviewNotOpen"].ToString();
+                                        }
+                                        if (!string.IsNullOrEmpty(messageToSend))
                                             Globals.sendChatBotMessage(e.Command.ChatMessage.Channel, messageToSend, e.Command.ChatMessage.Id);
                                     }
                                     catch (Exception ex)
@@ -972,7 +1001,7 @@ namespace LeStealthBot
 
                 //follower tracker timer
                 Globals.GetFollowedData();
-                //Globals.GetChannelPointsRedemtionList();
+                Globals.GetChannelPointsRedemtionList();
                 followerTimer = new DispatcherTimer();
                 followerTimer.Interval = TimeSpan.FromMilliseconds(60000);
                 followerTimer.Tick += delegate
@@ -1000,19 +1029,8 @@ namespace LeStealthBot
                             Globals.GetFollowedData();
                         }
 
-
-                        //if ()
-                        //{
-                        //    Globals.GetChannelPointsRedemtionList();
-                        //}
-                        //else
-                        //{
-                        //    Globals.GetChannelPointsRedemtionList();
-                        //}
-
-
-
-
+                        //update channel points
+                        Globals.GetChannelPointsRedemtionList();
 
                         //This makes sure the bot stays connected to the the chat
                         if (!Globals.twitchChatClient.IsInitialized && !Globals.twitchChatClient.IsConnected)

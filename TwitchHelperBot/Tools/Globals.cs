@@ -348,31 +348,47 @@ namespace LeStealthBot
         public static JArray ChannelPointsRedemtionList = new JArray();
         public static void GetChannelPointsRedemtionList()
         {
-            JArray tmpChannelPoints = new JArray();
+            //JArray tmpChannelPoints = new JArray();
 
-            RestClient client = new RestClient();
-            client.AddDefaultHeader("Client-ID", clientId);
-            client.AddDefaultHeader("Authorization", "Bearer " + access_token);
-            RestRequest request = new RestRequest("https://api.twitch.tv/helix/channel_points/custom_rewards", Method.Get);
-            request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
-            RestResponse response = client.Execute(request);
-            tmpChannelPoints = JObject.Parse(response.Content)["data"] as JArray;
+            //RestClient client = new RestClient();
+            //client.AddDefaultHeader("Client-ID", clientId);
+            //client.AddDefaultHeader("Authorization", "Bearer " + access_token);
+            //RestRequest request = new RestRequest("https://api.twitch.tv/helix/channel_points/custom_rewards", Method.Get);
+            //request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
+            //RestResponse response = client.Execute(request);
+            //JObject data = JObject.Parse(response.Content);
+            //tmpChannelPoints = data["data"] as JArray;
 
-            JArray tmpChannelPointsRedemtionList = new JArray();
-            foreach (JObject channelPoint in tmpChannelPoints)
-            {
-                client = new RestClient();
-                client.AddDefaultHeader("Client-ID", clientId);
-                client.AddDefaultHeader("Authorization", "Bearer " + access_token);
-                request = new RestRequest("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions", Method.Get);
-                request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
-                request.AddQueryParameter("reward_id", channelPoint["id"].ToString());
-                request.AddQueryParameter("status", "UNFULFILLED");
-                response = client.Execute(request);
-                tmpChannelPointsRedemtionList.Merge(JObject.Parse(response.Content)["data"] as JArray);
-            }
+            //JArray tmpChannelPointsRedemtionList = new JArray();
+            //foreach (JObject channelPoint in tmpChannelPoints)
+            //{
+            //    client = new RestClient();
+            //    client.AddDefaultHeader("Client-ID", clientId);
+            //    client.AddDefaultHeader("Authorization", "Bearer " + access_token);
+            //    request = new RestRequest("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions", Method.Get);
+            //    request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
+            //    request.AddQueryParameter("reward_id", channelPoint["id"].ToString());
+            //    request.AddQueryParameter("status", "UNFULFILLED");
+            //    response = client.Execute(request);
+            //    data = JObject.Parse(response.Content);
+            //    tmpChannelPointsRedemtionList.Merge(data["data"] as JArray);
 
-            ChannelPointsRedemtionList = tmpChannelPointsRedemtionList;
+            //    while (data?["pagination"]?["cursor"] != null)
+            //    {
+            //        client = new RestClient();
+            //        client.AddDefaultHeader("Client-ID", clientId);
+            //        client.AddDefaultHeader("Authorization", "Bearer " + access_token);
+            //        request = new RestRequest("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions", Method.Get);
+            //        request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
+            //        request.AddQueryParameter("reward_id", channelPoint["id"].ToString());
+            //        request.AddQueryParameter("status", "UNFULFILLED");
+            //        response = client.Execute(request);
+            //        data = JObject.Parse(response.Content);
+            //        tmpChannelPointsRedemtionList.Merge(data["data"] as JArray);
+            //    }
+            //}
+
+            //ChannelPointsRedemtionList = tmpChannelPointsRedemtionList;
         }
     }
 }
