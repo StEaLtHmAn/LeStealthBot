@@ -13,60 +13,6 @@ namespace LeStealthBot
     {
         public static readonly string exe = Assembly.GetExecutingAssembly().GetName().Name;
 
-        //public static void ConvertOldIniIntoDB()
-        //{
-        //    //convert from ini file to database
-        //    if (File.Exists($"{exe}Settings.ini") && !File.Exists($"{exe}Settings.db"))
-        //    {
-        //        using (var db = new LiteDatabase($"{exe}Settings.db"))
-        //        {
-        //            IniHelper iniHelper = new IniHelper($"{exe}Settings.ini");
-        //            foreach (string section in iniHelper.SectionNames())
-        //            {
-        //                if (File.Exists(section))
-        //                {
-        //                    var col = db.GetCollection("Presets");
-        //                    col.Insert(new BsonDocument
-        //                    {
-        //                        ["exePath"] = section,
-        //                        ["PresetTitle"] = iniHelper.Read("PresetTitle", section),
-        //                        ["PresetCategory"] = iniHelper.Read("PresetCategory", section)
-        //                    });
-        //                }
-        //                else
-        //                {
-        //                    if (section == "HotkeysUp" || section == "HotkeysDown")
-        //                    {
-        //                        var col = db.GetCollection("Hotkeys");
-        //                        foreach (string key in iniHelper.ReadKeys(section))
-        //                        {
-        //                            col.Insert(new BsonDocument
-        //                            {
-        //                                ["exePath"] = key,
-        //                                ["keyCode"] = iniHelper.Read(key, section),
-        //                                ["isVolumeUp"] = section.Contains("Up")
-        //                            });
-        //                        }
-        //                    }
-        //                    else
-        //                    {
-        //                        var col = db.GetCollection(section);
-        //                        foreach (string key in iniHelper.ReadKeys(section))
-        //                        {
-        //                            col.Insert(new BsonDocument
-        //                            {
-        //                                ["Key"] = key,
-        //                                ["Value"] = iniHelper.Read(key, section)
-        //                            });
-        //                        }
-        //                    }
-        //                }
-        //            }
-        //        }
-        //        //File.Delete($"{Assembly.GetExecutingAssembly().GetName().Name}Settings.ini");
-        //    }
-        //}
-
         public static string ReadSettingCell(string columnName)
         {
             int attempts = 0;
@@ -76,7 +22,14 @@ namespace LeStealthBot
                 using (var db = new LiteDatabase($"{exe}Settings.db"))
                 {
                     var col = db.GetCollection(exe);
-                    return col.FindOne(x => x["Key"] == columnName)["Value"].AsString;
+                    var data = col.FindOne(x => x["Key"] == columnName);
+                    if (data != null && data.ContainsKey("Value"))
+                    {
+                        if(data["Value"].IsString)
+                            return data["Value"].AsString;
+                        else
+                            return data["Value"].ToString();
+                    }
                 }
             }
             catch

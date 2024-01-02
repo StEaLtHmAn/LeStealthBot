@@ -81,6 +81,7 @@ namespace LeStealthBot
             panel1.Controls.ClearAndDispose();
             int yValue = 10;
 
+            //name
             Control lblHeading;
             if (!isDefaultSetting)
             {
@@ -124,6 +125,7 @@ namespace LeStealthBot
             }
             panel1.Controls.Add(lblHeading);
 
+            //enabled
             CheckBox cbxEnabled = new CheckBox
             {
                 Font = new Font(lblHeading.Font.FontFamily, 9),
@@ -138,9 +140,18 @@ namespace LeStealthBot
             };
             panel1.Controls.Add(cbxEnabled);
 
+            //permissions
             int xValue = cbxEnabled.Location.X + cbxEnabled.Width;
             if (settingName.StartsWith("ChatCommand - "))
             {
+                Label lblPermissions = new Label();
+                lblPermissions.Font = new Font(lblPermissions.Font.FontFamily, 9);
+                lblPermissions.Text = "Permission:";
+                lblPermissions.Location = new Point(xValue, yValue);
+                lblPermissions.AutoSize = true;
+                panel1.Controls.Add(lblPermissions);
+                xValue = lblPermissions.Location.X + lblPermissions.Width;
+
                 ComboBox cbxPermissions = new ComboBox();
                 cbxPermissions.Location = new Point(xValue, yValue);
                 cbxPermissions.FlatStyle = FlatStyle.Flat;
@@ -196,6 +207,7 @@ namespace LeStealthBot
                 xValue = cbxPermissions.Location.X + cbxPermissions.Width + 3;
             }
 
+            //delete button
             if (!isDefaultSetting)
             {
                 Button btnDelete = new Button();

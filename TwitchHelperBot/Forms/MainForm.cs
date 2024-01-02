@@ -257,7 +257,9 @@ namespace LeStealthBot
                 //if token is still not valid then we close the app
                 if (!ValidateToken())
                 {
-                    Globals.DelayAction(0, new Action(() => { Dispose(); }));
+                    Database.DeleteRecords(x => x["Key"] == "LoginName");
+                    Database.DeleteRecords(x => x["Key"] == "access_token");
+                    Application.Restart();
                     return;
                 }
             }
@@ -498,8 +500,8 @@ namespace LeStealthBot
                 Database.UpsertRecord(x => x["Key"] == "ChatBotSettings",
                     new BsonDocument()
                     {
-                            { "Key", "ChatBotSettings" },
-                            { "Value", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None) }
+                        { "Key", "ChatBotSettings" },
+                        { "Value", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None) }
                     });
             }
 
@@ -1001,7 +1003,7 @@ namespace LeStealthBot
 
                 //follower tracker timer
                 Globals.GetFollowedData();
-                Globals.GetChannelPointsRedemtionList();
+                //Globals.GetChannelPointsRedemtionList();
                 followerTimer = new DispatcherTimer();
                 followerTimer.Interval = TimeSpan.FromMilliseconds(60000);
                 followerTimer.Tick += delegate
@@ -1030,7 +1032,7 @@ namespace LeStealthBot
                         }
 
                         //update channel points
-                        Globals.GetChannelPointsRedemtionList();
+                        //Globals.GetChannelPointsRedemtionList();
 
                         //This makes sure the bot stays connected to the the chat
                         if (!Globals.twitchChatClient.IsInitialized && !Globals.twitchChatClient.IsConnected)
