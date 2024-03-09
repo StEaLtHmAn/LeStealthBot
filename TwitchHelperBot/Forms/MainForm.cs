@@ -506,15 +506,17 @@ namespace LeStealthBot
             }
 
 
+
+
             int attempts = 0;
             retry:
             try
             {
                 ConnectionCredentials credentials = new ConnectionCredentials(Globals.loginName, Globals.access_token);
-                WebSocketClient customClient = new WebSocketClient(new ClientOptions { ReconnectionPolicy = new ReconnectionPolicy(3000) });
+                WebSocketClient customClient = new WebSocketClient(new ClientOptions() { ReconnectionPolicy = new ReconnectionPolicy(3000) });
                 Globals.twitchChatClient = new TwitchClient(customClient);
                 Globals.twitchChatClient.Initialize(credentials, Globals.loginName);
-                if (!Globals.twitchChatClient.Connect() && attempts < 5)
+                if (!Globals.twitchChatClient.Connect() && attempts < 3)
                 {
                     Thread.Sleep(50);
                     attempts++;
@@ -561,7 +563,7 @@ namespace LeStealthBot
                             Globals.ChatBotSettings["OnMessageReceived - Bits > 0"]["message"].ToString()
                             .Replace("##SenderName##", e.ChatMessage.DisplayName)
                             .Replace("##Bits##", e.ChatMessage.Bits.ToString())
-                            .Replace("##BitsInDollars##", e.ChatMessage.BitsInDollars.ToString("0:##")));
+                            .Replace("##BitsInDollars##", e.ChatMessage.BitsInDollars.ToString("$0.##")));
                     }
                 };
                 Globals.twitchChatClient.OnNewSubscriber += (sender, e) =>
@@ -775,31 +777,31 @@ namespace LeStealthBot
                                                     {
                                                         case "follower":
                                                             if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsVip || e.Command.ChatMessage.IsSubscriber || Globals.Followers.Any(x => x["id"].ToString() == e.Command.ChatMessage.UserId.ToString()))
-                                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                                messageToSend += $"!{setting.Replace("ChatCommand - ", string.Empty)}, ";
                                                             break;
                                                         case "subscriber":
                                                             if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsVip || e.Command.ChatMessage.IsSubscriber)
-                                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                                messageToSend += $"!{setting.Replace("ChatCommand - ", string.Empty)}, ";
                                                             break;
                                                         case "vip":
                                                             if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster || e.Command.ChatMessage.IsVip)
-                                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                                messageToSend += $"!{setting.Replace("ChatCommand - ", string.Empty)}, ";
                                                             break;
                                                         case "moderator":
                                                             if (e.Command.ChatMessage.IsModerator || e.Command.ChatMessage.IsBroadcaster)
-                                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                                messageToSend += $"!{setting.Replace("ChatCommand - ", string.Empty)}, ";
                                                             break;
                                                         case "broadcaster":
                                                             if (e.Command.ChatMessage.IsBroadcaster)
-                                                                messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                                messageToSend += $"!{setting.Replace("ChatCommand - ", string.Empty)}, ";
                                                             break;
                                                         default:
-                                                            messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                            messageToSend += $"!{setting.Replace("ChatCommand - ", string.Empty)}, ";
                                                             break;
                                                     }
                                                 }
                                                 else
-                                                    messageToSend += setting.Replace("ChatCommand - ", string.Empty) + ", ";
+                                                    messageToSend += $"!{setting.Replace("ChatCommand - ", string.Empty)}, ";
                                             }
                                         }
                                         messageToSend = messageToSend.Substring(0, messageToSend.Length - 2);
@@ -1061,9 +1063,9 @@ namespace LeStealthBot
             catch (Exception ex)
             {
                 Globals.LogMessage("setupChatBot " + ex.ToString());
-                if (attempts < 5)
+                if (attempts < 3)
                 {
-                    Thread.Sleep(50);
+                    Thread.Sleep(80);
                     attempts++;
                     goto retry;
                 }

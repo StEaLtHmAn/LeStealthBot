@@ -357,7 +357,7 @@ namespace LeStealthBot
             request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
             RestResponse response = client.Execute(request);
             JObject data = JObject.Parse(response.Content);
-            ChannelPointsRewardsList = data["data"] as JArray;
+            ChannelPointsRewardsList = data["data"] as JArray ?? new JArray();
         }
         public static JArray ChannelPointsRedemtionList = new JArray();
         public static void GetChannelPointsRedemtionList()

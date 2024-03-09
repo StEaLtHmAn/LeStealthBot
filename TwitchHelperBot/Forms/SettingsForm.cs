@@ -965,5 +965,24 @@ namespace LeStealthBot
                 webView21.Reload();
             }
         }
+
+        private void button15_Click(object sender, EventArgs e)
+        {
+            int newIndex = 1;
+            while (tmpChatBotSettings.ContainsKey($"ChannelPoints - {newIndex}"))
+            {
+                newIndex++;
+            }
+            tmpChatBotSettings.Add($"ChannelPoints - {newIndex}", new JObject
+            {
+                { "enabled", "false" },
+                { "default", "false" },
+                { "title", "" },
+                { "message", "" },
+            });
+            loadChatBotSettingsOuterUI();
+            loadChatBotSettingsInnerUI($"ChannelPoints - {newIndex}", false);
+            flowLayoutPanel1.ScrollControlIntoView(ChatBotSettingsTabButtons[$"ChannelPoints - {newIndex}"]);
+        }
     }
 }

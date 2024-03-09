@@ -160,60 +160,89 @@ namespace LeStealthBot
                     return false;
                 }
 
-                RestClient client = new RestClient();
-                string url = $"https://api.spotify.com/v1/search?q={HttpUtility.UrlEncode(Track)}%20{HttpUtility.UrlEncode(Artist)}%20artist%3A{HttpUtility.UrlEncode(Artist)}%20track%3A{HttpUtility.UrlEncode(Track)}&type=track";
-                if (string.IsNullOrEmpty(Artist))
+                JToken jsonResult;
+                if (string.IsNullOrEmpty(Artist) && Track.StartsWith("https://open.spotify.com/track/"))
                 {
-                    url = $"https://api.spotify.com/v1/search?q={HttpUtility.UrlEncode(Track)}&type=track";
-                }
-                RestRequest request = new RestRequest(url, Method.Get);
-                request.AddHeader("Authorization", "Bearer " + SpotifyToken);
-                RestResponse response = client.Execute(request);
-                if (response.Content.Contains("The access token expired"))
-                {
-                    if (!string.IsNullOrEmpty(SpotifyRefreshToken))
-                        SpotifyReLog();
-                    else
-                        SpotifyToken = string.Empty;
+                    Uri uri = new UriBuilder(Track).Uri;
+                    string url = "https://api.spotify.com/v1/tracks/" + uri.Segments[2];
 
-                    return false;
-                }
-                if (!response.Content.StartsWith("{"))
-                {
-                    return false;
-                }
-                JObject SearchData = JObject.Parse(response.Content);
-                if (SearchData["tracks"]["total"].ToString() == "0")
-                {
-                    return false;
-                }
-                int accuracy = 0;
-                int accurateIndex = 0;
-                for (int i = 0; i < (SearchData["tracks"]["items"] as JArray).Count; i++)
-                {
-                    int currentAccuracy = int.Parse(SearchData["tracks"]["items"][i]["popularity"].ToString());
-                    if (SearchData["tracks"]["items"][i]["name"].ToString().ToLower() == Track.ToLower())
-                        currentAccuracy += 100;
-                    if ((SearchData["tracks"]["items"][i]["artists"] as JArray).Any(x=>x["name"].ToString().ToLower() == Artist.ToLower()))
-                        currentAccuracy += 100;
-
-                    if (currentAccuracy > accuracy)
+                    RestClient client = new RestClient();
+                    RestRequest request = new RestRequest(url, Method.Get);
+                    request.AddHeader("Authorization", "Bearer " + SpotifyToken);
+                    RestResponse response = client.Execute(request);
+                    if (response.Content.Contains("The access token expired"))
                     {
-                        accuracy = currentAccuracy;
-                        accurateIndex = i;
-                    }
-                }
+                        if (!string.IsNullOrEmpty(SpotifyRefreshToken))
+                            SpotifyReLog();
+                        else
+                            SpotifyToken = string.Empty;
 
-                result = SearchData["tracks"]["items"][accurateIndex].ToString();
-                if (Globals.AutoEnqueue)
-                {
-                    EnqueueTrack(SearchData["tracks"]["items"][accurateIndex]["uri"].ToString());
+                        return false;
+                    }
+                    if (!response.Content.StartsWith("{"))
+                    {
+                        return false;
+                    }
+                    jsonResult = JObject.Parse(response.Content);
                 }
                 else
                 {
-                    Globals.SongRequestList.Add(SearchData["tracks"]["items"][accurateIndex].DeepClone());
+                    RestClient client = new RestClient();
+                    string url = $"https://api.spotify.com/v1/search?q={HttpUtility.UrlEncode(Track)}%20{HttpUtility.UrlEncode(Artist)}%20artist%3A{HttpUtility.UrlEncode(Artist)}%20track%3A{HttpUtility.UrlEncode(Track)}&type=track";
+                    if (string.IsNullOrEmpty(Artist))
+                    {
+                        url = $"https://api.spotify.com/v1/search?q={HttpUtility.UrlEncode(Track)}&type=track";
+                    }
+                    RestRequest request = new RestRequest(url, Method.Get);
+                    request.AddHeader("Authorization", "Bearer " + SpotifyToken);
+                    RestResponse response = client.Execute(request);
+                    if (response.Content.Contains("The access token expired"))
+                    {
+                        if (!string.IsNullOrEmpty(SpotifyRefreshToken))
+                            SpotifyReLog();
+                        else
+                            SpotifyToken = string.Empty;
+
+                        return false;
+                    }
+                    if (!response.Content.StartsWith("{"))
+                    {
+                        return false;
+                    }
+                    JObject SearchData = JObject.Parse(response.Content);
+                    if (SearchData["tracks"]["total"].ToString() == "0")
+                    {
+                        return false;
+                    }
+                    int accuracy = 0;
+                    int accurateIndex = 0;
+                    for (int i = 0; i < (SearchData["tracks"]["items"] as JArray).Count; i++)
+                    {
+                        int currentAccuracy = int.Parse(SearchData["tracks"]["items"][i]["popularity"].ToString());
+                        if (SearchData["tracks"]["items"][i]["name"].ToString().ToLower() == Track.ToLower())
+                            currentAccuracy += 100;
+                        if ((SearchData["tracks"]["items"][i]["artists"] as JArray).Any(x => x["name"].ToString().ToLower() == Artist.ToLower()))
+                            currentAccuracy += 100;
+
+                        if (currentAccuracy > accuracy)
+                        {
+                            accuracy = currentAccuracy;
+                            accurateIndex = i;
+                        }
+                    }
+                    jsonResult = SearchData["tracks"]["items"][accurateIndex];
+                }
+
+                if (Globals.AutoEnqueue)
+                {
+                    EnqueueTrack(jsonResult["uri"].ToString());
+                }
+                else
+                {
+                    Globals.SongRequestList.Add(jsonResult.DeepClone());
                     File.WriteAllText("SongRequestList.json", Globals.SongRequestList.ToString());
                 }
+                result = jsonResult.ToString();
                 return true;
             }
             catch//(Exception ex)
