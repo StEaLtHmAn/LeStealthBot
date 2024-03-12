@@ -249,7 +249,7 @@ namespace LeStealthBot
             Globals.access_token = Database.ReadSettingCell("access_token");
             if (string.IsNullOrWhiteSpace(Globals.access_token) || !ValidateToken())
             {
-                string[] scopes = { "channel:manage:broadcast", "moderator:read:chatters", "moderator:read:followers", "channel:read:subscriptions", "chat:edit", "chat:read", "channel:manage:redemptions", "channel:read:redemptions" };
+                string[] scopes = { "channel:manage:broadcast", "moderator:read:chatters", "moderator:read:followers", "channel:read:subscriptions", "chat:edit", "chat:read", "channel:moderate" };
                 BrowserForm form = new BrowserForm($"https://id.twitch.tv/oauth2/authorize?client_id={Globals.clientId}&redirect_uri={RedirectURI}&response_type=token&scope={string.Join("+", scopes)}");
                 form.webView2.NavigationCompleted += new EventHandler<CoreWebView2NavigationCompletedEventArgs>(webView2_TwitchAuthNavigationCompleted);
                 form.ShowDialog();
