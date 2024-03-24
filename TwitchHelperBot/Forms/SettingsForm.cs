@@ -29,6 +29,7 @@ namespace LeStealthBot
             numericUpDown2.Value = decimal.Parse(Database.ReadSettingCell("NotificationDuration"));
             numericUpDown3.Value = decimal.Parse(Database.ReadSettingCell("VolumeNotificationDuration"));
             numericUpDown5.Value = decimal.Parse(Database.ReadSettingCell("SubscriberCheckCooldown"));
+            numericUpDown4.Value = decimal.Parse(Database.ReadSettingCell("MaxViewersShown"));
 
             tmpChatBotSettings = Globals.ChatBotSettings.DeepClone() as JObject;
 
@@ -140,10 +141,30 @@ namespace LeStealthBot
             };
             panel1.Controls.Add(cbxEnabled);
 
+            int xValue = cbxEnabled.Location.X + cbxEnabled.Width + 5;
             //permissions
-            int xValue = cbxEnabled.Location.X + cbxEnabled.Width;
             if (settingName.StartsWith("ChatCommand - "))
             {
+                if (tmpChatBotSettings[settingName]["counterCommand"] == null)
+                {
+                    tmpChatBotSettings[settingName]["counterCommand"] = false;
+                }
+                CheckBox cbxCounterCommand = new CheckBox
+                {
+                    Font = new Font(lblHeading.Font.FontFamily, 9),
+                    Text = "Counter Command",
+                    Location = new Point(xValue, yValue + 2),
+                    Checked = bool.Parse(tmpChatBotSettings[settingName]["counterCommand"].ToString()),
+                    AutoSize = true
+                };
+                cbxCounterCommand.CheckedChanged += delegate
+                {
+                    tmpChatBotSettings[settingName]["counterCommand"] = cbxCounterCommand.Checked;
+                    tmpChatBotSettings[settingName]["counterValue"] = 0;
+                };
+                panel1.Controls.Add(cbxCounterCommand);
+                xValue = cbxCounterCommand.Location.X + cbxCounterCommand.Width+5;
+
                 Label lblPermissions = new Label();
                 lblPermissions.Font = new Font(lblPermissions.Font.FontFamily, 9);
                 lblPermissions.Text = "Permission:";
@@ -253,7 +274,7 @@ namespace LeStealthBot
             {
                 TextBox lblMessage = new TextBox();
                 lblMessage.Text = "Chat command fill points: \r\n" +
-                    "##YourName## | ##Time## | ##Name## | ##TimeZone## | ##Argument0## | ##Argument1## | ##Argument2## | ##SpotifySong## | ##SpotifyArtist## | ##SpotifyURL## | ##SessionUpTime##";
+                    "##YourName## | ##Time## | ##Name## | ##TimeZone## | ##Argument0## | ##Argument1## | ##Argument2## | ##SpotifySong## | ##SpotifyArtist## | ##SpotifyURL## | ##SessionUpTime## | ##CounterValue## | ##Game##";
                 lblMessage.Location = new Point(10, yValue);
                 lblMessage.Multiline = true;
                 lblMessage.ReadOnly = true;
@@ -268,7 +289,7 @@ namespace LeStealthBot
             {
                 TextBox lblMessage = new TextBox();
                 lblMessage.Text = "Timer fill points: \r\n" +
-                    "##YourName## | ##Time## | ##Name## | ##TimeZone## | ##SpotifySong## | ##SpotifyArtist## | ##SpotifyURL## | ##SessionUpTime##";
+                    "##YourName## | ##Time## | ##Name## | ##TimeZone## | ##SpotifySong## | ##SpotifyArtist## | ##SpotifyURL## | ##SessionUpTime## | ##Game##";
                 lblMessage.Location = new Point(10, yValue);
                 lblMessage.Multiline = true;
                 lblMessage.ReadOnly = true;
@@ -551,6 +572,7 @@ namespace LeStealthBot
             Database.UpsertRecord(x => x["Key"] == "VolumeNotificationDuration", new BsonDocument() { { "Key", "VolumeNotificationDuration" }, { "Value", ((int)numericUpDown3.Value).ToString() } });
             Database.UpsertRecord(x => x["Key"] == "DarkModeEnabled", new BsonDocument() { { "Key", "DarkModeEnabled" }, { "Value", checkBox1.Checked.ToString() } });
             Database.UpsertRecord(x => x["Key"] == "SubscriberCheckCooldown", new BsonDocument() { { "Key", "SubscriberCheckCooldown" }, { "Value", ((int)numericUpDown5.Value).ToString() } });
+            Database.UpsertRecord(x => x["Key"] == "MaxViewersShown", new BsonDocument() { { "Key", "MaxViewersShown" }, { "Value", ((int)numericUpDown4.Value).ToString() } });
 
             Globals.ChatBotSettings = tmpChatBotSettings;
             Database.UpsertRecord(x => x["Key"] == "ChatBotSettings", new BsonDocument() { { "Key", "ChatBotSettings" }, { "Value", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None) } });
@@ -571,6 +593,8 @@ namespace LeStealthBot
             {
                 { "enabled", "false" },
                 { "default", "false" },
+                { "counterCommand", "false" },
+                { "counterValue", "0" },
                 { "message", "" },
             });
             loadChatBotSettingsOuterUI();

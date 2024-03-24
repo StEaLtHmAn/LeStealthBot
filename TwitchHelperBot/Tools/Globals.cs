@@ -30,6 +30,7 @@ namespace LeStealthBot
         public static TwitchClient twitchChatClient = null;
         public static Dictionary<string, DispatcherTimer> ChatbotTimers = new Dictionary<string, DispatcherTimer>();
         public static int webServerPort = 8080;
+        public static string CurrentGame = string.Empty;
 
         public static void LogMessage(string message)
         {
@@ -294,6 +295,8 @@ namespace LeStealthBot
                             messageToSend = messageToSend.Replace("##Time##", DateTime.Now.ToShortTimeString());
                         if (messageToSend.Contains("##TimeZone##"))
                             messageToSend = messageToSend.Replace("##TimeZone##", TimeZone.CurrentTimeZone.StandardName);
+                        if (messageToSend.Contains("##Game##"))
+                            messageToSend = messageToSend.Replace("##Game##", CurrentGame);
 
                         var OpenSpotifyPreviewForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
                         if (OpenSpotifyPreviewForms.Count() > 0)
@@ -345,59 +348,59 @@ namespace LeStealthBot
             c.Owner.ResumeLayout();
         }
 
-        public static JArray ChannelPointsRewardsList = new JArray();
-        public static void GetChannelPointsRewards()
-        {
-            JArray tmpChannelPoints = new JArray();
+        //public static JArray ChannelPointsRewardsList = new JArray();
+        //public static void GetChannelPointsRewards()
+        //{
+        //    JArray tmpChannelPoints = new JArray();
 
-            RestClient client = new RestClient();
-            client.AddDefaultHeader("Client-ID", clientId);
-            client.AddDefaultHeader("Authorization", "Bearer " + access_token);
-            RestRequest request = new RestRequest("https://api.twitch.tv/helix/channel_points/custom_rewards", Method.Get);
-            request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
-            RestResponse response = client.Execute(request);
-            JObject data = JObject.Parse(response.Content);
-            ChannelPointsRewardsList = data["data"] as JArray ?? new JArray();
-        }
-        public static JArray ChannelPointsRedemtionList = new JArray();
-        public static void GetChannelPointsRedemtionList()
-        {
-            GetChannelPointsRewards();
+        //    RestClient client = new RestClient();
+        //    client.AddDefaultHeader("Client-ID", clientId);
+        //    client.AddDefaultHeader("Authorization", "Bearer " + access_token);
+        //    RestRequest request = new RestRequest("https://api.twitch.tv/helix/channel_points/custom_rewards", Method.Get);
+        //    request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
+        //    RestResponse response = client.Execute(request);
+        //    JObject data = JObject.Parse(response.Content);
+        //    ChannelPointsRewardsList = data["data"] as JArray ?? new JArray();
+        //}
+        //public static JArray ChannelPointsRedemtionList = new JArray();
+        //public static void GetChannelPointsRedemtionList()
+        //{
+        //    GetChannelPointsRewards();
 
-            JArray tmpChannelPointsRedemtionList = new JArray();
-            RestClient client;
-            RestRequest request;
-            RestResponse response;
-            JObject data;
-            foreach (JObject channelPoint in ChannelPointsRewardsList)
-            {
-                client = new RestClient();
-                client.AddDefaultHeader("Client-ID", clientId);
-                client.AddDefaultHeader("Authorization", "Bearer " + access_token);
-                request = new RestRequest("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions", Method.Get);
-                request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
-                request.AddQueryParameter("reward_id", channelPoint["id"].ToString());
-                request.AddQueryParameter("status", "UNFULFILLED");
-                response = client.Execute(request);
-                data = JObject.Parse(response.Content);
-                tmpChannelPointsRedemtionList.Merge(data["data"] as JArray);
+        //    JArray tmpChannelPointsRedemtionList = new JArray();
+        //    RestClient client;
+        //    RestRequest request;
+        //    RestResponse response;
+        //    JObject data;
+        //    foreach (JObject channelPoint in ChannelPointsRewardsList)
+        //    {
+        //        client = new RestClient();
+        //        client.AddDefaultHeader("Client-ID", clientId);
+        //        client.AddDefaultHeader("Authorization", "Bearer " + access_token);
+        //        request = new RestRequest("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions", Method.Get);
+        //        request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
+        //        request.AddQueryParameter("reward_id", channelPoint["id"].ToString());
+        //        request.AddQueryParameter("status", "UNFULFILLED");
+        //        response = client.Execute(request);
+        //        data = JObject.Parse(response.Content);
+        //        tmpChannelPointsRedemtionList.Merge(data["data"] as JArray);
 
-                while (data?["pagination"]?["cursor"] != null)
-                {
-                    client = new RestClient();
-                    client.AddDefaultHeader("Client-ID", clientId);
-                    client.AddDefaultHeader("Authorization", "Bearer " + access_token);
-                    request = new RestRequest("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions", Method.Get);
-                    request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
-                    request.AddQueryParameter("reward_id", channelPoint["id"].ToString());
-                    request.AddQueryParameter("status", "UNFULFILLED");
-                    response = client.Execute(request);
-                    data = JObject.Parse(response.Content);
-                    tmpChannelPointsRedemtionList.Merge(data["data"] as JArray);
-                }
-            }
+        //        while (data?["pagination"]?["cursor"] != null)
+        //        {
+        //            client = new RestClient();
+        //            client.AddDefaultHeader("Client-ID", clientId);
+        //            client.AddDefaultHeader("Authorization", "Bearer " + access_token);
+        //            request = new RestRequest("https://api.twitch.tv/helix/channel_points/custom_rewards/redemptions", Method.Get);
+        //            request.AddQueryParameter("broadcaster_id", userDetailsResponse["data"][0]["id"].ToString());
+        //            request.AddQueryParameter("reward_id", channelPoint["id"].ToString());
+        //            request.AddQueryParameter("status", "UNFULFILLED");
+        //            response = client.Execute(request);
+        //            data = JObject.Parse(response.Content);
+        //            tmpChannelPointsRedemtionList.Merge(data["data"] as JArray);
+        //        }
+        //    }
 
-            ChannelPointsRedemtionList = tmpChannelPointsRedemtionList;
-        }
+        //    ChannelPointsRedemtionList = tmpChannelPointsRedemtionList;
+        //}
     }
 }

@@ -56,6 +56,7 @@
             this.panel1 = new System.Windows.Forms.Panel();
             this.flowLayoutPanel1 = new System.Windows.Forms.FlowLayoutPanel();
             this.panel2 = new System.Windows.Forms.Panel();
+            this.button15 = new System.Windows.Forms.Button();
             this.button6 = new System.Windows.Forms.Button();
             this.button5 = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
@@ -86,7 +87,8 @@
             this.label6 = new System.Windows.Forms.Label();
             this.checkBox1 = new System.Windows.Forms.CheckBox();
             this.numericUpDown3 = new System.Windows.Forms.NumericUpDown();
-            this.button15 = new System.Windows.Forms.Button();
+            this.numericUpDown4 = new System.Windows.Forms.NumericUpDown();
+            this.label15 = new System.Windows.Forms.Label();
             this.tabControl1.SuspendLayout();
             this.tabPage4.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown1)).BeginInit();
@@ -103,6 +105,7 @@
             this.tabPage1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown5)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown4)).BeginInit();
             this.SuspendLayout();
             // 
             // button3
@@ -417,6 +420,20 @@
             this.panel2.Name = "panel2";
             this.panel2.Size = new System.Drawing.Size(1142, 32);
             this.panel2.TabIndex = 2;
+            // 
+            // button15
+            // 
+            this.button15.Enabled = false;
+            this.button15.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.button15.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.button15.ForeColor = System.Drawing.Color.Green;
+            this.button15.Location = new System.Drawing.Point(230, 3);
+            this.button15.Name = "button15";
+            this.button15.Size = new System.Drawing.Size(132, 24);
+            this.button15.TabIndex = 106;
+            this.button15.Text = "New Channel Points";
+            this.button15.UseVisualStyleBackColor = true;
+            this.button15.Click += new System.EventHandler(this.button15_Click);
             // 
             // button6
             // 
@@ -737,6 +754,8 @@
             // tabPage1
             // 
             this.tabPage1.BackColor = System.Drawing.Color.Transparent;
+            this.tabPage1.Controls.Add(this.numericUpDown4);
+            this.tabPage1.Controls.Add(this.label15);
             this.tabPage1.Controls.Add(this.numericUpDown5);
             this.tabPage1.Controls.Add(this.label8);
             this.tabPage1.Controls.Add(this.label6);
@@ -819,18 +838,36 @@
             0,
             0});
             // 
-            // button15
+            // numericUpDown4
             // 
-            this.button15.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.button15.Font = new System.Drawing.Font("Microsoft Sans Serif", 8.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.button15.ForeColor = System.Drawing.Color.Green;
-            this.button15.Location = new System.Drawing.Point(230, 3);
-            this.button15.Name = "button15";
-            this.button15.Size = new System.Drawing.Size(132, 24);
-            this.button15.TabIndex = 106;
-            this.button15.Text = "New Channel Points";
-            this.button15.UseVisualStyleBackColor = true;
-            this.button15.Click += new System.EventHandler(this.button15_Click);
+            this.numericUpDown4.Location = new System.Drawing.Point(211, 83);
+            this.numericUpDown4.Maximum = new decimal(new int[] {
+            10000,
+            0,
+            0,
+            0});
+            this.numericUpDown4.Minimum = new decimal(new int[] {
+            50,
+            0,
+            0,
+            0});
+            this.numericUpDown4.Name = "numericUpDown4";
+            this.numericUpDown4.Size = new System.Drawing.Size(140, 20);
+            this.numericUpDown4.TabIndex = 110;
+            this.numericUpDown4.Value = new decimal(new int[] {
+            1000,
+            0,
+            0,
+            0});
+            // 
+            // label15
+            // 
+            this.label15.AutoSize = true;
+            this.label15.Location = new System.Drawing.Point(48, 85);
+            this.label15.Name = "label15";
+            this.label15.Size = new System.Drawing.Size(157, 13);
+            this.label15.TabIndex = 111;
+            this.label15.Text = "ViewerList Max Viewers Shown:";
             // 
             // SettingsForm
             // 
@@ -866,6 +903,7 @@
             this.tabPage1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown5)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.numericUpDown3)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.numericUpDown4)).EndInit();
             this.ResumeLayout(false);
 
         }
@@ -930,5 +968,7 @@
         private System.Windows.Forms.Label label14;
         private System.Windows.Forms.Button button14;
         private System.Windows.Forms.Button button15;
+        private System.Windows.Forms.NumericUpDown numericUpDown4;
+        private System.Windows.Forms.Label label15;
     }
 }

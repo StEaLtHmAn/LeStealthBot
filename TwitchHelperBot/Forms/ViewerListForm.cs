@@ -27,6 +27,7 @@ namespace LeStealthBot
         public DateTime sessionStart = DateTime.UtcNow;
         private string[] botNamesList = new string[0];
         private int SubscriberCheckCooldown;
+        private int MaxViewersShown;
         private JObject TwitchTrackerData = new JObject();
         public ViewerListForm()
         {
@@ -78,6 +79,7 @@ namespace LeStealthBot
             Sessions = Database.ReadAllData<SessionData>("Sessions");
 
             SubscriberCheckCooldown = int.Parse(Database.ReadSettingCell("SubscriberCheckCooldown"));
+            MaxViewersShown = int.Parse(Database.ReadSettingCell("MaxViewersShown"));
 
             Subscribers = GetSubscribedData();
 
@@ -222,32 +224,29 @@ namespace LeStealthBot
                                     }
                                 }
 
-                                IOrderedEnumerable<KeyValuePair<string, TimeSpan>> sortedList;
+                                IEnumerable<KeyValuePair<string, TimeSpan>> sortedList = tmpWatchTimeList.Where(x=>x.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()));
                                 if (!checkBox1.Checked)
-                                    sortedList = tmpWatchTimeList.OrderByDescending(x => x.Value).ThenBy(x => x.Key);
+                                    sortedList = sortedList.OrderByDescending(x => x.Value).ThenBy(x => x.Key).Take(MaxViewersShown);
                                 else
-                                    sortedList = tmpWatchTimeList.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key);
+                                    sortedList = sortedList.OrderByDescending(x => ViewersOnlineNames.Contains(x.Key)).ThenByDescending(x => x.Value).ThenBy(x => x.Key).Take(MaxViewersShown);
                                 string line = string.Empty;
                                 foreach (KeyValuePair<string, TimeSpan> kvp in sortedList)
                                 {
-                                    if (kvp.Key.ToLower().Contains(textBox2.Text.Trim().ToLower()))
-                                    {
-                                        par = doc.AddParagraph();
-                                        line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value)}";
-                                        par.SetText(line);
-                                        //format online indicator
-                                        fmt = par.AddCharFormat(0, 1);
-                                        fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
-                                        //format name
-                                        fmt = par.AddCharFormat(2, kvp.Key.Length + 1);
-                                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                                        if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                                            fmt.FgColor = gold;
-                                        else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
-                                            fmt.FgColor = cyan;
-                                        else if (!Sessions.Any(x => x.Viewers.Any(y => y.UserName == kvp.Key)))
-                                            fmt.FgColor = lightGreen;
-                                    }
+                                    par = doc.AddParagraph();
+                                    line = $"⚫ {kvp.Key} - {Globals.getRelativeTimeSpan(kvp.Value)}";
+                                    par.SetText(line);
+                                    //format online indicator
+                                    fmt = par.AddCharFormat(0, 1);
+                                    fmt.FgColor = ViewersOnlineNames.Contains(kvp.Key) ? green : red;
+                                    //format name
+                                    fmt = par.AddCharFormat(2, kvp.Key.Length + 1);
+                                    fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                                    if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                                        fmt.FgColor = gold;
+                                    else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == kvp.Key.ToLower()))
+                                        fmt.FgColor = cyan;
+                                    else if (!Sessions.Any(x => x.Viewers.Any(y => y.UserName == kvp.Key)))
+                                        fmt.FgColor = lightGreen;
                                 }
                             }
                             else if (TextDisplaying == button3.Text)//stats
@@ -383,32 +382,29 @@ namespace LeStealthBot
                                 fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
                                 fmt.FontStyle.AddStyle(FontStyleFlag.Underline);
 
-                                IOrderedEnumerable<ViewerData> sortedList;
+                                IEnumerable<ViewerData> sortedList = WatchTimeList.Where(x => x.UserName.ToLower().Contains(textBox2.Text.Trim().ToLower()));
                                 if (!checkBox1.Checked)
-                                    sortedList = WatchTimeList.OrderByDescending(x => x.WatchTime).ThenBy(x => x.UserName);
+                                    sortedList = sortedList.OrderByDescending(x => x.WatchTime).ThenBy(x => x.UserName).Take(MaxViewersShown);
                                 else
-                                    sortedList = WatchTimeList.OrderByDescending(x => ViewersOnlineNames.Contains(x.UserName)).ThenByDescending(x => x.WatchTime).ThenBy(x => x.UserName);
+                                    sortedList = sortedList.OrderByDescending(x => ViewersOnlineNames.Contains(x.UserName)).ThenByDescending(x => x.WatchTime).ThenBy(x => x.UserName).Take(MaxViewersShown);
 
                                 foreach (ViewerData v in sortedList)
                                 {
-                                    if (v.UserName.ToLower().Contains(textBox2.Text.Trim().ToLower()))
-                                    {
-                                        par = doc.AddParagraph();
-                                        line = $"⚫ {v.UserName} - {Globals.getRelativeTimeSpan(v.WatchTime)}";
-                                        par.SetText(line);
-                                        //format online indicator
-                                        fmt = par.AddCharFormat(0, 1);
-                                        fmt.FgColor = ViewersOnlineNames.Contains(v.UserName) ? green : red;
-                                        //format name
-                                        fmt = par.AddCharFormat(2, v.UserName.Length + 1);
-                                        fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
-                                        if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == v.UserName.ToLower()))
-                                            fmt.FgColor = gold;
-                                        else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == v.UserName.ToLower()))
-                                            fmt.FgColor = cyan;
-                                        else if (!Sessions.Any(x => x.Viewers.Any(y=>y.UserName == v.UserName)))
-                                            fmt.FgColor = lightGreen;
-                                    }
+                                    par = doc.AddParagraph();
+                                    line = $"⚫ {v.UserName} - {Globals.getRelativeTimeSpan(v.WatchTime)}";
+                                    par.SetText(line);
+                                    //format online indicator
+                                    fmt = par.AddCharFormat(0, 1);
+                                    fmt.FgColor = ViewersOnlineNames.Contains(v.UserName) ? green : red;
+                                    //format name
+                                    fmt = par.AddCharFormat(2, v.UserName.Length + 1);
+                                    fmt.FontStyle.AddStyle(FontStyleFlag.Bold);
+                                    if (Subscribers.Any(x => x["user_login"].ToString().ToLower() == v.UserName.ToLower()))
+                                        fmt.FgColor = gold;
+                                    else if (Globals.Followers.Any(x => x["user_login"].ToString().ToLower() == v.UserName.ToLower()))
+                                        fmt.FgColor = cyan;
+                                    else if (!Sessions.Any(x => x.Viewers.Any(y => y.UserName == v.UserName)))
+                                        fmt.FgColor = lightGreen;
                                 }
                             }
                         }

@@ -234,6 +234,9 @@ namespace LeStealthBot
             tmp = Database.ReadSettingCell("SubscriberCheckCooldown");
             if (string.IsNullOrEmpty(tmp) || !int.TryParse(tmp, out _))
                 Database.UpsertRecord(x => x["Key"] == "SubscriberCheckCooldown", new BsonDocument() { { "Key", "SubscriberCheckCooldown" }, { "Value", 5 } });
+            tmp = Database.ReadSettingCell("MaxViewersShown");
+            if (string.IsNullOrEmpty(tmp) || !int.TryParse(tmp, out _))
+                Database.UpsertRecord(x => x["Key"] == "MaxViewersShown", new BsonDocument() { { "Key", "MaxViewersShown" }, { "Value", 1000 } });
             tmp = Database.ReadSettingCell("AutoEnqueue");
             if (string.IsNullOrEmpty(tmp) || !bool.TryParse(tmp, out _))
             {
@@ -359,6 +362,11 @@ namespace LeStealthBot
                     { "enabled", "false" },
                     { "default", "true" },
                     { "message", "MrDestructoid Thanks @##RaiderName##, for the ##RaidViewerCount## viewer raid." }
+                } },
+                { "OnJoinedChannel", new JObject{
+                    { "enabled", "false" },
+                    { "default", "true" },
+                    { "message", "" }
                 } },
                 { "ChatCommand - power", new JObject{
                     { "enabled", "false" },
@@ -523,6 +531,14 @@ namespace LeStealthBot
                     goto retry;
                 }
                 //setup events
+                Globals.twitchChatClient.OnJoinedChannel += (sender, e) =>
+                {
+                    if (bool.Parse(Globals.ChatBotSettings["OnJoinedChannel"]["enabled"].ToString()))
+                    {
+                        Globals.sendChatBotMessage(e.Channel,
+                            Globals.ChatBotSettings["OnJoinedChannel"]["message"].ToString());
+                    }
+                };
                 Globals.twitchChatClient.OnUserBanned += (sender, e) =>
                 {
                     if (bool.Parse(Globals.ChatBotSettings["OnUserBanned"]["enabled"].ToString()))
@@ -946,6 +962,8 @@ namespace LeStealthBot
                                         string messageToSend = Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["message"].ToString();
                                         if (messageToSend.Contains("##YourName##"))
                                             messageToSend = messageToSend.Replace("##YourName##", Globals.userDetailsResponse["data"][0]["display_name"].ToString());
+                                        if (messageToSend.Contains("##Game##"))
+                                            messageToSend = messageToSend.Replace("##Game##", Globals.CurrentGame);
                                         if (messageToSend.Contains("##Time##"))
                                             messageToSend = messageToSend.Replace("##Time##", DateTime.Now.ToShortTimeString());
                                         if (messageToSend.Contains("##Name##"))
@@ -958,7 +976,19 @@ namespace LeStealthBot
                                             messageToSend = messageToSend.Replace("##Argument1##", e.Command.ArgumentsAsList[1].Replace("@", string.Empty));
                                         if (messageToSend.Contains("##Argument2##") && e.Command.ArgumentsAsList.Count > 2)
                                             messageToSend = messageToSend.Replace("##Argument2##", e.Command.ArgumentsAsList[2].Replace("@", string.Empty));
-
+                                        if (messageToSend.Contains("##CounterValue##"))
+                                        {
+                                            if (Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["counterValue"] == null)
+                                                Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["counterValue"] = 0;
+                                            if (Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["counterCommand"] == null)
+                                                Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["counterCommand"] = false;
+                                            if (bool.Parse(Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["counterCommand"].ToString()))
+                                            {
+                                                Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["counterValue"] = int.Parse(Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["counterValue"].ToString()) + 1;
+                                                Database.UpsertRecord(x => x["Key"] == "ChatBotSettings", new BsonDocument() { { "Key", "ChatBotSettings" }, { "Value", Globals.ChatBotSettings.ToString(Newtonsoft.Json.Formatting.None) } });
+                                                messageToSend = messageToSend.Replace("##CounterValue##", Globals.ChatBotSettings[$"ChatCommand - {e.Command.CommandText.ToLower()}"]["counterValue"].ToString());
+                                            }
+                                        }
                                         var OpenSpotifyPreviewForms = Application.OpenForms.OfType<SpotifyPreviewForm>();
                                         if (OpenSpotifyPreviewForms.Count() > 0)
                                         {
@@ -1224,7 +1254,7 @@ namespace LeStealthBot
             RestRequest request = new RestRequest("https://id.twitch.tv/oauth2/validate", Method.Get);
             RestResponse response = client.Execute(request);
             return response.StatusCode == HttpStatusCode.OK &&
-                response.Content.Contains("\"login\":\"" + Globals.loginName) &&
+                response.Content.ToLower().Contains("\"login\":\"" + Globals.loginName.ToLower()) &&
                 response.Content.Contains("\"client_id\":\"" + Globals.clientId);
         }
 
@@ -1273,10 +1303,11 @@ namespace LeStealthBot
                         {
                             string PresetTitle = Presets.First()["PresetTitle"].AsString;
                             JObject category = JObject.Parse(Presets.First()["PresetCategory"].AsString);
+                            Globals.CurrentGame = category["name"].ToString();
 
                             if (UpdateChannelInfo(category["id"].ToString(), PresetTitle))
                             {
-                                OverlayNotificationMessage form = new OverlayNotificationMessage($"Channel Info Updated\r\n{category["name"]}\r\n{PresetTitle}", category["box_art_url"].ToString(), category["id"].ToString());
+                                OverlayNotificationMessage form = new OverlayNotificationMessage($"Channel Info Updated\r\n{Globals.CurrentGame}\r\n{PresetTitle}", category["box_art_url"].ToString(), category["id"].ToString());
                                 form.Show();
                             }
                         }
